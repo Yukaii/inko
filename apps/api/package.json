@@ -1,0 +1,28 @@
+{
+  "name": "@inko/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "test": "vitest run",
+    "lint": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.0.0",
+    "@fastify/sensible": "^6.0.3",
+    "@inko/shared": "0.1.0",
+    "convex": "^1.20.0",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.2.1",
+    "jose": "^5.9.6",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "vitest": "^3.0.8"
+  }
+}

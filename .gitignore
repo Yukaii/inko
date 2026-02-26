@@ -1,0 +1,9 @@
+node_modules
+.env
+.env.*
+dist
+coverage
+.convex
+apps/web/.vite
+apps/web/playwright-report
+apps/web/test-results
