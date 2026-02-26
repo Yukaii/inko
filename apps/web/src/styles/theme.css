@@ -96,6 +96,75 @@ textarea {
   gap: 24px;
 }
 
+.typing-feedback {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #343434;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #1b1b1b, #171717);
+}
+
+.typing-feedback-topline {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.typing-progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #2a2a2a;
+  overflow: hidden;
+}
+
+.typing-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent-orange), var(--accent-teal));
+  transition: width 120ms ease-out;
+}
+
+.typing-feedback-metrics {
+  display: flex;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.typing-feedback-target {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: var(--font-jp);
+}
+
+.streak-card {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #343434;
+}
+
+.streak-headline {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.streak-headline strong {
+  font-size: 32px;
+  color: var(--accent-orange);
+  font-family: var(--font-display);
+}
+
+.streak-meta {
+  display: flex;
+  gap: 16px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
 .metric-value {
   font-size: 36px;
   font-family: var(--font-display);
