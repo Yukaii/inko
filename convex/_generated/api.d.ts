@@ -11,6 +11,7 @@
 import type * as dashboard from "../dashboard.js";
 import type * as decks from "../decks.js";
 import type * as practice from "../practice.js";
+import type * as seed from "../seed.js";
 import type * as users from "../users.js";
 import type * as words from "../words.js";
 
@@ -24,6 +25,7 @@ declare const fullApi: ApiFromModules<{
   dashboard: typeof dashboard;
   decks: typeof decks;
   practice: typeof practice;
+  seed: typeof seed;
   users: typeof users;
   words: typeof words;
 }>;

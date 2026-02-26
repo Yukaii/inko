@@ -38,6 +38,15 @@ type ConvexWord = {
   tags: string[];
 };
 
+export class RepositoryError extends Error {
+  statusCode: number;
+
+  constructor(message: string, statusCode: number) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
+
 function toUserDTO(user: ConvexUser) {
   return { id: user._id, email: user.email, createdAt: user.createdAt };
 }
@@ -98,13 +107,20 @@ export const repository = {
     return toDeckDTO(deck as ConvexDeck);
   },
 
-  async updateDeck(deckId: string, input: UpdateDeckInput) {
-    const deck = await convex.mutation("decks:updateDeck", { deckId, ...input });
-    if (!deck) throw new Error("Deck not found");
-    return toDeckDTO(deck as ConvexDeck);
+  async updateDeck(userId: string, deckId: string, input: UpdateDeckInput) {
+    const existingDeck = (await convex.query("decks:getDeckById", { deckId })) as ConvexDeck | null;
+    if (!existingDeck) throw new RepositoryError("Deck not found", 404);
+    if (existingDeck.userId !== userId) throw new RepositoryError("Forbidden", 403);
+    const updatedDeck = await convex.mutation("decks:updateDeck", { deckId, ...input });
+    if (!updatedDeck) throw new RepositoryError("Deck not found", 404);
+    return toDeckDTO(updatedDeck as ConvexDeck);
   },
 
-  async listDeckWords(deckId: string) {
+  async listDeckWords(userId: string, deckId: string) {
+    const deck = (await convex.query("decks:getDeckById", { deckId })) as ConvexDeck | null;
+    if (!deck) throw new RepositoryError("Deck not found", 404);
+    if (deck.userId !== userId) throw new RepositoryError("Forbidden", 403);
+
     const words = (await convex.query("decks:listDeckWords", {
       deckId,
     })) as ConvexWord[];
@@ -112,6 +128,10 @@ export const repository = {
   },
 
   async createWord(userId: string, deckId: string, input: CreateWordInput) {
+    const deck = (await convex.query("decks:getDeckById", { deckId })) as ConvexDeck | null;
+    if (!deck) throw new RepositoryError("Deck not found", 404);
+    if (deck.userId !== userId) throw new RepositoryError("Forbidden", 403);
+
     const word = await convex.mutation("decks:createWord", {
       userId,
       deckId,
@@ -122,28 +142,40 @@ export const repository = {
     return toWordDTO(word as ConvexWord);
   },
 
-  async updateWord(wordId: string, input: UpdateWordInput) {
+  async updateWord(userId: string, wordId: string, input: UpdateWordInput) {
+    const existingWord = (await convex.query("words:getById", { wordId })) as ConvexWord | null;
+    if (!existingWord) throw new RepositoryError("Word not found", 404);
+    if (existingWord.userId !== userId) throw new RepositoryError("Forbidden", 403);
+
     const word = await convex.mutation("decks:updateWord", {
       wordId,
       ...input,
     });
 
-    if (!word) throw new Error("Word not found");
+    if (!word) throw new RepositoryError("Word not found", 404);
     return toWordDTO(word as ConvexWord);
   },
 
-  async deleteWord(wordId: string) {
+  async deleteWord(userId: string, wordId: string) {
+    const existingWord = (await convex.query("words:getById", { wordId })) as ConvexWord | null;
+    if (!existingWord) throw new RepositoryError("Word not found", 404);
+    if (existingWord.userId !== userId) throw new RepositoryError("Forbidden", 403);
+
     await convex.mutation("decks:deleteWord", { wordId });
     return { ok: true };
   },
 
   async startPracticeSession(userId: string, input: StartPracticeSessionInput) {
+    const deck = (await convex.query("decks:getDeckById", { deckId: input.deckId })) as ConvexDeck | null;
+    if (!deck) throw new RepositoryError("Deck not found", 404);
+    if (deck.userId !== userId) throw new RepositoryError("Forbidden", 403);
+
     const session = await convex.mutation("practice:startSession", {
       userId,
       deckId: input.deckId,
     });
 
-    if (!session) throw new Error("Failed to start session");
+    if (!session) throw new RepositoryError("Failed to start session", 500);
 
     const rows = (await convex.query("practice:listDeckWordsWithStats", {
       userId,
@@ -151,7 +183,7 @@ export const repository = {
     })) as Array<{ word: ConvexWord; stat?: any }>;
 
     if (rows.length === 0) {
-      throw new Error("No words available in deck");
+      throw new RepositoryError("No words available in deck", 409);
     }
 
     const now = Date.now();
@@ -194,16 +226,24 @@ export const repository = {
     }
 
     const session = (await convex.query("practice:getSessionById", { sessionId })) as
-      | { _id: string; deckId: string }
+      | { _id: string; userId: string; deckId: string }
       | null;
     if (!session) {
-      throw new Error("Session not found");
+      throw new RepositoryError("Session not found", 404);
     }
+    if (session.userId !== userId) throw new RepositoryError("Forbidden", 403);
 
     const word = (await convex.query("words:getById", { wordId })) as ConvexWord | null;
     if (!word) {
-      throw new Error("Word not found for submission");
+      throw new RepositoryError("Word not found for submission", 404);
     }
+    if (word.userId !== userId) throw new RepositoryError("Forbidden", 403);
+
+    const inDeck = (await convex.query("decks:isWordInDeck", {
+      deckId: session.deckId,
+      wordId,
+    })) as boolean;
+    if (!inDeck) throw new RepositoryError("Word not in session deck", 403);
 
     const shape = scoreShape(input.handwritingCompleted);
     const typing = scoreTyping(input.typingInput, word.target, word.reading, input.typingMs);
@@ -261,9 +301,15 @@ export const repository = {
     };
   },
 
-  async finishPracticeSession(sessionId: string) {
+  async finishPracticeSession(userId: string, sessionId: string) {
+    const existingSession = (await convex.query("practice:getSessionById", { sessionId })) as
+      | { _id: string; userId: string }
+      | null;
+    if (!existingSession) throw new RepositoryError("Session not found", 404);
+    if (existingSession.userId !== userId) throw new RepositoryError("Forbidden", 403);
+
     const session = await convex.mutation("practice:finishSession", { sessionId });
-    if (!session) throw new Error("Session not found");
+    if (!session) throw new RepositoryError("Session not found", 404);
 
     const attempts = (await convex.query("practice:listAttemptsBySession", { sessionId })) as Array<{
       shapeScore: number;
@@ -302,3 +348,5 @@ export const repository = {
     return await convex.query("dashboard:summary", { userId });
   },
 };
+
+export type Repository = typeof repository;
