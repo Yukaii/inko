@@ -1,0 +1,86 @@
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+
+export default defineSchema({
+  users: defineTable({
+    email: v.string(),
+    createdAt: v.number(),
+  }).index("by_email", ["email"]),
+
+  decks: defineTable({
+    userId: v.id("users"),
+    name: v.string(),
+    language: v.literal("ja"),
+    archived: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_language", ["userId", "language"]),
+
+  words: defineTable({
+    userId: v.id("users"),
+    language: v.literal("ja"),
+    target: v.string(),
+    reading: v.optional(v.string()),
+    romanization: v.optional(v.string()),
+    meaning: v.string(),
+    example: v.optional(v.string()),
+    audioUrl: v.optional(v.string()),
+    tags: v.array(v.string()),
+    createdAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  deck_words: defineTable({
+    deckId: v.id("decks"),
+    wordId: v.id("words"),
+    position: v.number(),
+  })
+    .index("by_deck", ["deckId"])
+    .index("by_deck_word", ["deckId", "wordId"]),
+
+  word_channel_stats: defineTable({
+    userId: v.id("users"),
+    wordId: v.id("words"),
+    shapeStrength: v.number(),
+    typingStrength: v.number(),
+    listeningStrength: v.number(),
+    shapeDueAt: v.number(),
+    typingDueAt: v.number(),
+    listeningDueAt: v.number(),
+    lastPracticedAt: v.optional(v.number()),
+  })
+    .index("by_user_word", ["userId", "wordId"])
+    .index("by_user_shape_due", ["userId", "shapeDueAt"])
+    .index("by_user_typing_due", ["userId", "typingDueAt"])
+    .index("by_user_listening_due", ["userId", "listeningDueAt"]),
+
+  practice_sessions: defineTable({
+    userId: v.id("users"),
+    deckId: v.id("decks"),
+    startedAt: v.number(),
+    finishedAt: v.optional(v.number()),
+    cardsCompleted: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_deck", ["userId", "deckId"]),
+
+  practice_attempts: defineTable({
+    sessionId: v.id("practice_sessions"),
+    wordId: v.id("words"),
+    shapeScore: v.number(),
+    typingScore: v.number(),
+    listeningScore: v.number(),
+    typingMs: v.number(),
+    submittedAt: v.number(),
+  }).index("by_session", ["sessionId"]),
+
+  daily_stats: defineTable({
+    userId: v.id("users"),
+    date: v.string(),
+    wordsCompleted: v.number(),
+    secondsSpent: v.number(),
+    streakCount: v.number(),
+  })
+    .index("by_user_date", ["userId", "date"])
+    .index("by_user", ["userId"]),
+});

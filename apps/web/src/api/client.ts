@@ -1,0 +1,84 @@
+import type {
+  CreateDeckInput,
+  CreateWordInput,
+  SubmitPracticeCardInput,
+  UpdateDeckInput,
+  UpdateWordInput,
+} from "@inko/shared";
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+
+async function request<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers: {
+      "content-type": "application/json",
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+      ...(init.headers ?? {}),
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(await res.text());
+  }
+
+  return (await res.json()) as T;
+}
+
+export const api = {
+  requestMagicLink: (email: string) =>
+    request<{ ok: boolean }>("/api/auth/magic-link/request", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  verifyMagicLink: (token: string) =>
+    request<{ accessToken: string; user: any }>("/api/auth/magic-link/verify", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
+
+  me: (token: string) => request<any>("/api/me", {}, token),
+  dashboard: (token: string) => request<any>("/api/dashboard/summary", {}, token),
+
+  listDecks: (token: string) => request<any[]>("/api/decks", {}, token),
+
+  createDeck: (token: string, input: CreateDeckInput) =>
+    request<any>("/api/decks", { method: "POST", body: JSON.stringify(input) }, token),
+
+  updateDeck: (token: string, deckId: string, input: UpdateDeckInput) =>
+    request<any>(`/api/decks/${deckId}`, { method: "PATCH", body: JSON.stringify(input) }, token),
+
+  listWords: (token: string, deckId: string) => request<any[]>(`/api/decks/${deckId}/words`, {}, token),
+
+  createWord: (token: string, deckId: string, input: CreateWordInput) =>
+    request<any>(`/api/decks/${deckId}/words`, { method: "POST", body: JSON.stringify(input) }, token),
+
+  updateWord: (token: string, wordId: string, input: UpdateWordInput) =>
+    request<any>(`/api/words/${wordId}`, { method: "PATCH", body: JSON.stringify(input) }, token),
+
+  deleteWord: (token: string, wordId: string) =>
+    request<{ ok: boolean }>(`/api/words/${wordId}`, { method: "DELETE" }, token),
+
+  startPractice: (token: string, deckId: string) =>
+    request<{ sessionId: string; card: any }>(
+      "/api/practice/session/start",
+      { method: "POST", body: JSON.stringify({ deckId }) },
+      token,
+    ),
+
+  submitPractice: (
+    token: string,
+    sessionId: string,
+    wordId: string,
+    input: SubmitPracticeCardInput,
+  ) =>
+    request<{ accepted: boolean; scores: any; nextDueAt: string }>(
+      `/api/practice/session/${sessionId}/card/submit?wordId=${wordId}`,
+      { method: "POST", body: JSON.stringify(input) },
+      token,
+    ),
+
+  finishPractice: (token: string, sessionId: string) =>
+    request<any>(`/api/practice/session/${sessionId}/finish`, { method: "POST" }, token),
+};

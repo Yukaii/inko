@@ -1,0 +1,157 @@
+:root {
+  --accent-orange: #ff6b35;
+  --accent-teal: #00d4aa;
+  --bg-page: #1a1a1a;
+  --bg-card: #212121;
+  --bg-elevated: #2d2d2d;
+  --bg-placeholder: #3d3d3d;
+  --text-primary: #ffffff;
+  --text-secondary: #777777;
+  --text-on-accent: #0d0d0d;
+  --radius: 16px;
+  --font-display: "Oswald", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-jp: "Noto Sans JP", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top right, #2b2b2b, #161616 60%);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg-page);
+  border-right: 1px solid #2f2f2f;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--accent-orange);
+  margin-bottom: 16px;
+}
+
+.nav-link {
+  padding: 10px 14px;
+  border-radius: 12px;
+  color: var(--text-secondary);
+}
+
+.nav-link.active {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.main {
+  padding: 32px 40px;
+}
+
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.grid.cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.practice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.metric-value {
+  font-size: 36px;
+  font-family: var(--font-display);
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  background: #141414;
+  border: 1px solid #3a3a3a;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+button {
+  background: var(--accent-orange);
+  color: var(--text-on-accent);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button.secondary {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    flex-direction: row;
+    overflow-x: auto;
+    align-items: center;
+  }
+
+  .main {
+    padding: 20px;
+  }
+
+  .grid.cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .practice-grid {
+    grid-template-columns: 1fr;
+  }
+}
