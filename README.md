@@ -47,6 +47,20 @@ cp apps/web/.env.example apps/web/.env
 bun run dev
 ```
 
+## Seed Starter Data
+
+After Convex is initialized and running, seed a default Japanese deck and starter words:
+
+```bash
+bun run seed:starter
+```
+
+To seed another email:
+
+```bash
+bunx convex run seed:seedStarterData '{"email":"you@example.com"}'
+```
+
 ## Auth Flow (Local)
 
 - Request magic link token from login page.

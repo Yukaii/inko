@@ -30,6 +30,13 @@ export const createDeck = mutation({
   },
 });
 
+export const getDeckById = query({
+  args: { deckId: v.id("decks") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.deckId);
+  },
+});
+
 export const updateDeck = mutation({
   args: {
     deckId: v.id("decks"),
@@ -111,6 +118,20 @@ export const listDeckWords = query({
       .map((x) => ({
         ...x.word,
       }));
+  },
+});
+
+export const isWordInDeck = query({
+  args: {
+    deckId: v.id("decks"),
+    wordId: v.id("words"),
+  },
+  handler: async (ctx, args) => {
+    const link = await ctx.db
+      .query("deck_words")
+      .withIndex("by_deck_word", (q) => q.eq("deckId", args.deckId).eq("wordId", args.wordId))
+      .first();
+    return !!link;
   },
 });
 

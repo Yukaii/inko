@@ -5,44 +5,73 @@ import {
   UpdateDeckSchema,
   UpdateWordSchema,
 } from "@inko/shared";
-import { repository } from "../services/repository.js";
+import { repository, type Repository } from "../services/repository.js";
 import { requireAuth } from "../plugins/auth.js";
+import { rethrowAsHttp } from "../lib/http.js";
 
-export async function deckRoutes(app: FastifyInstance) {
+export async function deckRoutes(app: FastifyInstance, repo: Repository = repository) {
   app.get("/api/decks", { preHandler: requireAuth }, async (request) => {
-    return await repository.listDecks(request.auth!.userId);
+    try {
+      return await repo.listDecks(request.auth!.userId);
+    } catch (error) {
+      rethrowAsHttp(app, error);
+    }
   });
 
   app.post("/api/decks", { preHandler: requireAuth }, async (request) => {
-    const body = CreateDeckSchema.parse(request.body);
-    return await repository.createDeck(request.auth!.userId, body);
+    try {
+      const body = CreateDeckSchema.parse(request.body);
+      return await repo.createDeck(request.auth!.userId, body);
+    } catch (error) {
+      rethrowAsHttp(app, error);
+    }
   });
 
   app.patch("/api/decks/:deckId", { preHandler: requireAuth }, async (request) => {
-    const body = UpdateDeckSchema.parse(request.body);
-    const { deckId } = request.params as { deckId: string };
-    return await repository.updateDeck(deckId, body);
+    try {
+      const body = UpdateDeckSchema.parse(request.body);
+      const { deckId } = request.params as { deckId: string };
+      return await repo.updateDeck(request.auth!.userId, deckId, body);
+    } catch (error) {
+      rethrowAsHttp(app, error);
+    }
   });
 
   app.get("/api/decks/:deckId/words", { preHandler: requireAuth }, async (request) => {
-    const { deckId } = request.params as { deckId: string };
-    return await repository.listDeckWords(deckId);
+    try {
+      const { deckId } = request.params as { deckId: string };
+      return await repo.listDeckWords(request.auth!.userId, deckId);
+    } catch (error) {
+      rethrowAsHttp(app, error);
+    }
   });
 
   app.post("/api/decks/:deckId/words", { preHandler: requireAuth }, async (request) => {
-    const body = CreateWordSchema.parse(request.body);
-    const { deckId } = request.params as { deckId: string };
-    return await repository.createWord(request.auth!.userId, deckId, body);
+    try {
+      const body = CreateWordSchema.parse(request.body);
+      const { deckId } = request.params as { deckId: string };
+      return await repo.createWord(request.auth!.userId, deckId, body);
+    } catch (error) {
+      rethrowAsHttp(app, error);
+    }
   });
 
   app.patch("/api/words/:wordId", { preHandler: requireAuth }, async (request) => {
-    const body = UpdateWordSchema.parse(request.body);
-    const { wordId } = request.params as { wordId: string };
-    return await repository.updateWord(wordId, body);
+    try {
+      const body = UpdateWordSchema.parse(request.body);
+      const { wordId } = request.params as { wordId: string };
+      return await repo.updateWord(request.auth!.userId, wordId, body);
+    } catch (error) {
+      rethrowAsHttp(app, error);
+    }
   });
 
   app.delete("/api/words/:wordId", { preHandler: requireAuth }, async (request) => {
-    const { wordId } = request.params as { wordId: string };
-    return await repository.deleteWord(wordId);
+    try {
+      const { wordId } = request.params as { wordId: string };
+      return await repo.deleteWord(request.auth!.userId, wordId);
+    } catch (error) {
+      rethrowAsHttp(app, error);
+    }
   });
 }

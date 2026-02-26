@@ -3,28 +3,37 @@ import {
   StartPracticeSessionSchema,
   SubmitPracticeCardSchema,
 } from "@inko/shared";
-import { repository } from "../services/repository.js";
+import { repository, type Repository } from "../services/repository.js";
 import { requireAuth } from "../plugins/auth.js";
+import { rethrowAsHttp } from "../lib/http.js";
 
-export async function practiceRoutes(app: FastifyInstance) {
+export async function practiceRoutes(app: FastifyInstance, repo: Repository = repository) {
   app.post("/api/practice/session/start", { preHandler: requireAuth }, async (request) => {
-    const body = StartPracticeSessionSchema.parse(request.body);
-    return await repository.startPracticeSession(request.auth!.userId, body);
+    try {
+      const body = StartPracticeSessionSchema.parse(request.body);
+      return await repo.startPracticeSession(request.auth!.userId, body);
+    } catch (error) {
+      rethrowAsHttp(app, error);
+    }
   });
 
   app.post(
     "/api/practice/session/:sessionId/card/submit",
     { preHandler: requireAuth },
     async (request) => {
-      const body = SubmitPracticeCardSchema.parse(request.body);
-      const { sessionId } = request.params as { sessionId: string };
-      const { wordId } = request.query as { wordId: string };
+      try {
+        const body = SubmitPracticeCardSchema.parse(request.body);
+        const { sessionId } = request.params as { sessionId: string };
+        const { wordId } = request.query as { wordId: string };
 
-      if (!wordId) {
-        throw app.httpErrors.badRequest("wordId query param is required");
+        if (!wordId) {
+          throw app.httpErrors.badRequest("wordId query param is required");
+        }
+
+        return await repo.submitPracticeCard(request.auth!.userId, sessionId, wordId, body);
+      } catch (error) {
+        rethrowAsHttp(app, error);
       }
-
-      return await repository.submitPracticeCard(request.auth!.userId, sessionId, wordId, body);
     },
   );
 
@@ -32,8 +41,12 @@ export async function practiceRoutes(app: FastifyInstance) {
     "/api/practice/session/:sessionId/finish",
     { preHandler: requireAuth },
     async (request) => {
-      const { sessionId } = request.params as { sessionId: string };
-      return await repository.finishPracticeSession(sessionId);
+      try {
+        const { sessionId } = request.params as { sessionId: string };
+        return await repo.finishPracticeSession(request.auth!.userId, sessionId);
+      } catch (error) {
+        rethrowAsHttp(app, error);
+      }
     },
   );
 }

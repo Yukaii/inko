@@ -1,10 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import { MagicLinkRequestSchema, MagicLinkVerifySchema } from "@inko/shared";
 import { consumeMagicToken, createMagicToken, issueAccessToken } from "../lib/auth.js";
-import { repository } from "../services/repository.js";
+import { repository, type Repository } from "../services/repository.js";
 import { requireAuth } from "../plugins/auth.js";
 
-export async function authRoutes(app: FastifyInstance) {
+export async function authRoutes(app: FastifyInstance, repo: Repository = repository) {
   app.post("/api/auth/magic-link/request", async (request) => {
     const body = MagicLinkRequestSchema.parse(request.body);
     const token = createMagicToken(body.email.toLowerCase());
@@ -21,7 +21,7 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.badRequest("Invalid or expired token");
     }
 
-    const user = await repository.getOrCreateUser(email);
+    const user = await repo.getOrCreateUser(email);
     const accessToken = await issueAccessToken(user.id, user.email);
 
     return { accessToken, user };
@@ -32,7 +32,7 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   app.get("/api/me", { preHandler: requireAuth }, async (request, reply) => {
-    const user = await repository.getUserById(request.auth!.userId);
+    const user = await repo.getUserById(request.auth!.userId);
     if (!user) {
       return reply.notFound("User not found");
     }
