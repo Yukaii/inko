@@ -86,7 +86,6 @@ Inkō bridges these gaps by combining all input methods into a unified learning 
 Users can:
 
 * Create decks
-* Import vocabulary via CSV
 * Add words manually
 * Use pre-built starter decks
 * Tag and organize words
@@ -276,6 +275,7 @@ Gamification must not distract from core learning.
 
 Inkō will not initially include:
 
+* CSV import
 * Social networking features
 * Live tutoring
 * Marketplace for teachers
@@ -310,4 +310,68 @@ All in one simultaneous learning experience.
 
 It is designed to turn passive learners into active producers of language — strengthening memory through shape, sound, and input mastery.
 
+---
+
+## 12. Implementation Status (as of February 26, 2026)
+
+### 12.1 Delivered
+
+* Web MVP monorepo scaffold:
+  * `apps/web` (Vite + React + TypeScript)
+  * `apps/api` (Fastify + TypeScript)
+  * `packages/shared` (zod schemas + scoring/scheduling logic)
+  * `convex/` (schema + domain functions)
+* Auth:
+  * Email magic-link request/verify endpoints
+  * JWT-based API auth for protected routes
+  * Local dev flow currently uses token from API logs
+* Word Bank:
+  * Create/list/update decks
+  * Create/list/update/delete words
+  * Per-user ownership checks on deck and word operations
+* Triple-Input Practice:
+  * Session start/submit/finish endpoints
+  * Handwriting canvas (self-check completion model)
+  * Typing validation (normalized JP input; target or reading)
+  * Audio gate (must be played/marked played)
+  * Score generation (shape/typing/listening)
+* Scheduling:
+  * Per-word channel stats (shape/typing/listening)
+  * Weakest-channel-first and due-date updates after attempts
+* Dashboard:
+  * Summary endpoint and frontend cards for core KPIs
+  * Recent session list support
+* Starter seed:
+  * Convex mutation for `Core N5` deck + starter JP vocabulary
+  * Bun script for quick seeding
+* Quality gates:
+  * Shared/unit tests
+  * API integration tests (Fastify `inject`)
+  * Web component tests for practice submit gating
+
+### 12.2 Partially Delivered
+
+* UI parity with Pencil design:
+  * Core layout and tokens are implemented
+  * Fine-grained visual parity and polish are still pending
+* Audio experience:
+  * Works with stored `audioUrl` or manual played toggle
+  * No advanced playback UX (slow mode, waveform) yet
+
+### 12.3 Not Yet Delivered
+
+* Production-grade email delivery for magic links
+* CSV import workflow
+* Additional review modes beyond full Triple Mode
+* Advanced analytics visuals (heatmap/radar)
+* Deployment hardening and production infrastructure
+
+---
+
+## 13. Current MVP Focus (Immediate Next Steps)
+
+1. Replace log-based magic-link with real dev/prod mail delivery.
+2. Improve visual fidelity against `inko.pen` for dashboard and practice screens.
+3. Expand API integration coverage for all authorization edge cases.
+4. Add operational docs for cloud deployment + environment matrix.
 
