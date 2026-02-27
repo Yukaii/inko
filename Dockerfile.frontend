@@ -1,0 +1,23 @@
+FROM oven/bun:1 AS builder
+WORKDIR /app
+
+COPY package.json bun.lock tsconfig.base.json ./
+COPY apps/api/package.json ./apps/api/package.json
+COPY apps/web/package.json ./apps/web/package.json
+COPY packages/shared/package.json ./packages/shared/package.json
+
+RUN bun install --frozen-lockfile
+
+COPY apps/web ./apps/web
+COPY packages/shared ./packages/shared
+
+RUN bun run --filter @inko/shared build \
+  && bun run --filter @inko/web build
+
+FROM caddy:2.8-alpine AS runner
+WORKDIR /srv
+
+COPY apps/web/Caddyfile /etc/caddy/Caddyfile
+COPY --from=builder /app/apps/web/dist /usr/share/caddy
+
+EXPOSE 8080
