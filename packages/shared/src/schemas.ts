@@ -158,6 +158,10 @@ export const CreateWordsBatchSchema = z.object({
   words: z.array(CreateWordSchema).min(1).max(1000),
 });
 
+export const DeleteWordsBatchSchema = z.object({
+  wordIds: z.array(z.string()).min(1).max(1000),
+});
+
 export const UpdateWordSchema = CreateWordSchema.partial();
 
 export const StartPracticeSessionSchema = z.object({
@@ -188,6 +192,7 @@ export type CreateDeckInput = z.infer<typeof CreateDeckSchema>;
 export type UpdateDeckInput = z.infer<typeof UpdateDeckSchema>;
 export type CreateWordInput = z.infer<typeof CreateWordSchema>;
 export type CreateWordsBatchInput = z.infer<typeof CreateWordsBatchSchema>;
+export type DeleteWordsBatchInput = z.infer<typeof DeleteWordsBatchSchema>;
 export type UpdateWordInput = z.infer<typeof UpdateWordSchema>;
 export type StartPracticeSessionInput = z.infer<typeof StartPracticeSessionSchema>;
 export type SubmitPracticeCardInput = z.infer<typeof SubmitPracticeCardSchema>;

@@ -3,6 +3,7 @@ import {
   type CreateWordsBatchInput,
   type CreateDeckInput,
   type CreateWordInput,
+  type DeleteWordsBatchInput,
   type LanguageCode,
   type StartPracticeSessionInput,
   type SubmitPracticeCardInput,
@@ -253,6 +254,19 @@ export const repository = {
 
     await convex.mutation("decks:deleteWord", { wordId });
     return { ok: true };
+  },
+
+  async deleteWordsBatch(userId: string, deckId: string, input: DeleteWordsBatchInput) {
+    const existingDeck = (await convex.query("decks:getDeckById", { deckId })) as ConvexDeck | null;
+    if (!existingDeck) throw new RepositoryError("Deck not found", 404);
+    if (existingDeck.userId !== userId) throw new RepositoryError("Forbidden", 403);
+
+    const result = (await convex.mutation("decks:deleteWordsBatch", {
+      deckId,
+      wordIds: input.wordIds,
+    })) as { deleted: number; failedWordIds: string[] };
+
+    return result;
   },
 
   async deleteDeck(userId: string, deckId: string) {

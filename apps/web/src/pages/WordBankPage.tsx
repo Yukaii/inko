@@ -314,10 +314,12 @@ export function WordBankPage() {
 
   const bulkDeleteWords = useMutation({
     mutationFn: async () => {
-      const promises = Array.from(selectedWordIds).map((wordId) =>
-        api.deleteWord(token ?? "", wordId)
-      );
-      await Promise.all(promises);
+      if (!selectedDeckId || selectedWordIds.size === 0) {
+        return { deleted: 0, failedWordIds: [] as string[] };
+      }
+      return await api.deleteWordsBatch(token ?? "", selectedDeckId, {
+        wordIds: Array.from(selectedWordIds),
+      });
     },
     onSuccess: async () => {
       setSelectedWordIds(new Set());
@@ -377,10 +379,6 @@ export function WordBankPage() {
   const previewPage = Math.min(importPreviewPage, totalPreviewPages);
   const previewStart = (previewPage - 1) * IMPORT_PREVIEW_PAGE_SIZE;
   const previewRows = mappedImportRows.slice(previewStart, previewStart + IMPORT_PREVIEW_PAGE_SIZE);
-
-  useEffect(() => {
-    setImportPreviewPage(1);
-  }, [rawImportData, importColumnMapping]);
 
   const parseCSVLine = (line: string): string[] => {
     const result: string[] = [];
@@ -472,50 +470,49 @@ export function WordBankPage() {
     let imported = 0;
     let failed = 0;
 
+    const wordsToImport = [] as Array<{
+      target: string;
+      reading?: string;
+      meaning: string;
+      romanization?: string;
+      example?: string;
+      tags: string[];
+    }>;
+
     for (const row of rawImportData.rows) {
-      const data: Record<string, string | undefined> = {
-        target: undefined,
-        reading: undefined,
-        meaning: undefined,
-        romanization: undefined,
-        example: undefined,
-        tags: undefined,
-      };
-
-      // Map columns to fields
-      for (const [colIndex, field] of Object.entries(importColumnMapping)) {
-        if (field && field !== '') {
-          const value = row[Number.parseInt(colIndex)];
-          if (field === 'tags') {
-            data.tags = value;
-          } else {
-            data[field] = value || undefined;
-          }
-        }
-      }
-
+      const data = mapImportRow(row);
       if (!data.target || !data.meaning) {
         failed++;
         continue;
       }
 
+      wordsToImport.push({
+        target: data.target,
+        reading: data.reading,
+        meaning: data.meaning,
+        romanization: data.romanization,
+        example: data.example,
+        tags: data.tags
+          ? data.tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [],
+      });
+    }
+
+    if (wordsToImport.length > 0) {
       try {
-        await api.createWord(token ?? "", selectedDeckId, {
-          target: data.target,
-          reading: data.reading,
-          meaning: data.meaning,
-          romanization: data.romanization,
-          example: data.example,
-          tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+        const result = await api.createWordsBatch(token ?? "", selectedDeckId, {
+          words: wordsToImport,
         });
-        imported++;
+        imported = result.created;
       } catch {
-        failed++;
+        failed += wordsToImport.length;
       }
     }
 
     setImportStatus(`Done: ${imported} imported${failed ? `, ${failed} failed` : ""}`);
-    setImportPreview(null);
     setRawImportData(null);
     setImportColumnMapping({});
     await queryClient.invalidateQueries({ queryKey: ["words", selectedDeckId] });
@@ -535,18 +532,7 @@ export function WordBankPage() {
           setRawImportData(parsed);
           const mapping = autoMapColumns(parsed.headers);
           setImportColumnMapping(mapping);
-          
-          // Generate preview
-          const preview = parsed.rows.slice(0, 5).map(row => {
-            const item: Record<string, string> = {};
-            for (const [colIndex, field] of Object.entries(mapping)) {
-              if (field && field !== '') {
-                item[field] = row[Number.parseInt(colIndex)] || '';
-              }
-            }
-            return item;
-          });
-          setImportPreview(preview);
+          setImportPreviewPage(1);
         }
       }
     };
@@ -850,18 +836,7 @@ export function WordBankPage() {
                             setRawImportData(parsed);
                             const mapping = autoMapColumns(parsed.headers);
                             setImportColumnMapping(mapping);
-                            
-                            // Generate preview
-                            const preview = parsed.rows.slice(0, 5).map(row => {
-                              const item: Record<string, string> = {};
-                              for (const [colIndex, field] of Object.entries(mapping)) {
-                                if (field && field !== '') {
-                                  item[field] = row[Number.parseInt(colIndex)] || '';
-                                }
-                              }
-                              return item;
-                            });
-                            setImportPreview(preview);
+                            setImportPreviewPage(1);
                           }
                         }
                       }} 
@@ -880,7 +855,7 @@ export function WordBankPage() {
                     
                      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
                       {rawImportData.headers.map((header, index) => (
-                        <div key={`header-${header}-${index}`} className="flex flex-col gap-1">
+                        <div key={`header-${header}`} className="flex flex-col gap-1">
                           <label htmlFor={`col-map-${index}`} className="text-[11px] text-text-secondary truncate" title={header}>
                             {header}
                           </label>
@@ -893,6 +868,7 @@ export function WordBankPage() {
                                 ...prev,
                                 [index]: e.target.value
                               }));
+                              setImportPreviewPage(1);
                             }}
                           >
                             <option value="">-- Skip --</option>
@@ -909,9 +885,32 @@ export function WordBankPage() {
                   </div>
 
                   {/* Preview */}
-                  {importPreview && importPreview.length > 0 && (
+                  {previewRows.length > 0 && (
                     <div className="flex flex-col gap-3">
-                      <h3 className="m-0 text-sm font-semibold">Preview ({importPreview.length} of {rawImportData.rows.length} rows)</h3>
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="m-0 text-sm font-semibold">
+                          Preview ({previewStart + 1}-{Math.min(previewStart + previewRows.length, mappedImportRows.length)} of {mappedImportRows.length})
+                        </h3>
+                        <div className="flex items-center gap-2 text-xs text-text-secondary">
+                          <button
+                            type="button"
+                            className="bg-bg-elevated px-2 py-1 text-xs"
+                            onClick={() => setImportPreviewPage((prev) => Math.max(1, prev - 1))}
+                            disabled={previewPage <= 1}
+                          >
+                            Prev
+                          </button>
+                          <span>Page {previewPage} / {totalPreviewPages}</span>
+                          <button
+                            type="button"
+                            className="bg-bg-elevated px-2 py-1 text-xs"
+                            onClick={() => setImportPreviewPage((prev) => Math.min(totalPreviewPages, prev + 1))}
+                            disabled={previewPage >= totalPreviewPages}
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
                       <div className="max-h-60 overflow-auto rounded-lg border border-[var(--border-muted)]">
                         <table className="w-full text-sm">
                           <thead className="sticky top-0 bg-bg-elevated">
@@ -923,12 +922,12 @@ export function WordBankPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {importPreview.map((row, i) => (
-                              <tr key={i} className="border-t border-[var(--border-muted)]">
+                            {previewRows.map((row, i) => (
+                              <tr key={`${previewStart + i}-${row.target ?? ""}-${row.meaning ?? ""}`} className="border-t border-[var(--border-muted)]">
                                 <td className={`px-3 py-2 ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`}>{row.target || "-"}</td>
                                 <td className={`px-3 py-2 text-text-secondary ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`}>{row.reading || "-"}</td>
                                 <td className="px-3 py-2 text-text-secondary">{row.meaning || '-'}</td>
-                                <td className={`px-3 py-2 text-text-secondary truncate max-w-[200px] ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`} title={row.example}>
+                                <td className={`px-3 py-2 text-text-secondary truncate max-w-[200px] ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`} title={row.example ?? ""}>
                                   {row.example || "-"}
                                 </td>
                               </tr>
@@ -946,8 +945,8 @@ export function WordBankPage() {
                       className="bg-bg-elevated text-text-primary"
                       onClick={() => {
                         setRawImportData(null);
-                        setImportPreview(null);
                         setImportColumnMapping({});
+                        setImportPreviewPage(1);
                         setImportText('');
                       }}
                     >
