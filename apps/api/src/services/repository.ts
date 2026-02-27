@@ -182,12 +182,12 @@ function selectNextPracticeCard(rows: WordStatsRow[], deckId: string, excludedWo
   };
 }
 
-async function listPracticeCandidateRows(userId: string, deckId: string, maxRows = 120): Promise<WordStatsRow[]> {
+async function listPracticeCandidateRows(userId: string, deckId: string, maxRows = 40): Promise<WordStatsRow[]> {
   const rows: WordStatsRow[] = [];
   let cursor: string | null = null;
 
   while (rows.length < maxRows) {
-    const pageLimit = Math.min(40, maxRows - rows.length);
+    const pageLimit = Math.min(20, maxRows - rows.length);
     const result = (await convex.query("practice:listDeckWordsWithStatsPage", {
       userId,
       deckId,
