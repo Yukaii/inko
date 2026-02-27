@@ -51,8 +51,18 @@ export const addAttempt = mutation({
     typingScore: v.number(),
     listeningScore: v.number(),
     typingMs: v.number(),
+    maxCards: v.number(),
   },
   handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId);
+    if (!session) {
+      return { ok: false, capped: true, cardsCompleted: 0 };
+    }
+
+    if (session.cardsCompleted >= args.maxCards) {
+      return { ok: false, capped: true, cardsCompleted: session.cardsCompleted };
+    }
+
     await ctx.db.insert("practice_attempts", {
       sessionId: args.sessionId,
       wordId: args.wordId,
@@ -63,14 +73,12 @@ export const addAttempt = mutation({
       submittedAt: Date.now(),
     });
 
-    const session = await ctx.db.get(args.sessionId);
-    if (session) {
-      await ctx.db.patch(args.sessionId, {
-        cardsCompleted: session.cardsCompleted + 1,
-      });
-    }
+    const cardsCompleted = session.cardsCompleted + 1;
+    await ctx.db.patch(args.sessionId, {
+      cardsCompleted,
+    });
 
-    return { ok: true };
+    return { ok: true, capped: false, cardsCompleted };
   },
 });
 
@@ -171,6 +179,43 @@ export const listDeckWordsWithStats = query({
     );
 
     return rows.filter((row): row is NonNullable<typeof row> => !!row);
+  },
+});
+
+export const listDeckWordsWithStatsPage = query({
+  args: {
+    userId: v.id("users"),
+    deckId: v.id("decks"),
+    cursor: v.union(v.string(), v.null()),
+    limit: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const result = await ctx.db
+      .query("deck_words")
+      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+      .order("asc")
+      .paginate({
+        cursor: args.cursor,
+        numItems: args.limit,
+      });
+
+    const rows = await Promise.all(
+      result.page.map(async (link) => {
+        const word = await ctx.db.get(link.wordId);
+        if (!word) return null;
+        const stat = await ctx.db
+          .query("word_channel_stats")
+          .withIndex("by_user_word", (q) => q.eq("userId", args.userId).eq("wordId", link.wordId))
+          .first();
+        return { word, stat };
+      }),
+    );
+
+    return {
+      page: rows.filter((row): row is NonNullable<typeof row> => !!row),
+      continueCursor: result.continueCursor,
+      isDone: result.isDone,
+    };
   },
 });
 

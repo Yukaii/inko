@@ -4,7 +4,7 @@ import { RepositoryError } from "../services/repository.js";
 import { buildServer } from "../server.js";
 import { createMagicToken, issueAccessToken } from "../lib/auth.js";
 import type { Mailer } from "../lib/mailer.js";
-import { DefaultThemes } from "@inko/shared";
+import { DefaultThemes, PRACTICE_SESSION_CARD_CAP_DEFAULT } from "@inko/shared";
 
 function makeRepositoryMock(): Repository {
   return {
@@ -99,6 +99,9 @@ function makeRepositoryMock(): Repository {
     startPracticeSession: vi.fn(async () => ({
       sessionId: "session_1",
       typingMode: "language_specific" as const,
+      sessionTargetCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
+      cardsCompleted: 0,
+      remainingCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
       card: {
         wordId: "word_1",
         deckId: "deck_1",
@@ -113,6 +116,10 @@ function makeRepositoryMock(): Repository {
       accepted: true,
       scores: { shape: 100, typing: 90, listening: 80 },
       nextDueAt: new Date().toISOString(),
+      sessionTargetCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
+      cardsCompleted: 1,
+      remainingCards: PRACTICE_SESSION_CARD_CAP_DEFAULT - 1,
+      sessionCapped: false,
     })),
     finishPracticeSession: vi.fn(async () => ({
       sessionId: "session_1",
@@ -277,6 +284,8 @@ describe("API integration", () => {
       payload: { deckId: "deck_1" },
     });
     expect(startRes.statusCode).toBe(200);
+    expect(startRes.json().sessionTargetCards).toBe(PRACTICE_SESSION_CARD_CAP_DEFAULT);
+    expect(startRes.json().cardsCompleted).toBe(0);
 
     const submitRes = await app.inject({
       method: "POST",
@@ -292,6 +301,8 @@ describe("API integration", () => {
     });
     expect(submitRes.statusCode).toBe(200);
     expect(submitRes.json().accepted).toBe(true);
+    expect(submitRes.json().cardsCompleted).toBe(1);
+    expect(submitRes.json().sessionTargetCards).toBe(PRACTICE_SESSION_CARD_CAP_DEFAULT);
 
     const finishRes = await app.inject({
       method: "POST",

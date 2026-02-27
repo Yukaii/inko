@@ -5,6 +5,7 @@ import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { registerShortcut } from "../hooks/useKeyboard.js";
 import {
+  PRACTICE_SESSION_CARD_CAP_DEFAULT,
   getTypingMatchSource,
   getTypingMatchTarget,
   isTypingMatch,
@@ -89,6 +90,17 @@ export function getTypingFeedback(input: {
   };
 }
 
+export function getPracticeCompletionTitle(input: {
+  sessionCapped: boolean;
+  cardsCompleted: number;
+  sessionTargetCards: number;
+}) {
+  if (input.sessionCapped || (input.sessionTargetCards > 0 && input.cardsCompleted >= input.sessionTargetCards)) {
+    return "Daily target reached";
+  }
+  return "Session Complete";
+}
+
 export function PracticePage() {
   const { deckId } = useParams<{ deckId: string }>();
   const { token } = useAuth();
@@ -105,6 +117,9 @@ export function PracticePage() {
   const [typingMode, setTypingMode] = useState<TypingMode>("language_specific");
   const [cardTransition, setCardTransition] = useState(false);
   const [finishError, setFinishError] = useState("");
+  const [sessionTargetCards, setSessionTargetCards] = useState(PRACTICE_SESSION_CARD_CAP_DEFAULT);
+  const [cardsCompleted, setCardsCompleted] = useState(0);
+  const [sessionCapped, setSessionCapped] = useState(false);
 
   const startedAtRef = useRef<number>(Date.now());
   const autoSubmitKeyRef = useRef<string>("");
@@ -117,6 +132,9 @@ export function PracticePage() {
       setSessionId(res.sessionId);
       setCard(res.card as PracticeCard);
       setTypingMode((res.typingMode as TypingMode | undefined) ?? "language_specific");
+      setSessionTargetCards(res.sessionTargetCards ?? PRACTICE_SESSION_CARD_CAP_DEFAULT);
+      setCardsCompleted(res.cardsCompleted ?? 0);
+      setSessionCapped(false);
       startedAtRef.current = Date.now();
     });
   }, [deckId, token]);
@@ -155,6 +173,26 @@ export function PracticePage() {
       });
     },
     onSuccess: (res) => {
+      const resolvedTarget = res.sessionTargetCards ?? sessionTargetCards;
+      if (res.sessionTargetCards !== undefined) {
+        setSessionTargetCards(res.sessionTargetCards);
+      }
+      const nextCompleted =
+        res.cardsCompleted ??
+        (res.remainingCards !== undefined
+          ? Math.max(0, resolvedTarget - res.remainingCards)
+          : res.accepted
+            ? undefined
+            : cardsCompleted);
+      if (nextCompleted !== undefined) {
+        setCardsCompleted(nextCompleted);
+      } else {
+        setCardsCompleted((prev) => Math.min(resolvedTarget, prev + 1));
+      }
+      if (res.sessionCapped) {
+        setSessionCapped(true);
+      }
+
       if (res.accepted) {
         setLastSubmitAccepted(true);
         setCardStreak((prev) => {
@@ -178,6 +216,9 @@ export function PracticePage() {
       } else {
         setLastSubmitAccepted(false);
         setCardStreak(0);
+        if (res.sessionCapped) {
+          requestFinish();
+        }
       }
     },
   });
@@ -321,11 +362,18 @@ export function PracticePage() {
 
   // Session done screen
   if (sessionDone) {
+    const completedCards = sessionSummary?.cardsCompleted ?? cardsCompleted;
+    const completionTitle = getPracticeCompletionTitle({
+      sessionCapped,
+      cardsCompleted: completedCards,
+      sessionTargetCards,
+    });
+
     return (
       <section className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-center overflow-hidden bg-bg-page" aria-label="Practice complete">
         <div className="flex flex-col items-center gap-4">
           <div className="mb-2 text-5xl text-accent-teal" aria-hidden="true">&#x2714;</div>
-          <h1 className="m-0 text-4xl text-text-primary [font-family:var(--font-display)]">Session Complete</h1>
+          <h1 className="m-0 text-4xl text-text-primary [font-family:var(--font-display)]">{completionTitle}</h1>
           {sessionSummary ? (
             <div className="mt-4 flex gap-10">
               <div className="flex flex-col items-center gap-1">
@@ -374,6 +422,12 @@ export function PracticePage() {
       {/* Minimal top bar */}
       <div className="fixed inset-x-0 top-0 z-[210] flex items-center justify-between px-6 py-4 opacity-60 transition-opacity hover:opacity-100 focus-within:opacity-100">
         <div className="flex items-center gap-3">
+          <span
+            className="inline-flex items-center rounded-full border border-[var(--border-muted)] bg-bg-page px-3 py-1 text-xs text-text-secondary"
+            aria-label={`Session progress: ${cardsCompleted} of ${sessionTargetCards}`}
+          >
+            {cardsCompleted}/{sessionTargetCards}
+          </span>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-muted)] bg-bg-page px-3.5 py-1.5 text-sm text-accent-orange [font-family:var(--font-display)]" aria-label={`Current streak: ${cardStreak}`}>
             {cardStreak > 0 ? (
               <>

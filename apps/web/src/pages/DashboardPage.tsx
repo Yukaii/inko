@@ -211,7 +211,7 @@ export function DashboardPage() {
             sessionId: string; 
             cardsCompleted: number; 
             startedAt: number; 
-            finishedAt: number;
+            finishedAt?: number;
           }) => {
             const duration = Math.round(((session.finishedAt ?? Date.now()) - session.startedAt) / 1000);
             const formattedDate = new Date(session.finishedAt ?? session.startedAt).toLocaleString('en-US', {

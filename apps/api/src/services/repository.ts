@@ -1,5 +1,6 @@
 import {
   DefaultThemes,
+  PRACTICE_SESSION_CARD_CAP_DEFAULT,
   type CreateWordsBatchInput,
   type CreateDeckInput,
   type CreateWordInput,
@@ -61,6 +62,24 @@ type WordStatsRow = {
     typingDueAt: number;
     listeningDueAt: number;
   };
+};
+
+type WordChannelStats = {
+  shapeStrength: number;
+  typingStrength: number;
+  listeningStrength: number;
+  shapeDueAt: number;
+  typingDueAt: number;
+  listeningDueAt: number;
+};
+
+type ConvexPracticeSession = {
+  _id: string;
+  userId: string;
+  deckId: string;
+  startedAt: number;
+  finishedAt?: number;
+  cardsCompleted: number;
 };
 
 export class RepositoryError extends Error {
@@ -140,6 +159,31 @@ function selectNextPracticeCard(rows: WordStatsRow[], deckId: string, excludedWo
     example: selected.example,
     audioUrl: selected.audioUrl,
   };
+}
+
+async function listPracticeCandidateRows(userId: string, deckId: string, maxRows = 300): Promise<WordStatsRow[]> {
+  const rows: WordStatsRow[] = [];
+  let cursor: string | null = null;
+
+  while (rows.length < maxRows) {
+    const pageLimit = Math.min(100, maxRows - rows.length);
+    const result = (await convex.query("practice:listDeckWordsWithStatsPage", {
+      userId,
+      deckId,
+      cursor,
+      limit: pageLimit,
+    })) as { page: WordStatsRow[]; continueCursor: string; isDone: boolean };
+
+    rows.push(...result.page);
+
+    if (result.isDone) {
+      break;
+    }
+
+    cursor = result.continueCursor;
+  }
+
+  return rows;
 }
 
 export const repository = {
@@ -314,17 +358,14 @@ export const repository = {
     if (!deck) throw new RepositoryError("Deck not found", 404);
     if (deck.userId !== userId) throw new RepositoryError("Forbidden", 403);
 
-    const session = await convex.mutation("practice:startSession", {
+    const session = (await convex.mutation("practice:startSession", {
       userId,
       deckId: input.deckId,
-    });
+    })) as ConvexPracticeSession | null;
 
     if (!session) throw new RepositoryError("Failed to start session", 500);
 
-    const rows = (await convex.query("practice:listDeckWordsWithStats", {
-      userId,
-      deckId: input.deckId,
-    })) as WordStatsRow[];
+    const rows = await listPracticeCandidateRows(userId, input.deckId);
 
     if (rows.length === 0) {
       throw new RepositoryError("No words available in deck", 409);
@@ -335,9 +376,12 @@ export const repository = {
     const user = (await convex.query("users:getById", { userId })) as ConvexUser | null;
 
     return {
-      sessionId: (session as any)._id as string,
+      sessionId: session._id,
       card,
       typingMode: user?.typingMode ?? "language_specific",
+      sessionTargetCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
+      cardsCompleted: session.cardsCompleted,
+      remainingCards: Math.max(0, PRACTICE_SESSION_CARD_CAP_DEFAULT - session.cardsCompleted),
     };
   },
 
@@ -347,12 +391,11 @@ export const repository = {
         accepted: false,
         scores: { shape: 0, typing: 0, listening: 0 },
         nextDueAt: new Date().toISOString(),
+        sessionTargetCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
       };
     }
 
-    const session = (await convex.query("practice:getSessionById", { sessionId })) as
-      | { _id: string; userId: string; deckId: string }
-      | null;
+    const session = (await convex.query("practice:getSessionById", { sessionId })) as ConvexPracticeSession | null;
     if (!session) {
       throw new RepositoryError("Session not found", 404);
     }
@@ -388,13 +431,16 @@ export const repository = {
         accepted: false,
         scores: { shape, typing, listening },
         nextDueAt: new Date().toISOString(),
+        sessionTargetCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
+        cardsCompleted: session.cardsCompleted,
+        remainingCards: Math.max(0, PRACTICE_SESSION_CARD_CAP_DEFAULT - session.cardsCompleted),
       };
     }
 
     const existing = (await convex.query("practice:getWordStats", {
       userId,
       wordId,
-    })) as any;
+    })) as WordChannelStats | null;
 
     const now = Date.now();
     const current = existing
@@ -406,6 +452,29 @@ export const repository = {
       : defaultWordChannelStats(now);
 
     const next = applyAttempt(current, { shape, typing, listening }, now);
+
+    const attemptResult = (await convex.mutation("practice:addAttempt", {
+      sessionId,
+      wordId,
+      shapeScore: shape,
+      typingScore: typing,
+      listeningScore: listening,
+      typingMs: input.typingMs,
+      maxCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
+    })) as { ok: boolean; capped: boolean; cardsCompleted: number };
+
+    if (attemptResult.capped) {
+      return {
+        accepted: false,
+        scores: { shape, typing, listening },
+        nextDueAt: new Date(nextDueAt(next)).toISOString(),
+        nextCard: null,
+        sessionTargetCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
+        cardsCompleted: attemptResult.cardsCompleted,
+        remainingCards: 0,
+        sessionCapped: true,
+      };
+    }
 
     await convex.mutation("practice:upsertWordStats", {
       userId,
@@ -419,19 +488,23 @@ export const repository = {
       lastPracticedAt: now,
     });
 
-    await convex.mutation("practice:addAttempt", {
-      sessionId,
-      wordId,
-      shapeScore: shape,
-      typingScore: typing,
-      listeningScore: listening,
-      typingMs: input.typingMs,
-    });
+    const cardsCompleted = attemptResult.cardsCompleted;
+    const remainingCards = Math.max(0, PRACTICE_SESSION_CARD_CAP_DEFAULT - cardsCompleted);
+    const sessionCapped = remainingCards === 0;
+    if (sessionCapped) {
+      return {
+        accepted: true,
+        scores: { shape, typing, listening },
+        nextDueAt: new Date(nextDueAt(next)).toISOString(),
+        nextCard: null,
+        sessionTargetCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
+        cardsCompleted,
+        remainingCards,
+        sessionCapped,
+      };
+    }
 
-    const rows = (await convex.query("practice:listDeckWordsWithStats", {
-      userId,
-      deckId: session.deckId,
-    })) as WordStatsRow[];
+    const rows = await listPracticeCandidateRows(userId, session.deckId);
 
     const attempts = (await convex.query("practice:listAttemptsBySession", { sessionId })) as Array<{ wordId: string }>;
     const attemptedWordIds = new Set(attempts.map((attempt) => attempt.wordId));
@@ -442,6 +515,10 @@ export const repository = {
       scores: { shape, typing, listening },
       nextDueAt: new Date(nextDueAt(next)).toISOString(),
       nextCard,
+      sessionTargetCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
+      cardsCompleted,
+      remainingCards,
+      sessionCapped,
     };
   },
 
@@ -452,7 +529,9 @@ export const repository = {
     if (!existingSession) throw new RepositoryError("Session not found", 404);
     if (existingSession.userId !== userId) throw new RepositoryError("Forbidden", 403);
 
-    const session = await convex.mutation("practice:finishSession", { sessionId });
+    const session = (await convex.mutation("practice:finishSession", {
+      sessionId,
+    })) as ConvexPracticeSession | null;
     if (!session) throw new RepositoryError("Session not found", 404);
 
     const attempts = (await convex.query("practice:listAttemptsBySession", { sessionId })) as Array<{
@@ -468,19 +547,19 @@ export const repository = {
 
     const durationSeconds = Math.max(
       0,
-      Math.round((((session as any).finishedAt ?? Date.now()) - (session as any).startedAt) / 1000),
+      Math.round(((session.finishedAt ?? Date.now()) - session.startedAt) / 1000),
     );
 
     await convex.mutation("practice:upsertDailyStats", {
-      userId: (session as any).userId,
-      cardsCompletedDelta: (session as any).cardsCompleted,
+      userId: session.userId,
+      cardsCompletedDelta: session.cardsCompleted,
       secondsSpentDelta: durationSeconds,
       now: Date.now(),
     });
 
     return {
       sessionId,
-      cardsCompleted: (session as any).cardsCompleted,
+      cardsCompleted: session.cardsCompleted,
       avgShapeScore: avg("shapeScore"),
       avgTypingScore: avg("typingScore"),
       avgListeningScore: avg("listeningScore"),
