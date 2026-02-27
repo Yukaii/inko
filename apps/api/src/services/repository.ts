@@ -207,6 +207,15 @@ export const repository = {
     return { ok: true };
   },
 
+  async deleteDeck(userId: string, deckId: string) {
+    const existingDeck = (await convex.query("decks:getDeckById", { deckId })) as ConvexDeck | null;
+    if (!existingDeck) throw new RepositoryError("Deck not found", 404);
+    if (existingDeck.userId !== userId) throw new RepositoryError("Forbidden", 403);
+
+    await convex.mutation("decks:deleteDeck", { deckId });
+    return { ok: true };
+  },
+
   async startPracticeSession(userId: string, input: StartPracticeSessionInput) {
     const deck = (await convex.query("decks:getDeckById", { deckId: input.deckId })) as ConvexDeck | null;
     if (!deck) throw new RepositoryError("Deck not found", 404);

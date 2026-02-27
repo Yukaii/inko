@@ -53,6 +53,9 @@ export const api = {
   updateDeck: (token: string, deckId: string, input: UpdateDeckInput) =>
     request<any>(`/api/decks/${deckId}`, { method: "PATCH", body: JSON.stringify(input) }, token),
 
+  deleteDeck: (token: string, deckId: string) =>
+    request<{ ok: boolean }>(`/api/decks/${deckId}`, { method: "DELETE" }, token),
+
   listWords: (token: string, deckId: string) => request<any[]>(`/api/decks/${deckId}/words`, {}, token),
 
   createWord: (token: string, deckId: string, input: CreateWordInput) =>
