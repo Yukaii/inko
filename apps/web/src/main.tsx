@@ -2,9 +2,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { App } from "./App.js";
+import { App } from "./App";
 import "./styles/theme.css";
-import { applyThemePreferences, loadThemePreferences } from "./theme/theme.js";
+import { applyThemePreferences, loadThemePreferences } from "./theme/theme";
 
 const queryClient = new QueryClient();
 applyThemePreferences(loadThemePreferences());

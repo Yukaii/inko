@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Repository } from "../services/repository.js";
-import { RepositoryError } from "../services/repository.js";
-import { buildServer } from "../server.js";
-import { createMagicToken, issueAccessToken } from "../lib/auth.js";
-import type { Mailer } from "../lib/mailer.js";
+import type { Repository } from "../services/repository";
+import { RepositoryError } from "../services/repository";
+import { buildServer } from "../server";
+import { createMagicToken, issueAccessToken } from "../lib/auth";
+import type { Mailer } from "../lib/mailer";
 import { DefaultThemes, PRACTICE_SESSION_CARD_CAP_DEFAULT } from "@inko/shared";
 
 function makeRepositoryMock(): Repository {

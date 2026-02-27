@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyAttempt, defaultWordChannelStats, weakestChannel } from "./scheduling.js";
+import { applyAttempt, defaultWordChannelStats, weakestChannel } from "./scheduling";
 
 describe("scheduling", () => {
   it("updates channel strengths and due dates", () => {

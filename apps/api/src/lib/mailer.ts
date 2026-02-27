@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { env } from "./env.js";
+import { env } from "./env";
 
 const MAGIC_LINK_EXPIRY_MINUTES = 15;
 

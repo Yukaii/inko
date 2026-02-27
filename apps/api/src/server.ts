@@ -1,13 +1,13 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import sensible from "@fastify/sensible";
-import { env } from "./lib/env.js";
-import { createMailer, type Mailer } from "./lib/mailer.js";
-import { authRoutes } from "./routes/auth.js";
-import { deckRoutes } from "./routes/decks.js";
-import { practiceRoutes } from "./routes/practice.js";
-import { dashboardRoutes } from "./routes/dashboard.js";
-import { repository, type Repository } from "./services/repository.js";
+import { env } from "./lib/env";
+import { createMailer, type Mailer } from "./lib/mailer";
+import { authRoutes } from "./routes/auth";
+import { deckRoutes } from "./routes/decks";
+import { practiceRoutes } from "./routes/practice";
+import { dashboardRoutes } from "./routes/dashboard";
+import { repository, type Repository } from "./services/repository";
 
 export async function buildServer(options?: { repository?: Repository; mailer?: Mailer }) {
   const app = Fastify({ logger: true });

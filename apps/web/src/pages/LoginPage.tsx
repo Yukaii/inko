@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../api/client.js";
-import { useAuth } from "../hooks/useAuth.js";
+import { api } from "../api/client";
+import { useAuth } from "../hooks/useAuth";
 
 export function LoginPage() {
   const [email, setEmail] = useState(import.meta.env.DEV ? "user@example.com" : "");

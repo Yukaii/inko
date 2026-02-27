@@ -1,13 +1,13 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { AuthProvider, useAuth } from "./hooks/useAuth.js";
-import { useKeyboardShortcuts } from "./hooks/useKeyboard.js";
-import { Layout } from "./components/Layout.js";
-import { LoginPage } from "./pages/LoginPage.js";
-import { DashboardPage } from "./pages/DashboardPage.js";
-import { WordBankPage } from "./pages/WordBankPage.js";
-import { PracticePage } from "./pages/PracticePage.js";
-import { SettingsPage } from "./pages/SettingsPage.js";
-import { LandingPage } from "./pages/LandingPage.js";
+import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { useKeyboardShortcuts } from "./hooks/useKeyboard";
+import { Layout } from "./components/Layout";
+import { LoginPage } from "./pages/LoginPage";
+import { DashboardPage } from "./pages/DashboardPage";
+import { WordBankPage } from "./pages/WordBankPage";
+import { PracticePage } from "./pages/PracticePage";
+import { SettingsPage } from "./pages/SettingsPage";
+import { LandingPage } from "./pages/LandingPage";
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();

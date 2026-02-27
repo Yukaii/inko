@@ -3,9 +3,9 @@ import {
   StartPracticeSessionSchema,
   SubmitPracticeCardSchema,
 } from "@inko/shared";
-import { repository, type Repository } from "../services/repository.js";
-import { requireAuth } from "../plugins/auth.js";
-import { rethrowAsHttp } from "../lib/http.js";
+import { repository, type Repository } from "../services/repository";
+import { requireAuth } from "../plugins/auth";
+import { rethrowAsHttp } from "../lib/http";
 
 export async function practiceRoutes(app: FastifyInstance, repo: Repository = repository) {
   app.post("/api/practice/session/start", { preHandler: requireAuth }, async (request) => {

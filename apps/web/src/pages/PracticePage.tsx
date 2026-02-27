@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-import { api } from "../api/client.js";
-import { useAuth } from "../hooks/useAuth.js";
-import { registerShortcut } from "../hooks/useKeyboard.js";
+import { api } from "../api/client";
+import { useAuth } from "../hooks/useAuth";
+import { registerShortcut } from "../hooks/useKeyboard";
 import {
   PRACTICE_SESSION_CARD_CAP_DEFAULT,
   getTypingMatchSource,

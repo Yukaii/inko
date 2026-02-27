@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PERFORMANCE_CONSTANTS, testChunkArray } from "./repository.js";
+import { PERFORMANCE_CONSTANTS, testChunkArray } from "./repository";
 
 describe("repository performance guards", () => {
   it("chunks large imports into bounded Convex batches", () => {

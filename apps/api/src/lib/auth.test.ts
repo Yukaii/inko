@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { consumeMagicToken, createMagicToken, issueAccessToken, verifyAccessToken } from "./auth.js";
+import { consumeMagicToken, createMagicToken, issueAccessToken, verifyAccessToken } from "./auth";
 
 describe("auth", () => {
   it("issues and verifies access token", async () => {

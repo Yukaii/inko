@@ -3,9 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash2 } from "lucide-react";
 import { LANGUAGE_LABELS, type LanguageCode, SUPPORTED_LANGUAGES } from "@inko/shared";
-import { api } from "../api/client.js";
-import { useAuth } from "../hooks/useAuth.js";
-import { registerShortcut } from "../hooks/useKeyboard.js";
+import { api } from "../api/client";
+import { useAuth } from "../hooks/useAuth";
+import { registerShortcut } from "../hooks/useKeyboard";
 
 type AddTab = "single" | "import";
 const NEW_DECK_LANGUAGE_STORAGE_KEY = "inko:new-deck-language";

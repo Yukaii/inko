@@ -1,9 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { api } from "../api/client.js";
-import { useAuth } from "../hooks/useAuth.js";
-import { registerShortcut } from "../hooks/useKeyboard.js";
+import { api } from "../api/client";
+import { useAuth } from "../hooks/useAuth";
+import { registerShortcut } from "../hooks/useKeyboard";
 
 export function DashboardPage() {
   const { token } = useAuth();

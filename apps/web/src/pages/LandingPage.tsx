@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { PracticeSimulator } from "../components/PracticeSimulator";
 import {
   Keyboard,
   Repeat,
@@ -7,6 +9,20 @@ import {
   Zap,
   Smartphone,
 } from "lucide-react";
+
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.6 }
+};
+
+const staggerContainer = {
+  animate: {
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
 
 export function LandingPage() {
   return (
@@ -39,64 +55,100 @@ export function LandingPage() {
 
       {/* Hero Section */}
       <section className="flex flex-col items-center pt-20 pb-16 px-6 text-center md:px-30">
-        <div className="mb-8 inline-flex items-center justify-center rounded-full bg-bg-elevated px-3 py-1.5 font-mono text-[10px] font-bold text-accent-teal uppercase tracking-wider">
-          THE_FUTURE_OF_RETENTION
-        </div>
-        <h1 className="mb-6 font-display text-5xl font-bold leading-tight md:text-7xl">
-          type it until you own it
-        </h1>
-        <p className="mb-10 max-w-[600px] font-mono text-base text-text-secondary md:text-lg leading-relaxed">
-          The flashcard app that makes you prove you know it. Type your answers,
-          build muscle memory, and never forget again.
-        </p>
-        <div className="mb-20 flex flex-col gap-4 sm:flex-row sm:gap-6 font-mono font-semibold">
-          <Link
-            to="/login"
-            className="rounded-base bg-accent-orange px-7 py-3.5 text-text-on-accent transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-accent-orange/20"
+        <motion.div 
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+          className="flex flex-col items-center"
+        >
+          <motion.div 
+            variants={fadeInUp}
+            className="mb-8 inline-flex items-center justify-center rounded-full bg-bg-elevated px-3 py-1.5 font-mono text-[10px] font-bold text-accent-teal uppercase tracking-wider"
           >
-            Start Typing
-          </Link>
-          <a
-            href="#how-it-works"
-            className="rounded-base border border-text-primary px-7 py-3.5 text-text-primary transition-colors hover:bg-bg-elevated"
+            THE_FUTURE_OF_RETENTION
+          </motion.div>
+          <motion.h1 
+            variants={fadeInUp}
+            className="mb-6 font-display text-5xl font-bold leading-tight md:text-7xl"
           >
-            Learn More
-          </a>
-        </div>
+            type it until you own it
+          </motion.h1>
+          <motion.p 
+            variants={fadeInUp}
+            className="mb-10 max-w-[600px] font-mono text-base text-text-secondary md:text-lg leading-relaxed"
+          >
+            The flashcard app that makes you prove you know it. Type your answers,
+            build muscle memory, and never forget again.
+          </motion.p>
+          <motion.div 
+            variants={fadeInUp}
+            className="mb-20 flex flex-col gap-4 sm:flex-row sm:gap-6 font-mono font-semibold"
+          >
+            <Link
+              to="/login"
+              className="rounded-base bg-accent-orange px-7 py-3.5 text-text-on-accent transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-accent-orange/20"
+            >
+              Start Typing
+            </Link>
+            <a
+              href="#how-it-works"
+              className="rounded-base border border-text-primary px-7 py-3.5 text-text-primary transition-colors hover:bg-bg-elevated"
+            >
+              Learn More
+            </a>
+          </motion.div>
+        </motion.div>
 
-        {/* Mockup */}
-        <div className="w-full max-w-[1103px] mb-12">
+        {/* Mockup Simulator */}
+        <motion.div 
+          initial={{ opacity: 0, y: 40, scale: 0.95 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-full max-w-[1103px] mb-12"
+        >
           <div className="flex h-[39px] items-center gap-2 rounded-t-2xl bg-[#1a1a1a] px-4">
             <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]" />
             <div className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
             <div className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
           </div>
-          <div className="flex h-[300px] md:h-[500px] items-start justify-center rounded-b-2xl bg-bg-elevated border border-[#1a1a1a] border-t-0 shadow-2xl relative overflow-hidden">
-             <img src="/images/localhost_5173_dashboard.png" alt="App Dashboard Screenshot" className="object-cover object-top w-full h-full" />
-          </div>
-        </div>
+          <PracticeSimulator />
+        </motion.div>
       </section>
 
       {/* How It Works */}
       <section id="how-it-works" className="bg-bg-card py-20 px-6 md:px-30">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-12 flex flex-col gap-2">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="mb-12 flex flex-col gap-2"
+          >
             <h2 className="font-display text-3xl md:text-4xl font-bold text-text-primary">
               // how_it_works
             </h2>
             <p className="font-mono text-sm text-text-secondary">
               Three steps to never forgetting again
             </p>
-          </div>
-          <div className="grid gap-6 md:grid-cols-3">
+          </motion.div>
+          <motion.div 
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            className="grid gap-6 md:grid-cols-3"
+          >
             {[
               { num: "01", title: "Create Decks", desc: "Build custom decks for any subject. Add your terms and definitions." },
               { num: "02", title: "Type Answers", desc: "No multiple choice. Recall the answer from memory and type it out." },
               { num: "03", title: "Review Smartly", desc: "Our algorithm schedules reviews just before you're likely to forget." }
             ].map((step) => (
-              <div
+              <motion.div
                 key={step.num}
-                className="flex flex-col gap-4 rounded-base bg-bg-elevated p-6 hover:-translate-y-1 transition-transform border border-transparent hover:border-accent-teal/30"
+                variants={fadeInUp}
+                whileHover={{ y: -5 }}
+                className="flex flex-col gap-4 rounded-base bg-bg-elevated p-6 transition-colors border border-transparent hover:border-accent-teal/30"
               >
                 <div className="flex items-center justify-between font-display">
                   <span className="text-xl font-bold">Step {step.num}</span>
@@ -108,16 +160,21 @@ export function LandingPage() {
                     {step.desc}
                   </p>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Features Grid */}
       <section id="features" className="py-20 px-6 md:px-30 bg-bg-page">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-12 flex flex-col items-center text-center gap-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-12 flex flex-col items-center text-center gap-4"
+          >
             <div className="inline-flex rounded-base bg-bg-elevated px-3 py-1.5 font-mono text-[11px] font-semibold text-accent-teal">
               // features
             </div>
@@ -127,9 +184,15 @@ export function LandingPage() {
             <p className="max-w-[500px] font-mono text-sm text-text-secondary">
               Built for learners who want real retention, not just recognition.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <motion.div 
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+          >
             {[
               {
                 icon: Keyboard,
@@ -168,9 +231,11 @@ export function LandingPage() {
                 color: "text-accent-teal",
               },
             ].map((feat, i) => (
-              <div
+              <motion.div
                 key={i}
-                className="flex flex-col gap-4 rounded-base bg-bg-card p-6 border border-transparent hover:border-text-secondary/20 transition-colors"
+                variants={fadeInUp}
+                whileHover={{ scale: 1.02 }}
+                className="flex flex-col gap-4 rounded-base bg-bg-card p-6 border border-transparent hover:border-text-secondary/20 transition-all shadow-sm hover:shadow-md"
               >
                 <feat.icon className={`h-6 w-6 ${feat.color}`} />
                 <h3 className="font-display text-xl font-semibold text-text-primary">
@@ -179,15 +244,21 @@ export function LandingPage() {
                 <p className="font-mono text-sm leading-relaxed text-text-secondary">
                   {feat.desc}
                 </p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Final CTA */}
       <section className="bg-bg-page py-24 px-6 md:px-30">
-        <div className="mx-auto max-w-[1200px] flex flex-col items-center text-center gap-8 rounded-[24px] bg-gradient-to-t from-[#1A1A1A] to-[#2D2D2D] p-12 md:p-20 shadow-2xl shadow-black/50">
+        <motion.div 
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="mx-auto max-w-[1200px] flex flex-col items-center text-center gap-8 rounded-[24px] bg-gradient-to-t from-[#1A1A1A] to-[#2D2D2D] p-12 md:p-20 shadow-2xl shadow-black/50"
+        >
           <h2 className="font-display text-4xl md:text-[64px] font-bold leading-tight text-text-primary">
             Master anything by typing.
           </h2>
@@ -205,7 +276,7 @@ export function LandingPage() {
               // it's free, forever
             </span>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Footer */}
@@ -227,17 +298,6 @@ export function LandingPage() {
                 <a href="#features" className="text-text-secondary hover:text-accent-teal transition-colors">Features</a>
                 <a href="#how-it-works" className="text-text-secondary hover:text-accent-teal transition-colors">How it Works</a>
               </div>
-              {/* <div className="flex flex-col gap-3">
-                <span className="font-bold text-text-primary mb-2">Support</span>
-                <a href="#" className="text-text-secondary hover:text-accent-orange transition-colors">Help Center</a>
-                <a href="#" className="text-text-secondary hover:text-accent-orange transition-colors">Contact Us</a>
-                <a href="#" className="text-text-secondary hover:text-accent-orange transition-colors">Status</a>
-              </div>
-              <div className="flex flex-col gap-3">
-                <span className="font-bold text-text-primary mb-2">Legal</span>
-                <a href="#" className="text-text-secondary hover:text-text-primary transition-colors">Privacy Policy</a>
-                <a href="#" className="text-text-secondary hover:text-text-primary transition-colors">Terms of Service</a>
-              </div> */}
             </div>
           </div>
           <div className="h-[1px] w-full bg-[#2D2D2D] mb-6" />

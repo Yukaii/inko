@@ -1,4 +1,4 @@
-import type { LanguageCode, TypingMode } from "./schemas.js";
+import type { LanguageCode, TypingMode } from "./schemas";
 
 export type ChannelScores = {
   shape: number;

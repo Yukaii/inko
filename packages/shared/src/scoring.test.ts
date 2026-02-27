@@ -6,7 +6,7 @@ import {
   romajiToHiragana,
   scoreListening,
   scoreTyping,
-} from "./scoring.js";
+} from "./scoring";
 
 describe("scoring", () => {
   it("normalizes full-width and spaces", () => {

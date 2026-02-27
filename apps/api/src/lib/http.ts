@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { ZodError } from "zod";
-import { RepositoryError } from "../services/repository.js";
+import { RepositoryError } from "../services/repository";
 
 export function rethrowAsHttp(app: FastifyInstance, error: unknown): never {
   if (error instanceof RepositoryError) {

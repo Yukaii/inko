@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canSubmitCard, getPracticeCompletionTitle, getTypingFeedback, isEscDoublePress } from "./PracticePage.js";
+import { canSubmitCard, getPracticeCompletionTitle, getTypingFeedback, isEscDoublePress } from "./PracticePage";
 
 describe("canSubmitCard", () => {
   it("requires correct romaji typing", () => {
