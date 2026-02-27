@@ -8,6 +8,16 @@ import { useAuth } from "../hooks/useAuth.js";
 import { registerShortcut } from "../hooks/useKeyboard.js";
 
 type AddTab = "single" | "import";
+const NEW_DECK_LANGUAGE_STORAGE_KEY = "inko:new-deck-language";
+
+function getInitialDeckLanguage(): LanguageCode {
+  if (typeof window === "undefined") return "ja";
+  const stored = window.localStorage.getItem(NEW_DECK_LANGUAGE_STORAGE_KEY);
+  if (stored && SUPPORTED_LANGUAGES.includes(stored as LanguageCode)) {
+    return stored as LanguageCode;
+  }
+  return "ja";
+}
 
 export function WordBankPage() {
   const { token } = useAuth();
@@ -19,7 +29,7 @@ export function WordBankPage() {
   const [selectedDeckId, setSelectedDeckId] = useState<string>("");
   const [showNewDeckModal, setShowNewDeckModal] = useState(false);
   const [newDeckName, setNewDeckName] = useState("");
-  const [newDeckLanguage, setNewDeckLanguage] = useState<LanguageCode>("ja");
+  const [newDeckLanguage, setNewDeckLanguage] = useState<LanguageCode>(() => getInitialDeckLanguage());
   const [showEditDeckModal, setShowEditDeckModal] = useState(false);
   const [editingDeck, setEditingDeck] = useState<{ id: string; name: string; archived: boolean } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -223,10 +233,14 @@ export function WordBankPage() {
       setSelectedDeckId(deck.id);
       setShowNewDeckModal(false);
       setNewDeckName("");
-      setNewDeckLanguage("ja");
       await queryClient.invalidateQueries({ queryKey: ["decks"] });
     },
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(NEW_DECK_LANGUAGE_STORAGE_KEY, newDeckLanguage);
+  }, [newDeckLanguage]);
 
   const updateDeck = useMutation({
     mutationFn: (input: { name?: string; archived?: boolean }) =>
@@ -1149,18 +1163,13 @@ export function WordBankPage() {
           <button
             type="button"
             className="fixed inset-0 z-[100] border-0 bg-[var(--overlay-bg)] p-0"
-            onClick={() => {
-              setShowNewDeckModal(false);
-              setNewDeckLanguage("ja");
-            }}
+            onClick={() => setShowNewDeckModal(false)}
             onKeyDown={(e) => {
               if (e.key === "Escape") {
                 setShowNewDeckModal(false);
-                setNewDeckLanguage("ja");
               } else if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 setShowNewDeckModal(false);
-                setNewDeckLanguage("ja");
               }
             }}
             aria-label="Close new deck modal"
@@ -1202,10 +1211,7 @@ export function WordBankPage() {
               <button
                 type="button"
                 className="bg-bg-elevated text-text-primary"
-                onClick={() => {
-                  setShowNewDeckModal(false);
-                  setNewDeckLanguage("ja");
-                }}
+                onClick={() => setShowNewDeckModal(false)}
               >
                 Cancel
               </button>
