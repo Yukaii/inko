@@ -133,10 +133,7 @@ export const createWordsBatch = mutation({
       throw new Error("Deck not found");
     }
 
-    const existing = await ctx.db
-      .query("deck_words")
-      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
-      .collect();
+    const basePosition = Date.now() * 1000;
 
     const createdWords: unknown[] = [];
     for (const [index, input] of args.words.entries()) {
@@ -156,7 +153,7 @@ export const createWordsBatch = mutation({
       await ctx.db.insert("deck_words", {
         deckId: args.deckId,
         wordId,
-        position: existing.length + index,
+        position: basePosition + index,
       });
 
       const word = await ctx.db.get(wordId);
@@ -332,15 +329,45 @@ export const deleteDeck = mutation({
     const deck = await ctx.db.get(args.deckId);
     if (!deck) return null;
 
-    // Delete all deck_words links
-    const links = await ctx.db
+    const remainingLink = await ctx.db
       .query("deck_words")
       .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
-      .collect();
-    await Promise.all(links.map((link) => ctx.db.delete(link._id)));
+      .first();
+
+    if (remainingLink) {
+      throw new Error("Deck still has words");
+    }
 
     // Delete the deck itself
     await ctx.db.delete(args.deckId);
     return { ok: true };
+  },
+});
+
+export const deleteDeckWordsPage = mutation({
+  args: {
+    deckId: v.id("decks"),
+    cursor: v.union(v.string(), v.null()),
+    limit: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const result = await ctx.db
+      .query("deck_words")
+      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+      .order("asc")
+      .paginate({
+        cursor: args.cursor,
+        numItems: args.limit,
+      });
+
+    for (const link of result.page) {
+      await ctx.db.delete(link._id);
+    }
+
+    return {
+      deleted: result.page.length,
+      continueCursor: result.continueCursor,
+      isDone: result.isDone,
+    };
   },
 });

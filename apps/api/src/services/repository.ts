@@ -83,6 +83,8 @@ type ConvexPracticeSession = {
 };
 
 const CONVEX_ARRAY_ARG_LIMIT = 8192;
+const BATCH_WORDS_CHUNK_SIZE = 1000;
+const DECK_DELETE_PAGE_SIZE = 500;
 
 function chunkArray<T>(items: T[], chunkSize: number): T[][] {
   if (chunkSize <= 0) return [items];
@@ -312,7 +314,7 @@ export const repository = {
       tags: word.tags ?? [],
     }));
 
-    const chunkSize = CONVEX_ARRAY_ARG_LIMIT - 1;
+    const chunkSize = Math.min(BATCH_WORDS_CHUNK_SIZE, CONVEX_ARRAY_ARG_LIMIT - 1);
     const chunks = chunkArray(normalizedWords, chunkSize);
     const createdWords: ConvexWord[] = [];
 
@@ -356,7 +358,7 @@ export const repository = {
     if (!existingDeck) throw new RepositoryError("Deck not found", 404);
     if (existingDeck.userId !== userId) throw new RepositoryError("Forbidden", 403);
 
-    const chunkSize = CONVEX_ARRAY_ARG_LIMIT - 1;
+    const chunkSize = Math.min(BATCH_WORDS_CHUNK_SIZE, CONVEX_ARRAY_ARG_LIMIT - 1);
     const chunks = chunkArray(input.wordIds, chunkSize);
 
     let deleted = 0;
@@ -379,6 +381,17 @@ export const repository = {
     const existingDeck = (await convex.query("decks:getDeckById", { deckId })) as ConvexDeck | null;
     if (!existingDeck) throw new RepositoryError("Deck not found", 404);
     if (existingDeck.userId !== userId) throw new RepositoryError("Forbidden", 403);
+
+    let cursor: string | null = null;
+    do {
+      const result = (await convex.mutation("decks:deleteDeckWordsPage", {
+        deckId,
+        cursor,
+        limit: DECK_DELETE_PAGE_SIZE,
+      })) as { continueCursor: string; isDone: boolean };
+
+      cursor = result.isDone ? null : result.continueCursor;
+    } while (cursor !== null);
 
     await convex.mutation("decks:deleteDeck", { deckId });
     return { ok: true };
