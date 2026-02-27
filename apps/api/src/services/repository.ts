@@ -439,7 +439,7 @@ export const repository = {
 
     if (!session) throw new RepositoryError("Failed to start session", 500);
 
-    const rows = await listPracticeCandidateRows(userId, input.deckId);
+    const rows = await listPracticeCandidateRows(userId, input.deckId, 10);
 
     if (rows.length === 0) {
       throw new RepositoryError("No words available in deck", 409);
@@ -624,9 +624,21 @@ export const repository = {
       });
     }
 
-    const nextCard = selectNextPracticeCard(candidateRows, session.deckId, attemptedWordIds);
+    let nextCard = selectNextPracticeCard(candidateRows, session.deckId, attemptedWordIds);
     if (!nextCard) {
-      practiceSessionCache.delete(sessionId);
+      const refreshedRows = await listPracticeCandidateRows(userId, session.deckId, 20);
+      nextCard = selectNextPracticeCard(refreshedRows, session.deckId, attemptedWordIds);
+      if (nextCard) {
+        practiceSessionCache.set(sessionId, {
+          userId,
+          deckId: session.deckId,
+          rows: refreshedRows,
+          attemptedWordIds,
+          updatedAt: Date.now(),
+        });
+      } else {
+        practiceSessionCache.delete(sessionId);
+      }
     }
 
     return {
