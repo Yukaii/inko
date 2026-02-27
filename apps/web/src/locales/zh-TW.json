@@ -189,6 +189,7 @@
     },
     "import": {
       "instruction": "上傳 CSV/TSV 檔案或直接貼上資料。支援的欄位：target, reading, meaning, romanization, example, tags",
+      "format_hint": "格式：target, reading, meaning, romanization, example, tags",
       "choose_file": "選擇檔案",
       "or_paste": "或在下方貼上",
       "preview": "預覽匯入",

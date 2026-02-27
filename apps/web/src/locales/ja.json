@@ -189,6 +189,7 @@
     },
     "import": {
       "instruction": "CSV/TSVファイルをアップロードするか、データを直接貼り付けてください。サポートされている列: target, reading, meaning, romanization, example, tags",
+      "format_hint": "形式: target, reading, meaning, romanization, example, tags",
       "choose_file": "ファイルを選択",
       "or_paste": "または下に貼り付け",
       "preview": "インポートをプレビュー",
