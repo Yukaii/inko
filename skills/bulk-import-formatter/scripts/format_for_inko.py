@@ -14,7 +14,7 @@ from typing import Dict, List, Optional, Tuple
 
 # Inko field mappings
 INKO_FIELDS = ["target", "reading", "meaning", "romanization", "example", "tags"]
-REQUIRED_FIELDS = ["target", "meaning"]
+REQUIRED_FIELDS = ["target", "meaning", "romanization"]
 
 # Header auto-detection patterns
 HEADER_PATTERNS = {
