@@ -1,15 +1,18 @@
-import { useCallback, useId, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
+import { registerShortcut } from "../hooks/useKeyboard.js";
 
 type AddTab = "single" | "import";
 
 export function WordBankPage() {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const formId = useId();
+  const deckGridRef = useRef<HTMLDivElement>(null);
 
   const [selectedDeckId, setSelectedDeckId] = useState<string>("");
   const [showNewDeckModal, setShowNewDeckModal] = useState(false);
@@ -17,6 +20,7 @@ export function WordBankPage() {
   const [addTab, setAddTab] = useState<AddTab>("single");
   const [importText, setImportText] = useState("");
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [focusedDeckIndex, setFocusedDeckIndex] = useState(-1);
 
   const [wordForm, setWordForm] = useState({
     target: "",
@@ -43,6 +47,132 @@ export function WordBankPage() {
   const decks = decksQuery.data ?? [];
   const words = wordsQuery.data ?? [];
   const activeDeck = useMemo(() => decks.find((d) => d.id === selectedDeckId), [decks, selectedDeckId]);
+
+  // ---- keyboard navigation for decks ----
+  useEffect(() => {
+    const cleanups: Array<() => void> = [];
+
+    // Focus deck grid
+    cleanups.push(
+      registerShortcut({
+        key: "d",
+        handler: () => {
+          if (decks.length > 0) {
+            setFocusedDeckIndex(0);
+            const firstDeck = deckGridRef.current?.querySelector("[data-deck-index='0']") as HTMLElement;
+            firstDeck?.focus();
+          }
+        },
+        description: "Focus first deck",
+      })
+    );
+
+    // Tab shortcuts for add words section
+    cleanups.push(
+      registerShortcut({
+        key: "1",
+        shift: true,
+        handler: () => {
+          if (selectedDeckId) {
+            setAddTab("single");
+          }
+        },
+        description: "Switch to Single Word tab",
+      })
+    );
+
+    cleanups.push(
+      registerShortcut({
+        key: "2",
+        shift: true,
+        handler: () => {
+          if (selectedDeckId) {
+            setAddTab("import");
+          }
+        },
+        description: "Switch to Bulk Import tab",
+      })
+    );
+
+    return () => {
+      for (const cleanup of cleanups) {
+        cleanup();
+      }
+    };
+  }, [decks.length, selectedDeckId]);
+
+  // Handle arrow key navigation within deck grid
+  const handleDeckKeyDown = (event: React.KeyboardEvent) => {
+    const maxIndex = decks.length;
+
+    switch (event.key) {
+      case "ArrowRight":
+        event.preventDefault();
+        setFocusedDeckIndex((prev) => {
+          const next = prev + 1;
+          if (next > maxIndex) return 0;
+          return next;
+        });
+        break;
+      case "ArrowLeft":
+        event.preventDefault();
+        setFocusedDeckIndex((prev) => {
+          const next = prev - 1;
+          if (next < 0) return maxIndex;
+          return next;
+        });
+        break;
+      case "ArrowDown":
+        event.preventDefault();
+        setFocusedDeckIndex((prev) => {
+          if (!deckGridRef.current) return prev;
+          const cols = getComputedStyle(deckGridRef.current).gridTemplateColumns.split(" ").length;
+          const next = prev + cols;
+          if (next > maxIndex) return prev;
+          return next;
+        });
+        break;
+      case "ArrowUp":
+        event.preventDefault();
+        setFocusedDeckIndex((prev) => {
+          if (!deckGridRef.current) return prev;
+          const cols = getComputedStyle(deckGridRef.current).gridTemplateColumns.split(" ").length;
+          const next = prev - cols;
+          if (next < 0) return prev;
+          return next;
+        });
+        break;
+      case "Enter":
+        if (focusedDeckIndex === maxIndex) {
+          // New deck button
+          event.preventDefault();
+          setShowNewDeckModal(true);
+        } else if (focusedDeckIndex >= 0 && focusedDeckIndex < decks.length) {
+          event.preventDefault();
+          const deck = decks[focusedDeckIndex];
+          if (deck) {
+            setSelectedDeckId(deck.id);
+          }
+        }
+        break;
+      case "Home":
+        event.preventDefault();
+        setFocusedDeckIndex(0);
+        break;
+      case "End":
+        event.preventDefault();
+        setFocusedDeckIndex(maxIndex);
+        break;
+    }
+  };
+
+  // Focus the currently selected deck
+  useEffect(() => {
+    if (focusedDeckIndex >= 0) {
+      const card = deckGridRef.current?.querySelector(`[data-deck-index='${focusedDeckIndex}']`) as HTMLElement;
+      card?.focus();
+    }
+  }, [focusedDeckIndex]);
 
   // ---- mutations ----
   const createDeck = useMutation({
@@ -130,6 +260,54 @@ export function WordBankPage() {
 
   const selectDeck = (id: string) => () => setSelectedDeckId(id);
 
+  // Modal focus trap
+  const modalRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (!showNewDeckModal) return;
+
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    const focusableElements = modal.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowNewDeckModal(false);
+      }
+    };
+
+    modal.addEventListener("keydown", handleTab);
+    window.addEventListener("keydown", handleEscape, { capture: true });
+    firstElement?.focus();
+
+    return () => {
+      modal.removeEventListener("keydown", handleTab);
+      window.removeEventListener("keydown", handleEscape, { capture: true });
+    };
+  }, [showNewDeckModal]);
+
   return (
     <div style={{ display: "grid", gap: 28 }}>
       {/* ---- Page header ---- */}
@@ -144,15 +322,24 @@ export function WordBankPage() {
       <section>
         <div className="section-header" style={{ marginBottom: 14 }}>
           <h2 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 22 }}>Decks</h2>
+          <span className="keyboard-hint">
+            <kbd>d</kbd> to focus
+          </span>
         </div>
 
-        <div className="deck-grid">
-          {decks.map((deck) => (
+        <div
+          ref={deckGridRef}
+          className="deck-grid"
+          onKeyDown={handleDeckKeyDown}
+        >
+          {decks.map((deck, index) => (
             <button
               type="button"
               key={deck.id}
+              data-deck-index={index}
               className={`deck-card${selectedDeckId === deck.id ? " selected" : ""}`}
               onClick={selectDeck(deck.id)}
+              tabIndex={focusedDeckIndex === index ? 0 : -1}
             >
               <h3 className="deck-card-name">{deck.name}</h3>
               <div className="deck-card-meta">
@@ -180,8 +367,10 @@ export function WordBankPage() {
           {/* New deck card */}
           <button
             type="button"
+            data-deck-index={decks.length}
             className="deck-card-new"
             onClick={() => setShowNewDeckModal(true)}
+            tabIndex={focusedDeckIndex === decks.length ? 0 : -1}
           >
             <span className="plus">+</span>
             <span style={{ fontSize: 13 }}>New Deck</span>
@@ -199,12 +388,26 @@ export function WordBankPage() {
           </div>
 
           {/* Tabs */}
-          <div className="tab-bar">
-            <button type="button" className={addTab === "single" ? "active" : ""} onClick={() => setAddTab("single")}>
+          <div className="tab-bar" role="tablist" aria-label="Add words tabs">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={addTab === "single"}
+              className={addTab === "single" ? "active" : ""}
+              onClick={() => setAddTab("single")}
+            >
               Single Word
+              <kbd className="tab-shortcut">Shift+1</kbd>
             </button>
-            <button type="button" className={addTab === "import" ? "active" : ""} onClick={() => setAddTab("import")}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={addTab === "import"}
+              className={addTab === "import" ? "active" : ""}
+              onClick={() => setAddTab("import")}
+            >
               Bulk Import
+              <kbd className="tab-shortcut">Shift+2</kbd>
             </button>
           </div>
 
@@ -346,13 +549,21 @@ export function WordBankPage() {
             type="button"
             className="modal-overlay"
             onClick={() => setShowNewDeckModal(false)}
-            onKeyDown={(e) => { if (e.key === "Escape") setShowNewDeckModal(false); }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setShowNewDeckModal(false);
+              } else if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setShowNewDeckModal(false);
+              }
+            }}
+            aria-label="Close new deck modal"
           />
           <dialog
-            open
+            ref={modalRef}
             className="modal"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => { if (e.key === "Escape") setShowNewDeckModal(false); }}
+            open
+            aria-label="Create new deck"
           >
             <h2>Create New Deck</h2>
             <div className="form-group">

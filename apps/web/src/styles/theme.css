@@ -918,6 +918,24 @@ button.danger:hover {
   border-color: var(--accent-orange);
 }
 
+.zen-back-shortcut {
+  margin-left: 12px;
+  background: var(--bg-card);
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.zen-back-btn:hover .zen-back-shortcut {
+  opacity: 1;
+  border-color: var(--accent-orange);
+  color: var(--accent-orange);
+}
+
 /* Mobile adjustments for zen mode */
 @media (max-width: 600px) {
   .zen-target {
@@ -943,4 +961,284 @@ button.danger:hover {
   .zen-stat-value {
     font-size: 24px;
   }
+}
+
+/* =============================================
+   Keyboard Navigation & Focus Styles
+   ============================================= */
+
+/* Enhanced focus indicators */
+*:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+.nav-link:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 1px;
+  border-color: var(--accent-orange);
+}
+
+/* Keyboard shortcut indicators in nav */
+.nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  color: var(--text-secondary);
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.nav-link.active {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.nav-link-shortcut {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid #2f2f2f;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.nav-link:hover .nav-link-shortcut,
+.nav-link:focus .nav-link-shortcut {
+  opacity: 1;
+  border-color: var(--accent-orange);
+  color: var(--accent-orange);
+}
+
+/* Sidebar footer with keyboard help button */
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid #2f2f2f;
+}
+
+.keyboard-help-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: 1px dashed #3a3a3a;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 400;
+  transition: all 0.15s;
+}
+
+.keyboard-help-btn:hover,
+.keyboard-help-btn:focus {
+  border-color: var(--accent-orange);
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+
+.keyboard-help-btn kbd {
+  background: var(--bg-card);
+  border: 1px solid #2f2f2f;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+/* Keyboard shortcuts modal */
+.keyboard-help-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  border: none;
+  width: 100%;
+  cursor: default;
+}
+
+.keyboard-help-modal {
+  background: var(--bg-card);
+  border: 1px solid #2f2f2f;
+  border-radius: var(--radius);
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.keyboard-help-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #2f2f2f;
+}
+
+.keyboard-help-header h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+}
+
+.keyboard-help-close {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 24px;
+  line-height: 1;
+  padding: 4px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.keyboard-help-close:hover,
+.keyboard-help-close:focus {
+  color: var(--text-primary);
+}
+
+.keyboard-help-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.keyboard-help-content section h3 {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.keyboard-shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.keyboard-shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+}
+
+.keyboard-shortcut-row dt {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 100px;
+}
+
+.keyboard-shortcut-row dt kbd {
+  background: var(--bg-elevated);
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.keyboard-shortcut-row dt span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.keyboard-shortcut-row dd {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* Focused list item styles */
+.keyboard-focusable:focus {
+  outline: 2px solid var(--accent-orange);
+  outline-offset: 2px;
+}
+
+/* Keyboard hint badge */
+.keyboard-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-elevated);
+  border: 1px solid #2f2f2f;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+/* Skip link for accessibility */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent-orange);
+  color: var(--text-on-accent);
+  padding: 12px 20px;
+  border-radius: 0 0 10px 10px;
+  font-weight: 600;
+  z-index: 10000;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Tab shortcuts */
+.tab-shortcut {
+  margin-left: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid #2f2f2f;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.tab-bar button:hover .tab-shortcut,
+.tab-bar button.active .tab-shortcut {
+  opacity: 1;
+  border-color: var(--accent-orange);
+  color: var(--accent-orange);
 }
