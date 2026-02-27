@@ -1,6 +1,21 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+const languageValidator = v.union(
+  v.literal("ja"),
+  v.literal("ko"),
+  v.literal("zh"),
+  v.literal("es"),
+  v.literal("fr"),
+  v.literal("de"),
+  v.literal("it"),
+  v.literal("pt"),
+  v.literal("ru"),
+  v.literal("ar"),
+  v.literal("hi"),
+  v.literal("th"),
+);
+
 export const listDecks = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
@@ -15,7 +30,7 @@ export const createDeck = mutation({
   args: {
     userId: v.id("users"),
     name: v.string(),
-    language: v.literal("ja"),
+    language: languageValidator,
   },
   handler: async (ctx, args) => {
     const id = await ctx.db.insert("decks", {
@@ -69,9 +84,14 @@ export const createWord = mutation({
     tags: v.array(v.string()),
   },
   handler: async (ctx, args) => {
+    const deck = await ctx.db.get(args.deckId);
+    if (!deck) {
+      throw new Error("Deck not found");
+    }
+
     const wordId = await ctx.db.insert("words", {
       userId: args.userId,
-      language: "ja",
+      language: deck.language,
       target: args.target,
       reading: args.reading,
       romanization: args.romanization,

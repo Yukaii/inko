@@ -1,11 +1,27 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+const languageValidator = v.union(
+  v.literal("ja"),
+  v.literal("ko"),
+  v.literal("zh"),
+  v.literal("es"),
+  v.literal("fr"),
+  v.literal("de"),
+  v.literal("it"),
+  v.literal("pt"),
+  v.literal("ru"),
+  v.literal("ar"),
+  v.literal("hi"),
+  v.literal("th"),
+);
+
 export default defineSchema({
   users: defineTable({
     email: v.string(),
     displayName: v.optional(v.string()),
     themeMode: v.optional(v.union(v.literal("dark"), v.literal("light"))),
+    typingMode: v.optional(v.union(v.literal("language_specific"), v.literal("universal"))),
     themes: v.optional(
       v.object({
         dark: v.object({
@@ -36,7 +52,7 @@ export default defineSchema({
   decks: defineTable({
     userId: v.id("users"),
     name: v.string(),
-    language: v.literal("ja"),
+    language: languageValidator,
     archived: v.boolean(),
     createdAt: v.number(),
   })
@@ -45,7 +61,7 @@ export default defineSchema({
 
   words: defineTable({
     userId: v.id("users"),
-    language: v.literal("ja"),
+    language: languageValidator,
     target: v.string(),
     reading: v.optional(v.string()),
     romanization: v.optional(v.string()),

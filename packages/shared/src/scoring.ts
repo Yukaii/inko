@@ -1,3 +1,5 @@
+import type { LanguageCode, TypingMode } from "./schemas.js";
+
 export type ChannelScores = {
   shape: number;
   typing: number;
@@ -119,6 +121,14 @@ function normalizeRomajiInput(input: string): string {
   return normalizeJapaneseInput(input).toLowerCase();
 }
 
+export function normalizeTypingInput(input: string): string {
+  return input
+    .normalize("NFKC")
+    .replace(/\s+/g, "")
+    .trim()
+    .toLowerCase();
+}
+
 function isConsonant(char: string): boolean {
   return /[bcdfghjklmnpqrstvwxyz]/.test(char);
 }
@@ -190,19 +200,57 @@ export function isJapaneseTypingMatch(
   fallbackReading: string | undefined,
   romanization: string | undefined,
 ): boolean {
-  const reading = fallbackReading ? normalizeJapaneseInput(fallbackReading) : "";
-  const romajiTarget = romanization ? normalizeRomajiInput(romanization) : "";
-  const typedRomaji = normalizeRomajiInput(input);
+  return isTypingMatch(input, expected, fallbackReading, romanization, "ja", "language_specific");
+}
 
-  if (romajiTarget) {
-    return typedRomaji === romajiTarget;
+export function getTypingMatchTarget(
+  expected: string,
+  fallbackReading: string | undefined,
+  romanization: string | undefined,
+  language: LanguageCode = "ja",
+  typingMode: TypingMode = "language_specific",
+): string {
+  const languageSpecificJapanese = language === "ja" && typingMode === "language_specific";
+  if (languageSpecificJapanese) {
+    if (romanization) return normalizeRomajiInput(romanization);
+    if (fallbackReading) return normalizeJapaneseInput(fallbackReading);
+    return normalizeJapaneseInput(expected);
   }
 
-  if (reading) {
-    return romajiToHiragana(typedRomaji) === reading;
+  if (romanization) return normalizeTypingInput(romanization);
+  if (fallbackReading) return normalizeTypingInput(fallbackReading);
+  return normalizeTypingInput(expected);
+}
+
+export function getTypingMatchSource(
+  input: string,
+  fallbackReading: string | undefined,
+  romanization: string | undefined,
+  language: LanguageCode = "ja",
+  typingMode: TypingMode = "language_specific",
+): string {
+  const languageSpecificJapanese = language === "ja" && typingMode === "language_specific";
+  if (languageSpecificJapanese) {
+    const typedRomaji = normalizeRomajiInput(input);
+    if (romanization) return typedRomaji;
+    if (fallbackReading) return romajiToHiragana(typedRomaji);
+    return normalizeJapaneseInput(input);
   }
 
-  return normalizeJapaneseInput(input) === normalizeJapaneseInput(expected);
+  return normalizeTypingInput(input);
+}
+
+export function isTypingMatch(
+  input: string,
+  expected: string,
+  fallbackReading: string | undefined,
+  romanization: string | undefined,
+  language: LanguageCode = "ja",
+  typingMode: TypingMode = "language_specific",
+): boolean {
+  const source = getTypingMatchSource(input, fallbackReading, romanization, language, typingMode);
+  const target = getTypingMatchTarget(expected, fallbackReading, romanization, language, typingMode);
+  return source === target;
 }
 
 export function normalizeJapaneseInput(input: string): string {
@@ -218,8 +266,10 @@ export function scoreTyping(
   fallbackReading: string | undefined,
   romanization: string | undefined,
   typingMs: number,
+  language: LanguageCode = "ja",
+  typingMode: TypingMode = "language_specific",
 ): number {
-  const correct = isJapaneseTypingMatch(input, expected, fallbackReading, romanization);
+  const correct = isTypingMatch(input, expected, fallbackReading, romanization, language, typingMode);
 
   if (!correct) {
     return 0;

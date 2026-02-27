@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash2 } from "lucide-react";
+import { LANGUAGE_LABELS, type LanguageCode, SUPPORTED_LANGUAGES } from "@inko/shared";
 import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { registerShortcut } from "../hooks/useKeyboard.js";
@@ -18,6 +19,7 @@ export function WordBankPage() {
   const [selectedDeckId, setSelectedDeckId] = useState<string>("");
   const [showNewDeckModal, setShowNewDeckModal] = useState(false);
   const [newDeckName, setNewDeckName] = useState("");
+  const [newDeckLanguage, setNewDeckLanguage] = useState<LanguageCode>("ja");
   const [showEditDeckModal, setShowEditDeckModal] = useState(false);
   const [editingDeck, setEditingDeck] = useState<{ id: string; name: string; archived: boolean } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -74,6 +76,9 @@ export function WordBankPage() {
   const decks = decksQuery.data ?? [];
   const words = wordsQuery.data ?? [];
   const activeDeck = useMemo(() => decks.find((d) => d.id === selectedDeckId), [decks, selectedDeckId]);
+  const activeDeckLanguage = (activeDeck?.language ?? "ja") as LanguageCode;
+  const isJapaneseDeck = activeDeckLanguage === "ja";
+  const targetLang = activeDeck?.language || undefined;
 
   // ---- keyboard navigation for decks ----
   useEffect(() => {
@@ -213,11 +218,12 @@ export function WordBankPage() {
 
   // ---- mutations ----
   const createDeck = useMutation({
-    mutationFn: () => api.createDeck(token ?? "", { name: newDeckName, language: "ja" }),
+    mutationFn: () => api.createDeck(token ?? "", { name: newDeckName, language: newDeckLanguage }),
     onSuccess: async (deck) => {
       setSelectedDeckId(deck.id);
       setShowNewDeckModal(false);
       setNewDeckName("");
+      setNewDeckLanguage("ja");
       await queryClient.invalidateQueries({ queryKey: ["decks"] });
     },
   });
@@ -584,7 +590,9 @@ export function WordBankPage() {
               tabIndex={focusedDeckIndex === index ? 0 : -1}
             >
               <div className="flex flex-col gap-1">
-                <span className="text-[11px] uppercase tracking-[0.1em] text-text-secondary">{deck.language.toUpperCase()}</span>
+                <span className="text-[11px] uppercase tracking-[0.1em] text-text-secondary">
+                  {deck.language.toUpperCase()} · {LANGUAGE_LABELS[deck.language as LanguageCode]}
+                </span>
                 <span className="text-lg font-semibold text-text-primary [font-family:var(--font-display)]">{deck.name}</span>
               </div>
               <div className="mt-auto flex gap-2">
@@ -683,7 +691,12 @@ export function WordBankPage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor={`${formId}-target`}>Target word</label>
-                  <input id={`${formId}-target`} placeholder="e.g. 勉強" value={wordForm.target} onChange={updateField("target")} />
+                  <input
+                    id={`${formId}-target`}
+                    placeholder={isJapaneseDeck ? "e.g. 勉強" : "e.g. palabra"}
+                    value={wordForm.target}
+                    onChange={updateField("target")}
+                  />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor={`${formId}-meaning`}>Meaning</label>
@@ -693,7 +706,12 @@ export function WordBankPage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor={`${formId}-reading`}>Reading</label>
-                  <input id={`${formId}-reading`} placeholder="e.g. べんきょう" value={wordForm.reading} onChange={updateField("reading")} />
+                  <input
+                    id={`${formId}-reading`}
+                    placeholder={isJapaneseDeck ? "e.g. べんきょう" : "Optional pronunciation"}
+                    value={wordForm.reading}
+                    onChange={updateField("reading")}
+                  />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor={`${formId}-romanization`}>Romanization</label>
@@ -702,7 +720,12 @@ export function WordBankPage() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <label htmlFor={`${formId}-example`}>Example sentence</label>
-                <input id={`${formId}-example`} placeholder="e.g. 毎日日本語を勉強しています。" value={wordForm.example} onChange={updateField("example")} />
+                <input
+                  id={`${formId}-example`}
+                  placeholder={isJapaneseDeck ? "e.g. 毎日日本語を勉強しています。" : "e.g. Estoy aprendiendo cada dia."}
+                  value={wordForm.example}
+                  onChange={updateField("example")}
+                />
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
@@ -847,11 +870,11 @@ export function WordBankPage() {
                           <tbody>
                             {importPreview.map((row, i) => (
                               <tr key={i} className="border-t border-[var(--border-muted)]">
-                                <td className="px-3 py-2 [font-family:var(--font-jp)]">{row.target || '-'}</td>
-                                <td className="px-3 py-2 text-text-secondary [font-family:var(--font-jp)]">{row.reading || '-'}</td>
+                                <td className={`px-3 py-2 ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`}>{row.target || "-"}</td>
+                                <td className={`px-3 py-2 text-text-secondary ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`}>{row.reading || "-"}</td>
                                 <td className="px-3 py-2 text-text-secondary">{row.meaning || '-'}</td>
-                                <td className="px-3 py-2 text-text-secondary [font-family:var(--font-jp)] truncate max-w-[200px]" title={row.example}>
-                                  {row.example || '-'}
+                                <td className={`px-3 py-2 text-text-secondary truncate max-w-[200px] ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`} title={row.example}>
+                                  {row.example || "-"}
                                 </td>
                               </tr>
                             ))}
@@ -997,8 +1020,8 @@ export function WordBankPage() {
                             className="cursor-pointer"
                           />
                         </td>
-                        <td className="px-3 py-3 [font-family:var(--font-jp)]" lang="ja">{word.target}</td>
-                        <td className="px-3 py-3 text-text-secondary [font-family:var(--font-jp)]" lang="ja">{word.reading ?? '-'}</td>
+                        <td className={`px-3 py-3 ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`} lang={targetLang}>{word.target}</td>
+                        <td className={`px-3 py-3 text-text-secondary ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`} lang={targetLang}>{word.reading ?? "-"}</td>
                         <td className="px-3 py-3 text-text-secondary">{word.meaning}</td>
                         <td className="px-3 py-3">
                           <div className="flex flex-wrap gap-1">
@@ -1065,7 +1088,7 @@ export function WordBankPage() {
                               {word.example && (
                                 <div>
                                   <span className="text-[11px] uppercase tracking-wider text-text-secondary">Example</span>
-                                  <p className="mt-1 text-sm [font-family:var(--font-jp)]" lang="ja">{word.example}</p>
+                                  <p className={`mt-1 text-sm ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`} lang={targetLang}>{word.example}</p>
                                 </div>
                               )}
                               {word.audioUrl && (
@@ -1126,13 +1149,18 @@ export function WordBankPage() {
           <button
             type="button"
             className="fixed inset-0 z-[100] border-0 bg-[var(--overlay-bg)] p-0"
-            onClick={() => setShowNewDeckModal(false)}
+            onClick={() => {
+              setShowNewDeckModal(false);
+              setNewDeckLanguage("ja");
+            }}
             onKeyDown={(e) => {
               if (e.key === "Escape") {
                 setShowNewDeckModal(false);
+                setNewDeckLanguage("ja");
               } else if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 setShowNewDeckModal(false);
+                setNewDeckLanguage("ja");
               }
             }}
             aria-label="Close new deck modal"
@@ -1156,8 +1184,29 @@ export function WordBankPage() {
                 }}
               />
             </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor={`${formId}-deck-language`}>Target language</label>
+              <select
+                id={`${formId}-deck-language`}
+                value={newDeckLanguage}
+                onChange={(e) => setNewDeckLanguage(e.target.value as LanguageCode)}
+              >
+                {SUPPORTED_LANGUAGES.map((code) => (
+                  <option key={code} value={code}>
+                    {LANGUAGE_LABELS[code]} ({code.toUpperCase()})
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="mt-2 flex justify-end gap-2.5">
-              <button type="button" className="bg-bg-elevated text-text-primary" onClick={() => setShowNewDeckModal(false)}>
+              <button
+                type="button"
+                className="bg-bg-elevated text-text-primary"
+                onClick={() => {
+                  setShowNewDeckModal(false);
+                  setNewDeckLanguage("ja");
+                }}
+              >
                 Cancel
               </button>
               <button type="button" onClick={() => createDeck.mutate()} disabled={!newDeckName.trim() || createDeck.isPending}>
@@ -1292,7 +1341,7 @@ export function WordBankPage() {
                     id={`${formId}-edit-target`}
                     value={editingWord.target}
                     onChange={(e) => setEditingWord({ ...editingWord, target: e.target.value })}
-                    className="[font-family:var(--font-jp)]"
+                    className={isJapaneseDeck ? "[font-family:var(--font-jp)]" : undefined}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -1312,7 +1361,7 @@ export function WordBankPage() {
                     id={`${formId}-edit-reading`}
                     value={editingWord.reading}
                     onChange={(e) => setEditingWord({ ...editingWord, reading: e.target.value })}
-                    className="[font-family:var(--font-jp)]"
+                    className={isJapaneseDeck ? "[font-family:var(--font-jp)]" : undefined}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -1331,7 +1380,7 @@ export function WordBankPage() {
                   id={`${formId}-edit-example`}
                   value={editingWord.example}
                   onChange={(e) => setEditingWord({ ...editingWord, example: e.target.value })}
-                  className="[font-family:var(--font-jp)]"
+                  className={isJapaneseDeck ? "[font-family:var(--font-jp)]" : undefined}
                 />
               </div>
               

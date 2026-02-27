@@ -4,10 +4,18 @@ import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { registerShortcut } from "../hooks/useKeyboard.js";
-import { isJapaneseTypingMatch, normalizeJapaneseInput, romajiToHiragana } from "@inko/shared";
+import {
+  getTypingMatchSource,
+  getTypingMatchTarget,
+  isTypingMatch,
+  normalizeTypingInput,
+  type LanguageCode,
+  type TypingMode,
+} from "@inko/shared";
 
 type PracticeCard = {
   wordId: string;
+  language: LanguageCode;
   target: string;
   reading?: string;
   romanization?: string;
@@ -19,21 +27,33 @@ type PracticeCard = {
 export function canSubmitCard(input: {
   typingInput: string;
   expected: string;
+  language?: LanguageCode;
+  typingMode?: TypingMode;
   reading?: string;
   romanization?: string;
 }) {
-  return isJapaneseTypingMatch(input.typingInput, input.expected, input.reading, input.romanization);
+  return isTypingMatch(
+    input.typingInput,
+    input.expected,
+    input.reading,
+    input.romanization,
+    input.language ?? "ja",
+    input.typingMode ?? "language_specific",
+  );
 }
 
-export function getTypingFeedback(input: { typingInput: string; expected: string; reading?: string; romanization?: string }) {
-  const typedRomaji = normalizeJapaneseInput(input.typingInput).toLowerCase();
-  const typedKana = romajiToHiragana(typedRomaji);
-  const romajiTarget = input.romanization ? normalizeJapaneseInput(input.romanization).toLowerCase() : "";
-  const readingTarget = input.reading ? normalizeJapaneseInput(input.reading) : "";
-  const fallbackTarget = normalizeJapaneseInput(input.expected);
-
-  const target = romajiTarget || readingTarget || fallbackTarget;
-  const source = romajiTarget ? typedRomaji : readingTarget ? typedKana : normalizeJapaneseInput(input.typingInput);
+export function getTypingFeedback(input: {
+  typingInput: string;
+  expected: string;
+  language?: LanguageCode;
+  typingMode?: TypingMode;
+  reading?: string;
+  romanization?: string;
+}) {
+  const language = input.language ?? "ja";
+  const typingMode = input.typingMode ?? "language_specific";
+  const target = getTypingMatchTarget(input.expected, input.reading, input.romanization, language, typingMode);
+  const source = getTypingMatchSource(input.typingInput, input.reading, input.romanization, language, typingMode);
 
   if (!source || !target) {
     return {
@@ -82,6 +102,7 @@ export function PracticePage() {
   const [lastSubmitAccepted, setLastSubmitAccepted] = useState<boolean | null>(null);
   const [sessionDone, setSessionDone] = useState(false);
   const [sessionSummary, setSessionSummary] = useState<{ cardsCompleted: number; avgTypingScore: number } | null>(null);
+  const [typingMode, setTypingMode] = useState<TypingMode>("language_specific");
   const [cardTransition, setCardTransition] = useState(false);
   const [finishError, setFinishError] = useState("");
 
@@ -95,6 +116,7 @@ export function PracticePage() {
     api.startPractice(token, deckId).then((res) => {
       setSessionId(res.sessionId);
       setCard(res.card as PracticeCard);
+      setTypingMode((res.typingMode as TypingMode | undefined) ?? "language_specific");
       startedAtRef.current = Date.now();
     });
   }, [deckId, token]);
@@ -197,10 +219,12 @@ export function PracticePage() {
     return canSubmitCard({
       typingInput,
       expected: card.target,
+      language: card.language,
+      typingMode,
       reading: card.reading,
       romanization: card.romanization,
     });
-  }, [card, typingInput]);
+  }, [card, typingInput, typingMode]);
 
   const typingFeedback = useMemo(() => {
     if (!card) {
@@ -218,10 +242,12 @@ export function PracticePage() {
     return getTypingFeedback({
       typingInput,
       expected: card.target,
+      language: card.language,
+      typingMode,
       reading: card.reading,
       romanization: card.romanization,
     });
-  }, [card, typingInput]);
+  }, [card, typingInput, typingMode]);
 
   const focusKey = card?.wordId ?? "";
 
@@ -233,7 +259,7 @@ export function PracticePage() {
   // Auto-submit on match
   useEffect(() => {
     if (!card || submitMutation.isPending || !submitEnabled) return;
-    const normalizedTyped = normalizeJapaneseInput(typingInput).toLowerCase();
+    const normalizedTyped = normalizeTypingInput(typingInput);
     if (!normalizedTyped) return;
 
     const autoSubmitKey = `${sessionId}:${card.wordId}:${normalizedTyped}`;
@@ -261,7 +287,9 @@ export function PracticePage() {
     const target = typingFeedback.target;
     if (!target) return [];
 
-    const typed = normalizeJapaneseInput(typingInput).toLowerCase();
+    const typed = card
+      ? getTypingMatchSource(typingInput, card.reading, card.romanization, card.language, typingMode)
+      : normalizeTypingInput(typingInput);
     const chars: Array<{ char: string; pos: number; state: "correct" | "wrong" | "cursor" | "pending" }> = [];
 
     for (let i = 0; i < target.length; i++) {
@@ -286,7 +314,10 @@ export function PracticePage() {
     }
 
     return chars;
-  }, [typingInput, typingFeedback.target]);
+  }, [card, typingInput, typingFeedback.target, typingMode]);
+
+  const typingPrompt =
+    typingMode === "language_specific" && card?.language === "ja" ? "type romaji..." : "type answer...";
 
   // Session done screen
   if (sessionDone) {
@@ -374,11 +405,21 @@ export function PracticePage() {
         ) : null}
 
         {/* Large kanji target */}
-        <div className="select-none text-5xl leading-tight tracking-[0.04em] text-text-primary md:text-7xl [font-family:var(--font-jp)]" lang="ja">{card.target}</div>
+        <div
+          className={`select-none text-5xl leading-tight tracking-[0.04em] text-text-primary md:text-7xl ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}
+          lang={card.language}
+        >
+          {card.target}
+        </div>
 
         {/* Reading hint (small, below kanji) */}
         {card.reading ? (
-          <div className="-mt-1 text-lg text-text-secondary [font-family:var(--font-jp)]" lang="ja">{card.reading}</div>
+          <div
+            className={`-mt-1 text-lg text-text-secondary ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}
+            lang={card.language}
+          >
+            {card.reading}
+          </div>
         ) : null}
 
         {/* Monkeytype-style character display */}
@@ -401,14 +442,14 @@ export function PracticePage() {
           ))}
           {romajiChars.length === 0 ? (
             <span className="text-lg tracking-[0.02em] text-text-secondary">
-              type romaji...
+              {typingPrompt}
             </span>
           ) : null}
         </div>
 
         {/* Hidden input for capturing keystrokes */}
         <label className="absolute m-[-1px] h-px w-px overflow-hidden border-0 p-0 whitespace-nowrap [clip:rect(0,0,0,0)]" htmlFor="zen-typing-input">
-          Type romaji for {card.target}
+          Type answer for {card.target}
         </label>
         <input
           id="zen-typing-input"
@@ -423,7 +464,7 @@ export function PracticePage() {
               requestFinish();
             }
           }}
-          aria-label={`Type romaji for ${card.target}`}
+          aria-label={`Type answer for ${card.target}`}
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { DefaultThemes, type ThemeConfig, type ThemeMode, type ThemePalette } from "@inko/shared";
+import { DefaultThemes, type ThemeConfig, type ThemeMode, type ThemePalette, type TypingMode } from "@inko/shared";
 import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { applyThemePreferences, saveThemePreferences } from "../theme/theme.js";
@@ -11,6 +11,7 @@ type MeResponse = {
   email: string;
   displayName: string;
   themeMode: ThemeMode;
+  typingMode: TypingMode;
   themes: ThemeConfig;
   createdAt: number;
 };
@@ -301,6 +302,7 @@ export function ProfilePage() {
 
   const [displayName, setDisplayName] = useState("");
   const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
+  const [typingMode, setTypingMode] = useState<TypingMode>("language_specific");
   const [themes, setThemes] = useState<ThemeConfig>(DefaultThemes);
   const [hexDrafts, setHexDrafts] = useState<Record<string, string>>({});
 
@@ -308,6 +310,7 @@ export function ProfilePage() {
     if (!user) return;
     setDisplayName(user.displayName);
     setThemeMode(user.themeMode);
+    setTypingMode(user.typingMode);
     setThemes(user.themes);
     setActiveThemeEditor(user.themeMode);
   }, [user]);
@@ -317,6 +320,7 @@ export function ProfilePage() {
       api.updateMe(token ?? "", {
         displayName: displayName.trim(),
         themeMode,
+        typingMode,
         themes,
       }),
     onSuccess: (updated) => {
@@ -497,6 +501,28 @@ export function ProfilePage() {
                   Light
                 </button>
               </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">Typing Mode</span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className={typingMode === "language_specific" ? "" : "bg-bg-elevated text-text-primary hover:bg-bg-elevated"}
+                  onClick={() => setTypingMode("language_specific")}
+                >
+                  Language Specific
+                </button>
+                <button
+                  type="button"
+                  className={typingMode === "universal" ? "" : "bg-bg-elevated text-text-primary hover:bg-bg-elevated"}
+                  onClick={() => setTypingMode("universal")}
+                >
+                  Universal
+                </button>
+              </div>
+              <p className="m-0 text-[12px] text-text-secondary">
+                Language-specific uses script-aware matching (e.g. romaji to kana for Japanese). Universal uses normalized direct typing.
+              </p>
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">Joined</span>
