@@ -9,6 +9,7 @@ import { registerShortcut } from "../hooks/useKeyboard.js";
 
 type AddTab = "single" | "import";
 const NEW_DECK_LANGUAGE_STORAGE_KEY = "inko:new-deck-language";
+const IMPORT_PREVIEW_PAGE_SIZE = 20;
 
 function getInitialDeckLanguage(): LanguageCode {
   if (typeof window === "undefined") return "ja";
@@ -337,9 +338,49 @@ export function WordBankPage() {
   }, [words, wordSearch]);
 
   // ---- bulk import ----
-  const [importPreview, setImportPreview] = useState<Array<Record<string, string>> | null>(null);
   const [importColumnMapping, setImportColumnMapping] = useState<Record<number, string>>({});
   const [rawImportData, setRawImportData] = useState<{ headers: string[]; rows: string[][] } | null>(null);
+  const [importPreviewPage, setImportPreviewPage] = useState(1);
+
+  const mapImportRow = useCallback(
+    (row: string[]) => {
+      const mapped: Record<string, string | undefined> = {
+        target: undefined,
+        reading: undefined,
+        meaning: undefined,
+        romanization: undefined,
+        example: undefined,
+        tags: undefined,
+      };
+
+      for (const [colIndex, field] of Object.entries(importColumnMapping)) {
+        if (!field) continue;
+        const value = row[Number.parseInt(colIndex)]?.trim();
+        if (field === "tags") {
+          mapped.tags = value;
+        } else {
+          mapped[field] = value || undefined;
+        }
+      }
+
+      return mapped;
+    },
+    [importColumnMapping],
+  );
+
+  const mappedImportRows = useMemo(() => {
+    if (!rawImportData) return [];
+    return rawImportData.rows.map((row) => mapImportRow(row));
+  }, [mapImportRow, rawImportData]);
+
+  const totalPreviewPages = Math.max(1, Math.ceil(mappedImportRows.length / IMPORT_PREVIEW_PAGE_SIZE));
+  const previewPage = Math.min(importPreviewPage, totalPreviewPages);
+  const previewStart = (previewPage - 1) * IMPORT_PREVIEW_PAGE_SIZE;
+  const previewRows = mappedImportRows.slice(previewStart, previewStart + IMPORT_PREVIEW_PAGE_SIZE);
+
+  useEffect(() => {
+    setImportPreviewPage(1);
+  }, [rawImportData, importColumnMapping]);
 
   const parseCSVLine = (line: string): string[] => {
     const result: string[] = [];

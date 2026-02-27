@@ -16,6 +16,16 @@ const languageValidator = v.union(
   v.literal("th"),
 );
 
+const createWordFields = {
+  target: v.string(),
+  reading: v.optional(v.string()),
+  romanization: v.optional(v.string()),
+  meaning: v.string(),
+  example: v.optional(v.string()),
+  audioUrl: v.optional(v.string()),
+  tags: v.array(v.string()),
+};
+
 export const listDecks = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
@@ -75,13 +85,7 @@ export const createWord = mutation({
   args: {
     userId: v.id("users"),
     deckId: v.id("decks"),
-    target: v.string(),
-    reading: v.optional(v.string()),
-    romanization: v.optional(v.string()),
-    meaning: v.string(),
-    example: v.optional(v.string()),
-    audioUrl: v.optional(v.string()),
-    tags: v.array(v.string()),
+    ...createWordFields,
   },
   handler: async (ctx, args) => {
     const deck = await ctx.db.get(args.deckId);
@@ -114,6 +118,52 @@ export const createWord = mutation({
     });
 
     return await ctx.db.get(wordId);
+  },
+});
+
+export const createWordsBatch = mutation({
+  args: {
+    userId: v.id("users"),
+    deckId: v.id("decks"),
+    words: v.array(v.object(createWordFields)),
+  },
+  handler: async (ctx, args) => {
+    const deck = await ctx.db.get(args.deckId);
+    if (!deck) {
+      throw new Error("Deck not found");
+    }
+
+    const existing = await ctx.db
+      .query("deck_words")
+      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+      .collect();
+
+    const createdWords: unknown[] = [];
+    for (const [index, input] of args.words.entries()) {
+      const wordId = await ctx.db.insert("words", {
+        userId: args.userId,
+        language: deck.language,
+        target: input.target,
+        reading: input.reading,
+        romanization: input.romanization,
+        meaning: input.meaning,
+        example: input.example,
+        audioUrl: input.audioUrl,
+        tags: input.tags,
+        createdAt: Date.now(),
+      });
+
+      await ctx.db.insert("deck_words", {
+        deckId: args.deckId,
+        wordId,
+        position: existing.length + index,
+      });
+
+      const word = await ctx.db.get(wordId);
+      if (word) createdWords.push(word);
+    }
+
+    return createdWords;
   },
 });
 
