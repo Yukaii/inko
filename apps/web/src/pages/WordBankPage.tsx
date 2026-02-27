@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { registerShortcut } from "../hooks/useKeyboard.js";
@@ -17,6 +18,10 @@ export function WordBankPage() {
   const [selectedDeckId, setSelectedDeckId] = useState<string>("");
   const [showNewDeckModal, setShowNewDeckModal] = useState(false);
   const [newDeckName, setNewDeckName] = useState("");
+  const [showEditDeckModal, setShowEditDeckModal] = useState(false);
+  const [editingDeck, setEditingDeck] = useState<{ id: string; name: string; archived: boolean } | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deckToDelete, setDeckToDelete] = useState<{ id: string; name: string } | null>(null);
   const [addTab, setAddTab] = useState<AddTab>("single");
   const [importText, setImportText] = useState("");
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -195,6 +200,28 @@ export function WordBankPage() {
     },
   });
 
+  const updateDeck = useMutation({
+    mutationFn: (input: { name?: string; archived?: boolean }) =>
+      api.updateDeck(token ?? "", editingDeck!.id, input),
+    onSuccess: async () => {
+      setShowEditDeckModal(false);
+      setEditingDeck(null);
+      await queryClient.invalidateQueries({ queryKey: ["decks"] });
+    },
+  });
+
+  const deleteDeck = useMutation({
+    mutationFn: () => api.deleteDeck(token ?? "", deckToDelete!.id),
+    onSuccess: async () => {
+      if (selectedDeckId === deckToDelete?.id) {
+        setSelectedDeckId("");
+      }
+      setShowDeleteConfirm(false);
+      setDeckToDelete(null);
+      await queryClient.invalidateQueries({ queryKey: ["decks"] });
+    },
+  });
+
   const createWord = useMutation({
     mutationFn: () =>
       api.createWord(token ?? "", selectedDeckId, {
@@ -341,12 +368,17 @@ export function WordBankPage() {
           onKeyDown={handleDeckKeyDown}
         >
           {decks.map((deck, index) => (
-            <button
-              type="button"
+            <div
               key={deck.id}
               data-deck-index={index}
-              className={`relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-base border p-4 text-left transition-all ${selectedDeckId === deck.id ? "border-accent-orange shadow-[0_0_0_1px_#ff6b35]" : "border-[#2f2f2f] bg-bg-card hover:-translate-y-0.5 hover:border-accent-orange focus:-translate-y-0.5 focus:border-accent-orange"}`}
+              className={`group relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-base border p-4 text-left transition-all ${selectedDeckId === deck.id ? "border-accent-orange shadow-[0_0_0_1px_#ff6b35]" : "border-[#2f2f2f] bg-bg-card hover:-translate-y-0.5 hover:border-accent-orange"}`}
               onClick={selectDeck(deck.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  selectDeck(deck.id)();
+                }
+              }}
               tabIndex={focusedDeckIndex === index ? 0 : -1}
             >
               <div className="flex flex-col gap-1">
@@ -366,11 +398,37 @@ export function WordBankPage() {
                     setSelectedDeckId(deck.id);
                   }}
                 >
-                  <span>Edit</span>
+                  <span>Manage</span>
                   <kbd className="shrink-0 rounded border border-white/10 bg-black/30 px-1 py-[1px] font-mono text-[9px] opacity-70">Enter</kbd>
                 </button>
               </div>
-            </button>
+              <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <button
+                  type="button"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-0 bg-bg-elevated p-0 text-text-secondary hover:text-text-primary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingDeck({ id: deck.id, name: deck.name, archived: deck.archived });
+                    setShowEditDeckModal(true);
+                  }}
+                  aria-label="Edit deck"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  type="button"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-0 bg-bg-elevated p-0 text-text-secondary hover:text-red-400"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeckToDelete({ id: deck.id, name: deck.name });
+                    setShowDeleteConfirm(true);
+                  }}
+                  aria-label="Delete deck"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
           ))}
 
           {/* New deck tile */}
@@ -577,6 +635,103 @@ export function WordBankPage() {
               </button>
               <button type="button" onClick={() => createDeck.mutate()} disabled={!newDeckName.trim() || createDeck.isPending}>
                 {createDeck.isPending ? "Creating..." : "Create"}
+              </button>
+            </div>
+          </dialog>
+        </>
+      )}
+
+      {/* Edit Deck Modal */}
+      {showEditDeckModal && editingDeck && (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-[100] border-0 bg-black/60 p-0"
+            onClick={() => setShowEditDeckModal(false)}
+            aria-label="Close edit deck modal"
+          />
+          <dialog
+            className="fixed left-1/2 top-1/2 z-[101] flex w-[420px] max-w-[90vw] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[#2f2f2f] bg-bg-card p-7 text-text-primary"
+            open
+            aria-label="Edit deck"
+          >
+            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">Edit Deck</h2>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor={`${formId}-edit-deckname`}>Deck name</label>
+              <input
+                id={`${formId}-edit-deckname`}
+                value={editingDeck.name}
+                onChange={(e) => setEditingDeck({ ...editingDeck, name: e.target.value })}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id={`${formId}-archive`}
+                checked={editingDeck.archived}
+                onChange={(e) => setEditingDeck({ ...editingDeck, archived: e.target.checked })}
+              />
+              <label htmlFor={`${formId}-archive`} className="mb-0">Archive deck (hide from dashboard)</label>
+            </div>
+            <div className="mt-2 flex justify-end gap-2.5">
+              <button
+                type="button"
+                className="bg-bg-elevated text-text-primary"
+                onClick={() => {
+                  setShowEditDeckModal(false);
+                  setEditingDeck(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => updateDeck.mutate({ name: editingDeck.name, archived: editingDeck.archived })}
+                disabled={!editingDeck.name.trim() || updateDeck.isPending}
+              >
+                {updateDeck.isPending ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </dialog>
+        </>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && deckToDelete && (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-[100] border-0 bg-black/60 p-0"
+            onClick={() => setShowDeleteConfirm(false)}
+            aria-label="Close delete confirmation"
+          />
+          <dialog
+            className="fixed left-1/2 top-1/2 z-[101] flex w-[420px] max-w-[90vw] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[#2f2f2f] bg-bg-card p-7 text-text-primary"
+            open
+            aria-label="Delete deck confirmation"
+          >
+            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">Delete Deck</h2>
+            <p className="text-text-secondary">
+              Are you sure you want to delete "<strong>{deckToDelete.name}</strong>"? This will remove the deck and unlink all words from it. Words in other decks will not be affected.
+            </p>
+            <div className="mt-2 flex justify-end gap-2.5">
+              <button
+                type="button"
+                className="bg-bg-elevated text-text-primary"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeckToDelete(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="bg-red-500 text-white hover:bg-red-600"
+                onClick={() => deleteDeck.mutate()}
+                disabled={deleteDeck.isPending}
+              >
+                {deleteDeck.isPending ? "Deleting..." : "Delete"}
               </button>
             </div>
           </dialog>

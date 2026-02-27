@@ -74,4 +74,13 @@ export async function deckRoutes(app: FastifyInstance, repo: Repository = reposi
       rethrowAsHttp(app, error);
     }
   });
+
+  app.delete("/api/decks/:deckId", { preHandler: requireAuth }, async (request) => {
+    try {
+      const { deckId } = request.params as { deckId: string };
+      return await repo.deleteDeck(request.auth!.userId, deckId);
+    } catch (error) {
+      rethrowAsHttp(app, error);
+    }
+  });
 }

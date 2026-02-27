@@ -187,3 +187,24 @@ export const deleteWord = mutation({
     return { ok: true };
   },
 });
+
+export const deleteDeck = mutation({
+  args: {
+    deckId: v.id("decks"),
+  },
+  handler: async (ctx, args) => {
+    const deck = await ctx.db.get(args.deckId);
+    if (!deck) return null;
+
+    // Delete all deck_words links
+    const links = await ctx.db
+      .query("deck_words")
+      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+      .collect();
+    await Promise.all(links.map((link) => ctx.db.delete(link._id)));
+
+    // Delete the deck itself
+    await ctx.db.delete(args.deckId);
+    return { ok: true };
+  },
+});
