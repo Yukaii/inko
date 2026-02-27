@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { DefaultThemes, type ThemeConfig, type ThemeMode, type ThemePalette, type TypingMode } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
@@ -293,6 +294,7 @@ function parseThemePayload(text: string, currentMode: ThemeMode, currentThemes: 
 }
 
 export function SettingsPage() {
+  const { t } = useTranslation();
   const { token, setToken } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -460,17 +462,17 @@ export function SettingsPage() {
   };
 
   const navItems = [
-    { id: "profile" as const, label: "Profile" },
-    { id: "preferences" as const, label: "Preferences" },
-    { id: "appearance" as const, label: "Appearance" },
-    { id: "about" as const, label: "About" },
+    { id: "profile" as const, label: "settings.nav.profile" },
+    { id: "preferences" as const, label: "settings.nav.preferences" },
+    { id: "appearance" as const, label: "settings.nav.appearance" },
+    { id: "about" as const, label: "settings.nav.about" },
   ];
 
   return (
     <div className="flex flex-col gap-8">
       <header className="mb-2">
-        <h1 className="m-0 text-4xl font-semibold [font-family:var(--font-display)]">Settings</h1>
-        <p className="mt-1 text-sm text-text-secondary">Customize your experience</p>
+        <h1 className="m-0 text-4xl font-semibold [font-family:var(--font-display)]">{t("settings.title")}</h1>
+        <p className="mt-1 text-sm text-text-secondary">{t("settings.subtitle")}</p>
       </header>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[200px_1fr]">
@@ -483,7 +485,7 @@ export function SettingsPage() {
               className={`rounded-[10px] px-4 py-3 text-left text-sm transition-all ${activeSection === item.id ? "bg-bg-card font-medium text-text-primary" : "bg-transparent text-text-secondary hover:bg-bg-card hover:text-text-primary"}`}
               onClick={() => setActiveSection(item.id)}
             >
-              {item.label}
+              {t(item.label)}
             </button>
           ))}
         </nav>
@@ -491,38 +493,38 @@ export function SettingsPage() {
         {/* Settings Content */}
         <div className="rounded-base bg-bg-card p-7">
           {profileQuery.isLoading ? (
-            <p className="m-0 text-sm text-text-secondary">Loading...</p>
+            <p className="m-0 text-sm text-text-secondary">{t("common.loading")}</p>
           ) : profileQuery.isError ? (
             <p className="m-0 text-sm text-[var(--danger-text)]">Failed to load settings.</p>
           ) : (
             <>
               {activeSection === "profile" && (
                 <section className="flex flex-col gap-6">
-                  <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">Profile</h2>
+                  <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">{t("settings.nav.profile")}</h2>
                   
                   <div className="grid gap-6">
                     <div className="flex flex-col gap-2">
                       <label htmlFor="display-name" className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">
-                        Display Name
+                        {t("settings.profile.display_name")}
                       </label>
                       <input
                         id="display-name"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
                         maxLength={60}
-                        placeholder="Your name"
+                        placeholder={t("settings.profile.name_placeholder")}
                       />
                     </div>
                     
                     <div className="flex flex-col gap-2">
-                      <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">Email</span>
+                      <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">{t("settings.profile.email")}</span>
                       <div className="rounded-[10px] border border-[var(--border-strong)] bg-bg-elevated px-3 py-2.5 font-mono text-sm text-text-secondary">
                         {user?.email ?? "—"}
                       </div>
                     </div>
                     
                     <div className="flex flex-col gap-2">
-                      <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">Joined</span>
+                      <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">{t("settings.profile.joined")}</span>
                       <div className="rounded-[10px] border border-[var(--border-strong)] bg-bg-elevated px-3 py-2.5 font-mono text-sm text-text-secondary">
                         {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}
                       </div>
@@ -531,7 +533,7 @@ export function SettingsPage() {
 
                   <div className="border-t border-[var(--border-subtle)] pt-4">
                     <button type="button" className="bg-[var(--danger-bg)] text-[var(--danger-text)] hover:bg-[var(--danger-bg-hover)]" onClick={handleSignOut}>
-                      Sign Out
+                      {t("auth.sign_out")}
                     </button>
                   </div>
                 </section>
@@ -539,49 +541,49 @@ export function SettingsPage() {
 
               {activeSection === "preferences" && (
                 <section className="flex flex-col gap-6">
-                  <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">Preferences</h2>
+                  <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">{t("settings.nav.preferences")}</h2>
                   
                   <div className="flex flex-col gap-0">
                     <div className="flex flex-col gap-2 border-b border-[var(--border-subtle)] py-4">
-                      <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">Theme Mode</span>
+                      <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">{t("settings.preferences.theme_mode")}</span>
                       <div className="flex gap-2">
                         <button
                           type="button"
                           className={themeMode === "dark" ? "" : "bg-bg-elevated text-text-primary hover:bg-bg-elevated"}
                           onClick={() => handleThemeModeChange("dark")}
                         >
-                          Dark
+                          {t("settings.preferences.dark")}
                         </button>
                         <button
                           type="button"
                           className={themeMode === "light" ? "" : "bg-bg-elevated text-text-primary hover:bg-bg-elevated"}
                           onClick={() => handleThemeModeChange("light")}
                         >
-                          Light
+                          {t("settings.preferences.light")}
                         </button>
                       </div>
                     </div>
 
                     <div className="flex flex-col gap-2 py-4">
-                      <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">Typing Mode</span>
+                      <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">{t("settings.preferences.typing_mode")}</span>
                       <div className="flex gap-2">
                         <button
                           type="button"
                           className={typingMode === "language_specific" ? "" : "bg-bg-elevated text-text-primary hover:bg-bg-elevated"}
                           onClick={() => setTypingMode("language_specific")}
                         >
-                          Language Specific
+                          {t("settings.preferences.lang_specific")}
                         </button>
                         <button
                           type="button"
                           className={typingMode === "universal" ? "" : "bg-bg-elevated text-text-primary hover:bg-bg-elevated"}
                           onClick={() => setTypingMode("universal")}
                         >
-                          Universal
+                          {t("settings.preferences.universal")}
                         </button>
                       </div>
                       <p className="m-0 text-[12px] text-text-secondary">
-                        Language-specific uses script-aware matching (e.g. romaji to kana for Japanese). Universal uses normalized direct typing.
+                        {t("settings.preferences.typing_mode_desc")}
                       </p>
                     </div>
                   </div>
@@ -591,9 +593,9 @@ export function SettingsPage() {
               {activeSection === "appearance" && (
                 <section className="flex flex-col gap-6">
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">Appearance</h2>
+                    <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">{t("settings.nav.appearance")}</h2>
                     <button type="button" className="bg-bg-elevated text-text-primary hover:bg-bg-elevated" onClick={resetActiveTheme}>
-                      Reset {activeThemeEditor}
+                      {t("settings.appearance.reset", { mode: activeThemeEditor })}
                     </button>
                   </div>
 
@@ -603,19 +605,19 @@ export function SettingsPage() {
                       className={activeThemeEditor === "dark" ? "" : "bg-bg-elevated text-text-primary hover:bg-bg-elevated"}
                       onClick={() => setActiveThemeEditor("dark")}
                     >
-                      Dark Palette
+                      {t("settings.appearance.dark_palette")}
                     </button>
                     <button
                       type="button"
                       className={activeThemeEditor === "light" ? "" : "bg-bg-elevated text-text-primary hover:bg-bg-elevated"}
                       onClick={() => setActiveThemeEditor("light")}
                     >
-                      Light Palette
+                      {t("settings.appearance.light_palette")}
                     </button>
                   </div>
 
                   <div>
-                    <p className="mb-2 text-xs uppercase tracking-[0.04em] text-text-secondary">Theme Presets</p>
+                    <p className="mb-2 text-xs uppercase tracking-[0.04em] text-text-secondary">{t("settings.appearance.theme_presets")}</p>
                     <div className="flex flex-wrap gap-2">
                       {THEME_PRESETS.map((preset) => (
                         <button
@@ -680,31 +682,31 @@ export function SettingsPage() {
                   </div>
 
                   <div className="border-t border-[var(--border-subtle)] pt-4">
-                    <p className="mb-2 text-xs uppercase tracking-[0.04em] text-text-secondary">Export Theme</p>
+                    <p className="mb-2 text-xs uppercase tracking-[0.04em] text-text-secondary">{t("settings.appearance.export_theme")}</p>
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         className="bg-bg-elevated text-text-primary hover:bg-bg-elevated"
                         onClick={() => copyToClipboard(JSON.stringify({ themeMode, themes }, null, 2), "Theme JSON copied.")}
                       >
-                        Copy JSON
+                        {t("settings.appearance.copy_json")}
                       </button>
                       <button
                         type="button"
                         className="bg-bg-elevated text-text-primary hover:bg-bg-elevated"
                         onClick={() => copyToClipboard(buildCssVarsText(), "CSS variables copied.")}
                       >
-                        Copy CSS Vars
+                        {t("settings.appearance.copy_css")}
                       </button>
                       <button
                         type="button"
                         className="bg-bg-elevated text-text-primary hover:bg-bg-elevated"
                         onClick={() => copyToClipboard(buildCurrentPaletteText(), `${activeThemeEditor} palette hex values copied.`)}
                       >
-                        Copy {activeThemeEditor} Hex
+                        {t("settings.appearance.copy_hex", { mode: activeThemeEditor })}
                       </button>
                       <button type="button" className="bg-bg-elevated text-text-primary hover:bg-bg-elevated" onClick={exportThemeJson}>
-                        Export JSON
+                        {t("settings.appearance.export_json_btn")}
                       </button>
                     </div>
                   </div>
@@ -713,14 +715,14 @@ export function SettingsPage() {
 
               {activeSection === "about" && (
                 <section className="flex flex-col gap-6">
-                  <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">About</h2>
+                  <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">{t("settings.nav.about")}</h2>
                   
                   <div className="py-5 text-center">
                     <div className="mb-4 text-5xl text-accent-orange [font-family:var(--font-display)]">
                       <span lang="ja">inkō</span>
                     </div>
                     <p className="m-0 mb-5 text-sm leading-relaxed text-text-secondary">
-                      A minimal, focused language typing practice app inspired by monkeytype.
+                      {t("settings.about.desc")}
                     </p>
                     <div className="flex justify-center gap-3 font-mono text-xs text-text-secondary">
                       <span>Version 0.1.0</span>
@@ -734,7 +736,7 @@ export function SettingsPage() {
               {(activeSection === "profile" || activeSection === "preferences" || activeSection === "appearance") && (
                 <div className="mt-6 border-t border-[var(--border-subtle)] pt-4">
                   <button type="button" onClick={() => updateProfileMutation.mutate()} disabled={!canSave}>
-                    Save Changes
+                    {t("common.save_changes")}
                   </button>
                   {message ? <p className="mt-2 text-sm text-accent-teal">{message}</p> : null}
                 </div>

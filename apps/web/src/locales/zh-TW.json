@@ -1,0 +1,302 @@
+{
+  "common": {
+    "loading": "載入中...",
+    "save": "儲存",
+    "cancel": "取消",
+    "delete": "刪除",
+    "error": "錯誤",
+    "navigation": "導覽",
+    "global": "全域",
+    "page_specific": "頁面專用",
+    "clear": "清除",
+    "or": "或",
+    "handwriting": "手寫",
+    "change_language": "切換語言",
+    "step": "步驟",
+    "prev": "上一頁",
+    "next": "下一頁",
+    "page": "第",
+    "page_of": "第 {{x}} / {{y}} 頁",
+    "creating": "建立中...",
+    "saving": "儲存中...",
+    "deleting": "刪除中...",
+    "create": "建立",
+    "save_changes": "儲存變更"
+  },
+  "errors": {
+    "unknown": "發生預期外的錯誤。",
+    "INTERNAL_ERROR": "伺服器內部錯誤。",
+    "INVALID_TOKEN": "驗證碼無效或已過期。",
+    "USER_NOT_FOUND": "找不到使用者。",
+    "DECK_NOT_FOUND": "找不到牌組。",
+    "WORD_NOT_FOUND": "找不到單字。",
+    "UNAUTHORIZED": "未經授權的存取。",
+    "VALIDATION_ERROR": "輸入內容無效。",
+    "SERVICE_UNAVAILABLE": "服務暫時不可用。",
+    "network_error": "網路錯誤，請檢查您的連線。"
+  },
+  "auth": {
+    "login": "登入",
+    "logout": "登出",
+    "magic_link_sent": "認證連結已發送至您的信箱！",
+    "request_magic_link": "要求認證連結",
+    "verify_token": "驗證憑證",
+    "profile": "個人資料",
+    "settings": "設定",
+    "sign_out": "登出",
+    "email_label": "電子郵件",
+    "token_label": "憑證 (Token)",
+    "token_placeholder": "在此貼上憑證",
+    "dev_magic_link_msg": "已在本地端產生認證連結。憑證已自動填入以供開發測試。"
+  },
+  "nav": {
+    "dashboard": "控制台",
+    "word_bank": "單字庫",
+    "settings": "設定",
+    "shortcuts": "快速鍵",
+    "home": "首頁",
+    "decks": "牌組",
+    "shortcuts_help": "鍵盤快速鍵"
+  },
+  "shortcuts": {
+    "nav_numbers": "前往控制台 / 單字庫 / 設定",
+    "go_dashboard": "前往控制台",
+    "go_word_bank": "前往單字庫",
+    "go_settings": "前往設定",
+    "go_settings_direct": "前往設定",
+    "toggle_help": "切換此說明",
+    "close_dialogs": "關閉對話框 / 取消"
+  },
+  "landing": {
+    "nav": {
+      "how_it_works": "運作原理",
+      "features": "產品特點",
+      "get_started": "立即開始"
+    },
+    "hero": {
+      "badge": "記憶的未來",
+      "title": "打字，直到你完全掌握",
+      "subtitle": "這是一款讓你證明自己真的記住了的字卡 App。透過打字建立肌肉記憶，從此不再遺忘。",
+      "cta_primary": "開始練習",
+      "cta_secondary": "了解更多"
+    },
+    "how_it_works": {
+      "title": "// 運作原理",
+      "subtitle": "三個步驟，讓你永不遺忘",
+      "step1": {
+        "title": "建立牌組",
+        "desc": "為任何學科建立自訂牌組，添加你的術語和定義。"
+      },
+      "step2": {
+        "title": "輸入答案",
+        "desc": "沒有選擇題。從記憶中提取答案並親手打出來。"
+      },
+      "step3": {
+        "title": "聰明複習",
+        "desc": "我們的演算法會在您即將遺忘之前安排複習。"
+      }
+    },
+    "features": {
+      "badge": "// 特點",
+      "title": "你所需要的一切",
+      "subtitle": "為追求真實長期記憶而非僅僅「認得」的學習者打造。",
+      "typing_first": {
+        "title": "輸入優先",
+        "desc": "沒有選擇題，沒有連連看。從記憶中打出答案，建立真實的神經連結。"
+      },
+      "spaced_repetition": {
+        "title": "間隔複習",
+        "desc": "智慧排程會在您忘記之前顯示字卡，每次複習都是完美時機。"
+      },
+      "progress_tracking": {
+        "title": "進度追蹤",
+        "desc": "視覺化儀表板顯示掌握程度、連續天數與薄弱環節，精確掌握學習重心。"
+      },
+      "custom_decks": {
+        "title": "自訂牌組",
+        "desc": "建立任何主題的牌組 —— 語言、程式語法、醫學術語或歷史日期。"
+      },
+      "streak_system": {
+        "title": "連續紀錄",
+        "desc": "每日紀錄與評分機制保持動力。持之以恆的練習勝過臨時抱佛腳。"
+      },
+      "practice_anywhere": {
+        "title": "隨時練習",
+        "desc": "支援任何有鍵盤的裝置。不論是在通勤、在書桌前，甚至是睡前都能練習。"
+      }
+    },
+    "cta": {
+      "title": "透過打字，精通任何知識。",
+      "subtitle": "親手打出通往恆久知識的道路。",
+      "button": "現在開始練習"
+    },
+    "footer": {
+      "desc": "打字，直到你完全掌握。透過主動打字練習建立真實回憶能力的字卡 App。",
+      "product": "產品",
+      "rights": "© 2026 inko. all rights reserved.",
+      "built_with": "// 為學習者精心打造"
+    },
+    "simulator": {
+      "badge": "模擬器",
+      "auto_play": "自動播放模式",
+      "hint": "// 僅供視覺展示"
+    }
+  },
+  "dashboard": {
+    "welcome_back": "歡迎回來，",
+    "good_day": "你好，{{name}}",
+    "learner": "學習者",
+    "stats": {
+      "words_learned": "已學習單字",
+      "due_today": "今日待複習",
+      "day_streak": "連續學習天數",
+      "session_time": "學習時長"
+    },
+    "quick_practice": "快速練習",
+    "to_focus": "聚焦",
+    "start_practice": "開始練習",
+    "no_decks": "還沒有牌組。",
+    "head_to": "前往",
+    "create_first_deck": "建立你的第一個牌組。",
+    "recent_sessions": "最近的學習階段",
+    "cards_count": "{{count}} 張字卡",
+    "no_sessions": "尚未有完成的學習階段。"
+  },
+  "word_bank": {
+    "title": "單字庫",
+    "subtitle": "管理你的牌組與詞彙",
+    "decks": {
+      "title": "牌組",
+      "to_focus": "聚焦",
+      "practice": "練習",
+      "manage": "管理",
+      "new_deck": "新增牌組",
+      "edit_deck": "編輯牌組",
+      "delete_deck": "刪除牌組"
+    },
+    "add": {
+      "title": "新增至 {{deck}}",
+      "tab_single": "單一單字",
+      "tab_import": "批次匯入",
+      "target_word": "目標單字",
+      "target_placeholder": "例如：{{example}}",
+      "meaning": "意思",
+      "meaning_placeholder": "例如：study; learning",
+      "reading": "讀音",
+      "reading_placeholder_jp": "例如：べんきょう",
+      "reading_placeholder": "選填的發音",
+      "romanization": "羅馬拼音",
+      "romanization_placeholder": "例如：benkyou",
+      "example": "例句",
+      "example_placeholder_jp": "例如：毎日日本語を勉強しています。",
+      "example_placeholder": "例如：Estoy aprendiendo cada dia.",
+      "audio_url": "音檔網址 (選填)",
+      "tags": "標籤 (以逗號分隔)",
+      "submit": "新增單字",
+      "submitting": "新增中..."
+    },
+    "import": {
+      "instruction": "上傳 CSV/TSV 檔案或直接貼上資料。支援的欄位：target, reading, meaning, romanization, example, tags",
+      "choose_file": "選擇檔案",
+      "or_paste": "或在下方貼上",
+      "preview": "預覽匯入",
+      "field_mapping": "欄位對應",
+      "map_instruction": "將每個欄位對應到正確的屬性：",
+      "skip": "-- 略過 --",
+      "target_req": "目標單字 (必填)",
+      "meaning_req": "意思 (必填)",
+      "preview_title": "預覽",
+      "submit": "匯入 {{count}} 個單字",
+      "importing": "匯入中...",
+      "done": "完成：已匯入 {{imported}} 個{{failed}}"
+    },
+    "words": {
+      "title": "單字",
+      "search_placeholder": "搜尋單字...",
+      "selected": "已選取 {{count}} 個",
+      "delete_selected": "刪除選取項目",
+      "deleting": "刪除中...",
+      "clear_selection": "清除選取",
+      "showing_count": "本頁顯示 {{count}} 個單字",
+      "all_tags": "所有標籤",
+      "no_match": "沒有符合搜尋條件的單字。",
+      "try_different": "請嘗試不同的搜尋字詞或清除篩選。",
+      "no_words": "還沒有單字。",
+      "add_using_form": "使用上方表單新增單字。",
+      "select_deck": "選擇一個牌組以檢視及管理單字。"
+    },
+    "new_deck": {
+      "title": "建立新牌組",
+      "name": "牌組名稱",
+      "name_placeholder": "例如：JLPT N5 單字",
+      "language": "目標語言"
+    },
+    "edit_deck": {
+      "title": "編輯牌組",
+      "archive": "封存牌組 (從控制台隱藏)"
+    },
+    "delete_deck": {
+      "title": "刪除牌組",
+      "confirm": "確定要刪除「{{name}}」嗎？這將會移除該牌組並解除所有單字的連結。在其他牌組中的單字不會受到影響。"
+    },
+    "edit_word": {
+      "title": "編輯單字"
+    }
+  },
+  "settings": {
+    "title": "設定",
+    "subtitle": "自訂你的使用體驗",
+    "nav": {
+      "profile": "個人資料",
+      "preferences": "偏好設定",
+      "appearance": "外觀",
+      "about": "關於"
+    },
+    "profile": {
+      "display_name": "顯示名稱",
+      "name_placeholder": "你的名字",
+      "email": "電子郵件",
+      "joined": "加入時間"
+    },
+    "preferences": {
+      "theme_mode": "主題模式",
+      "dark": "深色",
+      "light": "淺色",
+      "typing_mode": "打字模式",
+      "lang_specific": "特定語言",
+      "universal": "通用",
+      "typing_mode_desc": "特定語言模式使用具備文字感知的比對（例如日文的羅馬拼音轉換假名）。通用模式則使用標準化的直接輸入。"
+    },
+    "appearance": {
+      "reset": "重設 {{mode}}",
+      "dark_palette": "深色調色盤",
+      "light_palette": "淺色調色盤",
+      "theme_presets": "預設主題",
+      "export_theme": "匯出主題",
+      "copy_json": "複製 JSON",
+      "copy_css": "複製 CSS 變數",
+      "copy_hex": "複製 {{mode}} 16進位碼",
+      "export_json_btn": "匯出 JSON"
+    },
+    "about": {
+      "desc": "一款受到 monkeytype 啟發、極簡且專注的語言打字練習 App。"
+    }
+  },
+  "practice": {
+    "daily_target_reached": "已達成每日目標",
+    "session_complete": "學習階段完成",
+    "cards": "字卡",
+    "avg_typing": "平均打字",
+    "best_streak": "最佳連續紀錄",
+    "back_to_dashboard": "返回控制台",
+    "end_session": "結束階段",
+    "esc_hint": "在1秒內再次按下 Esc 鍵以退出",
+    "end_confirm_title": "要結束這個練習階段嗎？",
+    "end_confirm_desc": "這個階段的進度將被保存。",
+    "confirm_exit": "確認退出",
+    "type_romaji": "輸入羅馬拼音...",
+    "type_answer": "輸入答案...",
+    "not_quite": "差一點 — 再試一次",
+    "off_track": "偏離軌道"
+  }
+}

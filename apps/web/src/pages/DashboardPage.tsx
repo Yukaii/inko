@@ -1,12 +1,14 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
 import { BookOpen, Target, Flame, Clock, Play } from "lucide-react";
 
 export function DashboardPage() {
+  const { t, i18n } = useTranslation();
   const { token } = useAuth();
   const navigate = useNavigate();
   const practiceGridRef = useRef<HTMLUListElement>(null);
@@ -39,7 +41,7 @@ export function DashboardPage() {
       registerShortcut({
         key: "w",
         handler: () => navigate("/word-bank"),
-        description: "Go to Word Bank",
+        description: t("shortcuts.go_word_bank", "Go to Word Bank"),
       })
     );
 
@@ -63,7 +65,7 @@ export function DashboardPage() {
         cleanup();
       }
     };
-  }, [navigate, activeDecks.length]);
+  }, [navigate, activeDecks.length, t]);
 
   // Handle arrow key navigation within practice grid
   const handlePracticeKeyDown = (event: React.KeyboardEvent) => {
@@ -117,7 +119,7 @@ export function DashboardPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-8">
-        <div className="p-[60px] text-center text-base text-text-secondary">Loading...</div>
+        <div className="p-[60px] text-center text-base text-text-secondary">{t("common.loading")}</div>
       </div>
     );
   }
@@ -126,9 +128,9 @@ export function DashboardPage() {
     <div className="flex flex-col gap-8">
       {/* Welcome Header */}
       <header className="mb-2">
-        <p className="mb-2 text-sm text-text-secondary">welcome_back,</p>
+        <p className="mb-2 text-sm text-text-secondary">{t("dashboard.welcome_back")}</p>
         <h1 className="m-0 text-[42px] font-semibold [font-family:var(--font-display)]">
-          Good day, {(meQuery.data as { displayName?: string } | undefined)?.displayName ?? "learner"}
+          {t("dashboard.good_day", { name: (meQuery.data as { displayName?: string } | undefined)?.displayName ?? t("dashboard.learner") })}
         </h1>
       </header>
 
@@ -136,25 +138,25 @@ export function DashboardPage() {
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Statistics">
         <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
           <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
-            <BookOpen size={14} /> words_learned
+            <BookOpen size={14} /> {t("dashboard.stats.words_learned")}
           </div>
           <div className="text-[32px] font-semibold [font-family:var(--font-display)]">{data?.totalWordsLearned ?? 0}</div>
         </div>
         <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
           <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
-            <Target size={14} className="text-accent-orange" /> due_today
+            <Target size={14} className="text-accent-orange" /> {t("dashboard.stats.due_today")}
           </div>
           <div className="text-[32px] font-semibold text-accent-orange [font-family:var(--font-display)]">{data?.wordsDueToday ?? 0}</div>
         </div>
         <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
           <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
-            <Flame size={14} className="text-accent-teal" /> day_streak
+            <Flame size={14} className="text-accent-teal" /> {t("dashboard.stats.day_streak")}
           </div>
           <div className="text-[32px] font-semibold text-accent-teal [font-family:var(--font-display)]">{data?.learningStreak ?? 0}</div>
         </div>
         <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
           <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
-            <Clock size={14} /> session_time
+            <Clock size={14} /> {t("dashboard.stats.session_time")}
           </div>
           <div className="text-[32px] font-semibold [font-family:var(--font-display)]">{Math.floor((data?.sessionTimeSeconds ?? 0) / 60)}m</div>
         </div>
@@ -164,10 +166,10 @@ export function DashboardPage() {
       {activeDecks.length > 0 && (
         <section className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">Quick Practice</h2>
+            <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">{t("dashboard.quick_practice")}</h2>
             <span className="inline-flex items-center gap-1 rounded border border-[var(--border-strong)] bg-bg-elevated px-2 py-1 font-mono text-[11px] text-text-primary shadow-sm">
               <kbd className="rounded bg-bg-card px-1.5 py-0.5 font-mono">p</kbd>
-              <span>to focus</span>
+              <span>{t("dashboard.to_focus")}</span>
             </span>
           </div>
           <ul
@@ -200,7 +202,7 @@ export function DashboardPage() {
                   </div>
                 </div>
                 <button type="button" className="mt-auto w-full rounded-lg bg-bg-elevated px-3 py-2 text-sm text-text-secondary transition-colors group-hover:bg-accent-orange group-hover:text-text-on-accent">
-                  Start Practice
+                  {t("dashboard.start_practice")}
                 </button>
               </li>
             ))}
@@ -210,16 +212,16 @@ export function DashboardPage() {
 
       {activeDecks.length === 0 && !decksQuery.isLoading && (
         <section className="rounded-base bg-bg-card p-10 text-center text-text-secondary">
-          <p>No decks yet.</p>
+          <p>{t("dashboard.no_decks")}</p>
           <p className="mt-2 text-[13px]">
-            Head to the <Link to="/word-bank" className="text-accent-orange hover:underline">Word Bank</Link> to create your first deck.
+            {t("dashboard.head_to")} <Link to="/word-bank" className="text-accent-orange hover:underline">{t("nav.word_bank")}</Link> {t("dashboard.create_first_deck")}
           </p>
         </section>
       )}
 
       {/* Recent Sessions */}
       <section className="flex flex-col gap-4">
-        <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">Recent Sessions</h2>
+        <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">{t("dashboard.recent_sessions")}</h2>
         <div className="rounded-base bg-bg-card py-2">
           {(data?.recentSessions ?? []).map((session: { 
             sessionId: string; 
@@ -228,7 +230,7 @@ export function DashboardPage() {
             finishedAt?: number;
           }) => {
             const duration = Math.round(((session.finishedAt ?? Date.now()) - session.startedAt) / 1000);
-            const formattedDate = new Date(session.finishedAt ?? session.startedAt).toLocaleString('en-US', {
+            const formattedDate = new Date(session.finishedAt ?? session.startedAt).toLocaleString(i18n.language, {
               month: 'short',
               day: 'numeric',
               hour: '2-digit',
@@ -239,13 +241,13 @@ export function DashboardPage() {
               <div key={session.sessionId} className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-3 last:border-b-0">
                 <span className="text-[13px] text-text-secondary">{formattedDate}</span>
                 <span className="font-mono text-[13px]">
-                  {session.cardsCompleted} cards · {Math.floor(duration / 60)}:{String(duration % 60).padStart(2, '0')}
+                  {t("dashboard.cards_count", { count: session.cardsCompleted })} · {Math.floor(duration / 60)}:{String(duration % 60).padStart(2, '0')}
                 </span>
               </div>
             );
           })}
           {data?.recentSessions?.length === 0 ? (
-            <p className="m-0 px-5 py-5 text-center text-[13px] text-text-secondary">No completed sessions yet.</p>
+            <p className="m-0 px-5 py-5 text-center text-[13px] text-text-secondary">{t("dashboard.no_sessions")}</p>
           ) : null}
         </div>
       </section>

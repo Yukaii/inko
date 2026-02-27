@@ -184,6 +184,19 @@ export const SubmitPracticeCardSchema = z.object({
   ]),
 });
 
+export const ErrorCode = {
+  INTERNAL_ERROR: "INTERNAL_ERROR",
+  INVALID_TOKEN: "INVALID_TOKEN",
+  USER_NOT_FOUND: "USER_NOT_FOUND",
+  DECK_NOT_FOUND: "DECK_NOT_FOUND",
+  WORD_NOT_FOUND: "WORD_NOT_FOUND",
+  UNAUTHORIZED: "UNAUTHORIZED",
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  SERVICE_UNAVAILABLE: "SERVICE_UNAVAILABLE",
+} as const;
+
+export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
+
 export type UserDTO = z.infer<typeof UserSchema>;
 export type DeckDTO = z.infer<typeof DeckSchema>;
 export type WordDTO = z.infer<typeof WordSchema>;

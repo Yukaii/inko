@@ -1,6 +1,7 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import type { ThemeConfig, ThemeMode } from "@inko/shared";
 import { registerShortcut, getShortcutsList } from "../hooks/useKeyboard";
 import { useAuth } from "../hooks/useAuth";
@@ -55,19 +56,39 @@ function LogoutIcon({ className }: { className?: string }) {
   );
 }
 
+function GlobeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  );
+}
+
 const NAV_LINKS = [
-  { to: "/dashboard", label: "dashboard", mobileLabel: "Home", Icon: HomeIcon, key: "d" },
-  { to: "/word-bank", label: "word_bank", mobileLabel: "Decks", Icon: DecksIcon, key: "w" },
+  { to: "/dashboard", label: "nav.dashboard", mobileLabel: "nav.home", Icon: HomeIcon, key: "d" },
+  { to: "/word-bank", label: "nav.word_bank", mobileLabel: "nav.decks", Icon: DecksIcon, key: "w" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { token, setToken } = useAuth();
   const [showHelp, setShowHelp] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showLangSubMenu, setShowLangSubMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   
+  const languages = [
+    { code: "en", label: "English" },
+    { code: "ja", label: "日本語" },
+    { code: "zh-TW", label: "繁體中文" },
+  ];
+
+  const currentLangLabel = languages.find(l => i18n.language.startsWith(l.code))?.label || "English";
+
   const meQuery = useQuery({
     queryKey: ["me"],
     queryFn: () => api.me(token ?? ""),
@@ -92,6 +113,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
+        setShowLangSubMenu(false);
       }
     };
     if (showProfileMenu) {
@@ -135,7 +157,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         registerShortcut({
           key: String(index + 1),
           handler: () => navigate(link.to),
-          description: `Go to ${link.label}`,
+          description: `Go to ${t(link.label)}`,
         })
       );
     }
@@ -176,7 +198,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         cleanup();
       }
     };
-  }, [navigate]);
+  }, [navigate, t]);
 
   const handleSignOut = () => {
     setToken(null);
@@ -203,7 +225,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               tabIndex={0}
               aria-current={location.pathname === link.to ? "page" : undefined}
             >
-              <span>{link.label}</span>
+              <span>{t(link.label)}</span>
               <kbd
                 className="shrink-0 rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] bg-bg-card px-1.5 py-0.5 font-mono text-[11px] text-text-secondary opacity-60 transition-all"
                 aria-label={`Shortcut: press ${index + 1}`}
@@ -225,7 +247,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           >
             <span className="flex items-center gap-2">
               <SettingsIcon className="h-4 w-4" />
-              settings
+              {t("nav.settings")}
             </span>
             <kbd className="shrink-0 rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] bg-bg-card px-1.5 py-0.5 font-mono text-[11px] text-text-secondary opacity-60">
               s
@@ -243,7 +265,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             >
               <span className="flex items-center gap-2 truncate">
                 <UserIcon className="h-4 w-4 shrink-0" />
-                <span className="truncate">{user?.displayName || "Profile"}</span>
+                <span className="truncate">{user?.displayName || t("auth.profile")}</span>
               </span>
               <span className="text-xs text-text-secondary">⌄</span>
             </button>
@@ -254,13 +276,51 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <p className="m-0 truncate text-sm font-medium text-text-primary">{user?.displayName}</p>
                   <p className="m-0 truncate text-xs text-text-secondary">{user?.email}</p>
                 </div>
+                
+                {/* Language Selection in Dropdown */}
+                <div className="flex flex-col">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-lg bg-transparent px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowLangSubMenu(!showLangSubMenu);
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <GlobeIcon className="h-4 w-4" />
+                      <span>{currentLangLabel}</span>
+                    </div>
+                    <span className={`text-[10px] transition-transform ${showLangSubMenu ? "rotate-180" : ""}`}>▼</span>
+                  </button>
+                  
+                  {showLangSubMenu && (
+                    <div className="flex flex-col gap-0.5 py-1 pl-6">
+                      {languages.map((lang) => (
+                        <button
+                          key={lang.code}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void i18n.changeLanguage(lang.code);
+                            setShowLangSubMenu(false);
+                          }}
+                          className={`flex w-full items-center rounded-md bg-transparent px-3 py-1.5 text-left text-xs transition-colors hover:bg-bg-elevated ${i18n.language.startsWith(lang.code) ? "text-accent-teal" : "text-text-secondary"}`}
+                        >
+                          {lang.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <NavLink
                   to="/settings"
                   className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
                   onClick={() => setShowProfileMenu(false)}
                 >
                   <SettingsIcon className="h-4 w-4" />
-                  Settings
+                  {t("auth.settings")}
                 </NavLink>
                 <button
                   type="button"
@@ -268,7 +328,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   onClick={handleSignOut}
                 >
                   <LogoutIcon className="h-4 w-4" />
-                  Sign Out
+                  {t("auth.sign_out")}
                 </button>
               </div>
             )}
@@ -278,10 +338,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             type="button"
             className="flex w-full items-center gap-2 rounded-[10px] border border-dashed border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-transparent px-3.5 py-2.5 text-[13px] font-normal text-text-secondary transition-all hover:border-accent-orange hover:bg-bg-elevated hover:text-text-primary focus:border-accent-orange focus:bg-bg-elevated focus:text-text-primary"
             onClick={() => setShowHelp(true)}
-            aria-label="Show keyboard shortcuts (Shift+?)"
+            aria-label={`${t("nav.shortcuts")} (Shift+?)`}
           >
             <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] bg-bg-card px-1.5 py-0.5 font-mono text-[11px]">?</kbd>
-            <span>shortcuts</span>
+            <span>{t("nav.shortcuts")}</span>
           </button>
         </div>
       </aside>
@@ -298,7 +358,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               aria-current={isActive ? "page" : undefined}
             >
               <link.Icon className="h-[22px] w-[22px]" />
-              <span className="text-[11px] font-medium">{link.mobileLabel}</span>
+              <span className="text-[11px] font-medium">{t(link.mobileLabel)}</span>
             </NavLink>
           );
         })}
@@ -310,7 +370,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           aria-current={location.pathname === "/settings" ? "page" : undefined}
         >
           <SettingsIcon className="h-[22px] w-[22px]" />
-          <span className="text-[11px] font-medium">Settings</span>
+          <span className="text-[11px] font-medium">{t("nav.settings")}</span>
         </NavLink>
       </nav>
 
@@ -333,6 +393,7 @@ function KeyboardHelpModal({
   onClose: () => void;
 }) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const modal = modalRef.current;
@@ -400,14 +461,14 @@ function KeyboardHelpModal({
         aria-label="Keyboard shortcuts"
       >
         <header className="flex items-center justify-between border-b border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] px-6 py-5">
-          <h2 className="[font-family:var(--font-display)] text-2xl text-text-primary">Keyboard Shortcuts</h2>
+          <h2 className="[font-family:var(--font-display)] text-2xl text-text-primary">{t("nav.shortcuts_help")}</h2>
           <button type="button" className="border-0 bg-transparent p-1 text-2xl leading-none text-text-secondary transition-colors hover:text-text-primary focus:text-text-primary" onClick={onClose} aria-label="Close">
             ×
           </button>
         </header>
         <div className="flex flex-col gap-6 p-6">
           <section>
-            <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">Navigation</h3>
+            <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">{t("common.navigation", "Navigation")}</h3>
             <dl className="flex flex-col gap-2">
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-[100px] items-center gap-1">
@@ -415,7 +476,7 @@ function KeyboardHelpModal({
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">2</kbd>
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">3</kbd>
                 </dt>
-                <dd className="m-0 text-text-secondary">Go to Dashboard / Word Bank / Settings</dd>
+                <dd className="m-0 text-text-secondary">{t("shortcuts.nav_numbers", "Go to Dashboard / Word Bank / Settings")}</dd>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-[100px] items-center gap-1">
@@ -423,7 +484,7 @@ function KeyboardHelpModal({
                   <span className="text-xs text-text-secondary">then</span>
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">d</kbd>
                 </dt>
-                <dd className="m-0 text-text-secondary">Go to Dashboard</dd>
+                <dd className="m-0 text-text-secondary">{t("shortcuts.go_dashboard", "Go to Dashboard")}</dd>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-[100px] items-center gap-1">
@@ -431,7 +492,7 @@ function KeyboardHelpModal({
                   <span className="text-xs text-text-secondary">then</span>
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">w</kbd>
                 </dt>
-                <dd className="m-0 text-text-secondary">Go to Word Bank</dd>
+                <dd className="m-0 text-text-secondary">{t("shortcuts.go_word_bank", "Go to Word Bank")}</dd>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-[100px] items-center gap-1">
@@ -439,18 +500,18 @@ function KeyboardHelpModal({
                   <span className="text-xs text-text-secondary">then</span>
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">s</kbd>
                 </dt>
-                <dd className="m-0 text-text-secondary">Go to Settings</dd>
+                <dd className="m-0 text-text-secondary">{t("shortcuts.go_settings", "Go to Settings")}</dd>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-[100px] items-center gap-1">
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">s</kbd>
                 </dt>
-                <dd className="m-0 text-text-secondary">Go to Settings</dd>
+                <dd className="m-0 text-text-secondary">{t("shortcuts.go_settings_direct", "Go to Settings")}</dd>
               </div>
             </dl>
           </section>
           <section>
-            <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">Global</h3>
+            <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">{t("common.global", "Global")}</h3>
             <dl className="flex flex-col gap-2">
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-[100px] items-center gap-1">
@@ -458,19 +519,19 @@ function KeyboardHelpModal({
                   <span>+</span>
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">?</kbd>
                 </dt>
-                <dd className="m-0 text-text-secondary">Toggle this help</dd>
+                <dd className="m-0 text-text-secondary">{t("shortcuts.toggle_help", "Toggle this help")}</dd>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-100px] items-center gap-1">
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">Esc</kbd>
                 </dt>
-                <dd className="m-0 text-text-secondary">Close dialogs / Cancel</dd>
+                <dd className="m-0 text-text-secondary">{t("shortcuts.close_dialogs", "Close dialogs / Cancel")}</dd>
               </div>
             </dl>
           </section>
           {shortcuts.length > 0 && (
             <section>
-              <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">Page Specific</h3>
+              <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">{t("common.page_specific", "Page Specific")}</h3>
               <dl className="flex flex-col gap-2">
                 {shortcuts.map((s) => (
                   <div key={s.key} className="flex items-center gap-4 text-sm">

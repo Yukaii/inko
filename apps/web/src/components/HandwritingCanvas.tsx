@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   onChanged: (drawn: boolean) => void;
 };
 
 export function HandwritingCanvas({ onChanged }: Props) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasStrokes, setHasStrokes] = useState(false);
@@ -73,9 +75,9 @@ export function HandwritingCanvas({ onChanged }: Props) {
   return (
     <div className="grid gap-3 rounded-base bg-bg-card p-5">
       <div className="flex items-center justify-between">
-        <strong>Handwriting</strong>
+        <strong>{t("common.handwriting")}</strong>
         <button className="bg-bg-elevated text-text-primary" onClick={clearCanvas}>
-          Clear
+          {t("common.clear")}
         </button>
       </div>
       <canvas

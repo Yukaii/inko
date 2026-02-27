@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 type SimulatorCard = {
   target: string;
@@ -41,6 +42,7 @@ const MOCK_CARDS: SimulatorCard[] = [
 ];
 
 export function PracticeSimulator() {
+  const { t } = useTranslation();
   const [cardIndex, setCardIndex] = useState(0);
   const [typed, setTyped] = useState("");
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -93,13 +95,13 @@ export function PracticeSimulator() {
       <div className="absolute inset-x-0 top-0 flex items-center justify-between px-6 py-4 opacity-60">
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center rounded-full border border-text-secondary/20 px-3 py-1 text-[10px] font-mono text-text-secondary">
-            SIMULATOR
+            {t("landing.simulator.badge")}
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-text-secondary/20 px-3 py-1 text-xs text-accent-orange font-display">
             🔥 {streak}
           </span>
         </div>
-        <div className="text-[10px] font-mono text-text-secondary">AUTO-PLAY MODE</div>
+        <div className="text-[10px] font-mono text-text-secondary">{t("landing.simulator.auto_play")}</div>
       </div>
 
       <AnimatePresence mode="wait">
@@ -162,7 +164,7 @@ export function PracticeSimulator() {
       {/* Interactive Overlay Hint */}
       <div className="absolute inset-x-0 bottom-8 flex justify-center">
         <div className="rounded-full bg-bg-elevated/50 px-4 py-1.5 text-[10px] font-mono text-text-secondary backdrop-blur-sm border border-text-secondary/10">
-          // visual_demonstration_only
+          {t("landing.simulator.hint")}
         </div>
       </div>
     </div>

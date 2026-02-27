@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import sensible from "@fastify/sensible";
+import { ErrorCode } from "@inko/shared";
 import { env } from "./lib/env";
 import { createMailer, type Mailer } from "./lib/mailer";
 import { authRoutes } from "./routes/auth";
@@ -13,6 +14,29 @@ export async function buildServer(options?: { repository?: Repository; mailer?: 
   const app = Fastify({ logger: true });
   const repo = options?.repository ?? repository;
   const mailer = options?.mailer ?? createMailer();
+
+  app.setErrorHandler((error, request, reply) => {
+    app.log.error(error);
+
+    if (error.validation) {
+      return reply.status(400).send({
+        statusCode: 400,
+        code: ErrorCode.VALIDATION_ERROR,
+        error: "Bad Request",
+        message: error.message,
+      });
+    }
+
+    const statusCode = error.statusCode || 500;
+    const code = (error as any).code || (statusCode >= 500 ? ErrorCode.INTERNAL_ERROR : undefined);
+
+    reply.status(statusCode).send({
+      statusCode,
+      code,
+      error: error.name,
+      message: error.message,
+    });
+  });
 
   await app.register(cors, {
     origin: [env.FRONTEND_URL],
