@@ -1,0 +1,5 @@
+{
+  "$schema": "https://schema.zeabur.com/zbpack.schema.json",
+  "buildCommand": "bun install --frozen-lockfile && bun run --filter @inko/shared build && bun run --filter @inko/api build",
+  "startCommand": "bun apps/api/dist/apps/api/src/server.js"
+}
