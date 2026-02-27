@@ -245,6 +245,8 @@ export function WordBankPage() {
   const hasNextWordsPage = !!wordsQuery.data?.nextCursor;
   const wordsPageLabel = wordsCursorHistory.length + 1;
   const isWordsLoading = wordsQuery.isLoading;
+  const showWordActionsColumn = isWordsLoading || pagedWords.length > 0;
+  const wordsTableColumnCount = showWordActionsColumn ? 5 : 4;
 
   const parseCSVLine = (line: string): string[] => {
     const result: string[] = [];
@@ -673,14 +675,20 @@ export function WordBankPage() {
                         <th className="sticky top-0 z-20 px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] bg-bg-elevated">{t("word_bank.words.target")}</th>
                         <th className="sticky top-0 z-20 px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] md:table-cell hidden bg-bg-elevated">{t("word_bank.words.reading")}</th>
                         <th className="sticky top-0 z-20 px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] bg-bg-elevated">{t("word_bank.words.meaning")}</th>
-                        <th className="sticky top-0 z-20 w-20 px-4 py-3 bg-bg-elevated"></th>
+                        {showWordActionsColumn ? <th className="sticky top-0 z-20 w-20 px-4 py-3 bg-bg-elevated"></th> : null}
                       </tr>
                       </thead>
                       <tbody className="divide-y divide-[var(--border-subtle)]">
                       {isWordsLoading ? (
                         <tr>
-                          <td className="px-4 py-10 text-center text-text-secondary" colSpan={5}>
+                          <td className="px-4 py-10 text-center text-text-secondary" colSpan={wordsTableColumnCount}>
                             {t("common.loading")}
+                          </td>
+                        </tr>
+                      ) : pagedWords.length === 0 ? (
+                        <tr>
+                          <td className="h-56 px-4 text-center align-middle text-text-secondary" colSpan={wordsTableColumnCount}>
+                            <p className="m-0">{t("word_bank.words.no_words")}</p>
                           </td>
                         </tr>
                       ) : pagedWords.map((word: any) => (
@@ -701,46 +709,43 @@ export function WordBankPage() {
                           <td className={`px-4 py-4 font-bold text-text-primary ${activeDeck?.language === "ja" ? "[font-family:var(--font-jp)] text-lg" : ""}`}>{word.target}</td>
                           <td className={`px-4 py-4 text-text-secondary md:table-cell hidden ${activeDeck?.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}>{word.reading ?? "-"}</td>
                           <td className="px-4 py-4 text-text-secondary">{word.meaning}</td>
-                          <td className="px-4 py-4 text-right">
-                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-                                <button
-                                  type="button"
-                                  className="p-1.5 text-text-secondary hover:text-text-primary rounded-md hover:bg-bg-elevated border-0 bg-transparent cursor-pointer"
-                                  onClick={() => {
-                                    setEditingWord({
-                                      id: word.id,
-                                      target: word.target,
-                                      reading: word.reading ?? '',
-                                      romanization: word.romanization ?? '',
-                                      meaning: word.meaning,
-                                      example: word.example ?? '',
-                                      audioUrl: word.audioUrl ?? '',
-                                      tags: word.tags ?? [],
-                                    });
-                                    setShowEditWordModal(true);
-                                  }}
-                                >
-                                  <Pencil size={14} />
-                                </button>
-                                <button
-                                  type="button"
-                                  className="p-1.5 text-text-secondary hover:text-[var(--danger-text)] rounded-md hover:bg-[var(--danger-bg)] border-0 bg-transparent cursor-pointer"
-                                  onClick={() => deleteWord.mutate(word.id)}
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                             </div>
-                          </td>
+                          {showWordActionsColumn ? (
+                            <td className="px-4 py-4 text-right">
+                               <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                                  <button
+                                    type="button"
+                                    className="p-1.5 text-text-secondary hover:text-text-primary rounded-md hover:bg-bg-elevated border-0 bg-transparent cursor-pointer"
+                                    onClick={() => {
+                                      setEditingWord({
+                                        id: word.id,
+                                        target: word.target,
+                                        reading: word.reading ?? '',
+                                        romanization: word.romanization ?? '',
+                                        meaning: word.meaning,
+                                        example: word.example ?? '',
+                                        audioUrl: word.audioUrl ?? '',
+                                        tags: word.tags ?? [],
+                                      });
+                                      setShowEditWordModal(true);
+                                    }}
+                                  >
+                                    <Pencil size={14} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="p-1.5 text-text-secondary hover:text-[var(--danger-text)] rounded-md hover:bg-[var(--danger-bg)] border-0 bg-transparent cursor-pointer"
+                                    onClick={() => deleteWord.mutate(word.id)}
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                               </div>
+                            </td>
+                          ) : null}
                         </tr>
                       ))}
                       </tbody>
                     </table>
                   </div>
-                  {!isWordsLoading && pagedWords.length === 0 && (
-                    <div className="py-20 text-center text-text-secondary">
-                      <p>{t("word_bank.words.no_words")}</p>
-                    </div>
-                  )}
                 </div>
               </div>
             </section>
