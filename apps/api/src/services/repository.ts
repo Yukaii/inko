@@ -1,12 +1,13 @@
-import type {
-  CreateDeckInput,
-  CreateWordInput,
-  StartPracticeSessionInput,
-  SubmitPracticeCardInput,
-  UpdateDeckInput,
-  UpdateWordInput,
-} from "@inko/shared";
 import {
+  DefaultThemes,
+  type CreateDeckInput,
+  type CreateWordInput,
+  type StartPracticeSessionInput,
+  type SubmitPracticeCardInput,
+  type ThemeConfig,
+  type UpdateDeckInput,
+  type UpdateProfileInput,
+  type UpdateWordInput,
   defaultWordChannelStats,
   nextDueAt,
   scoreListening,
@@ -16,7 +17,14 @@ import {
 } from "@inko/shared";
 import { convex } from "../lib/convex.js";
 
-type ConvexUser = { _id: string; email: string; createdAt: number };
+type ConvexUser = {
+  _id: string;
+  email: string;
+  displayName?: string;
+  themeMode?: "dark" | "light";
+  themes?: ThemeConfig;
+  createdAt: number;
+};
 type ConvexDeck = {
   _id: string;
   userId: string;
@@ -60,7 +68,15 @@ export class RepositoryError extends Error {
 }
 
 function toUserDTO(user: ConvexUser) {
-  return { id: user._id, email: user.email, createdAt: user.createdAt };
+  const fallbackName = (user.email.split("@")[0] ?? "learner").replace(/[._-]+/g, " ").trim() || "learner";
+  return {
+    id: user._id,
+    email: user.email,
+    displayName: user.displayName ?? fallbackName.slice(0, 60),
+    themeMode: user.themeMode ?? "dark",
+    themes: user.themes ?? DefaultThemes,
+    createdAt: user.createdAt,
+  };
 }
 
 function toDeckDTO(deck: ConvexDeck) {
@@ -131,6 +147,15 @@ export const repository = {
   async getUserById(userId: string) {
     const user = await convex.query("users:getById", { userId });
     if (!user) return null;
+    return toUserDTO(user as ConvexUser);
+  },
+
+  async updateUserProfile(userId: string, input: UpdateProfileInput) {
+    const user = await convex.mutation("users:updateProfile", {
+      userId,
+      ...input,
+    });
+    if (!user) throw new RepositoryError("User not found", 404);
     return toUserDTO(user as ConvexUser);
   },
 

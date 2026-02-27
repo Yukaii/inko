@@ -4,6 +4,32 @@ import { v } from "convex/values";
 export default defineSchema({
   users: defineTable({
     email: v.string(),
+    displayName: v.optional(v.string()),
+    themeMode: v.optional(v.union(v.literal("dark"), v.literal("light"))),
+    themes: v.optional(
+      v.object({
+        dark: v.object({
+          accentOrange: v.string(),
+          accentTeal: v.string(),
+          bgPage: v.string(),
+          bgCard: v.string(),
+          bgElevated: v.string(),
+          textPrimary: v.string(),
+          textSecondary: v.string(),
+          textOnAccent: v.string(),
+        }),
+        light: v.object({
+          accentOrange: v.string(),
+          accentTeal: v.string(),
+          bgPage: v.string(),
+          bgCard: v.string(),
+          bgElevated: v.string(),
+          textPrimary: v.string(),
+          textSecondary: v.string(),
+          textOnAccent: v.string(),
+        }),
+      }),
+    ),
     createdAt: v.number(),
   }).index("by_email", ["email"]),
 

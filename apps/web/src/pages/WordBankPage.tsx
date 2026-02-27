@@ -559,7 +559,7 @@ export function WordBankPage() {
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4">
           <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">Decks</h2>
-          <span className="inline-flex items-center gap-1 rounded border border-[#2f2f2f] bg-bg-elevated px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">
+          <span className="inline-flex items-center gap-1 rounded border border-[var(--border-muted)] bg-bg-elevated px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">
             <kbd className="font-mono">d</kbd> to focus
           </span>
         </div>
@@ -573,7 +573,7 @@ export function WordBankPage() {
             <div
               key={deck.id}
               data-deck-index={index}
-              className={`group relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-base border p-4 text-left transition-all ${selectedDeckId === deck.id ? "border-accent-orange shadow-[0_0_0_1px_#ff6b35]" : "border-[#2f2f2f] bg-bg-card hover:-translate-y-0.5 hover:border-accent-orange"}`}
+              className={`group relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-base border p-4 text-left transition-all ${selectedDeckId === deck.id ? "border-accent-orange shadow-[0_0_0_1px_var(--accent-orange)]" : "border-[var(--border-muted)] bg-bg-card hover:-translate-y-0.5 hover:border-accent-orange"}`}
               onClick={selectDeck(deck.id)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -590,7 +590,7 @@ export function WordBankPage() {
               <div className="mt-auto flex gap-2">
                 <Link to={`/practice/${deck.id}`} onClick={(e) => e.stopPropagation()} className="flex min-w-0 flex-1 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-lg bg-accent-orange px-2.5 py-2 text-xs font-semibold text-text-on-accent no-underline">
                   <span>Practice</span>
-                  <kbd className="shrink-0 rounded border border-white/10 bg-black/30 px-1 py-[1px] font-mono text-[9px] opacity-70">p</kbd>
+                  <kbd className="shrink-0 rounded border border-[var(--border-strong)] bg-bg-card px-1 py-[1px] font-mono text-[9px] opacity-70">p</kbd>
                 </Link>
                 <button
                   type="button"
@@ -601,7 +601,7 @@ export function WordBankPage() {
                   }}
                 >
                   <span>Manage</span>
-                  <kbd className="shrink-0 rounded border border-white/10 bg-black/30 px-1 py-[1px] font-mono text-[9px] opacity-70">Enter</kbd>
+                  <kbd className="shrink-0 rounded border border-[var(--border-strong)] bg-bg-card px-1 py-[1px] font-mono text-[9px] opacity-70">Enter</kbd>
                 </button>
               </div>
               <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -637,7 +637,7 @@ export function WordBankPage() {
           <button
             type="button"
             data-deck-index={decks.length}
-            className="flex min-h-[120px] flex-col items-center justify-center gap-2 rounded-base border-2 border-dashed border-[#3a3a3a] bg-transparent p-4 text-text-secondary transition-all hover:border-accent-orange hover:text-text-primary focus:border-accent-orange focus:text-text-primary"
+            className="flex min-h-[120px] flex-col items-center justify-center gap-2 rounded-base border-2 border-dashed border-[var(--border-strong)] bg-transparent p-4 text-text-secondary transition-all hover:border-accent-orange hover:text-text-primary focus:border-accent-orange focus:text-text-primary"
             onClick={() => setShowNewDeckModal(true)}
             tabIndex={focusedDeckIndex === decks.length ? 0 : -1}
           >
@@ -664,7 +664,7 @@ export function WordBankPage() {
               onClick={() => setAddTab("single")}
             >
               Single Word
-              <kbd className="ml-2 rounded border border-[#2f2f2f] bg-bg-elevated px-[5px] py-[1px] font-mono text-[10px] text-text-secondary opacity-70">Shift+1</kbd>
+              <kbd className="ml-2 rounded border border-[var(--border-muted)] bg-bg-elevated px-[5px] py-[1px] font-mono text-[10px] text-text-secondary opacity-70">Shift+1</kbd>
             </button>
             <button
               type="button"
@@ -674,7 +674,7 @@ export function WordBankPage() {
               onClick={() => setAddTab("import")}
             >
               Bulk Import
-              <kbd className="ml-2 rounded border border-[#2f2f2f] bg-bg-elevated px-[5px] py-[1px] font-mono text-[10px] text-text-secondary opacity-70">Shift+2</kbd>
+              <kbd className="ml-2 rounded border border-[var(--border-muted)] bg-bg-elevated px-[5px] py-[1px] font-mono text-[10px] text-text-secondary opacity-70">Shift+2</kbd>
             </button>
           </div>
 
@@ -753,7 +753,7 @@ export function WordBankPage() {
 
                     {/* Text Input */}
                     <textarea
-                      className="min-h-40 w-full resize-y rounded-[10px] border border-[#2f2f2f] bg-[#141414] p-[14px] font-mono text-sm leading-relaxed text-inherit"
+                      className="min-h-40 w-full resize-y rounded-[10px] border border-[var(--border-muted)] bg-bg-page p-[14px] font-mono text-sm leading-relaxed text-inherit"
                       placeholder={`target,reading,meaning,romanization,example,tags
 食べる,たべる,to eat,taberu,私は寿司を食べます。,verb,n5
 飲む,のむ,to drink,nomu,お茶を飲みます。,verb,n5
@@ -796,7 +796,7 @@ export function WordBankPage() {
               ) : (
                 <>
                   {/* Field Mapping */}
-                  <div className="flex flex-col gap-3 rounded-lg border border-[#2f2f2f] bg-bg-elevated p-4">
+                  <div className="flex flex-col gap-3 rounded-lg border border-[var(--border-muted)] bg-bg-elevated p-4">
                     <h3 className="m-0 text-sm font-semibold">Field Mapping</h3>
                     <p className="m-0 text-[12px] text-text-secondary">Map each column to the correct field:</p>
                     
@@ -834,7 +834,7 @@ export function WordBankPage() {
                   {importPreview && importPreview.length > 0 && (
                     <div className="flex flex-col gap-3">
                       <h3 className="m-0 text-sm font-semibold">Preview ({importPreview.length} of {rawImportData.rows.length} rows)</h3>
-                      <div className="max-h-60 overflow-auto rounded-lg border border-[#2f2f2f]">
+                      <div className="max-h-60 overflow-auto rounded-lg border border-[var(--border-muted)]">
                         <table className="w-full text-sm">
                           <thead className="sticky top-0 bg-bg-elevated">
                             <tr>
@@ -846,7 +846,7 @@ export function WordBankPage() {
                           </thead>
                           <tbody>
                             {importPreview.map((row, i) => (
-                              <tr key={i} className="border-t border-[#2f2f2f]">
+                              <tr key={i} className="border-t border-[var(--border-muted)]">
                                 <td className="px-3 py-2 [font-family:var(--font-jp)]">{row.target || '-'}</td>
                                 <td className="px-3 py-2 text-text-secondary [font-family:var(--font-jp)]">{row.reading || '-'}</td>
                                 <td className="px-3 py-2 text-text-secondary">{row.meaning || '-'}</td>
@@ -949,7 +949,7 @@ export function WordBankPage() {
           )}
 
           {filteredWords.length > 0 ? (
-            <div className="rounded-base border border-[#2f2f2f] overflow-hidden">
+            <div className="rounded-base border border-[var(--border-muted)] overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-bg-elevated">
                   <tr>
@@ -974,7 +974,7 @@ export function WordBankPage() {
                     <th className="w-20 px-3 py-3 text-right"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#2f2f2f]">
+                <tbody className="divide-y divide-[var(--border-muted)]">
                   {filteredWords.map((word: any) => (
                     <>
                       <tr
@@ -1125,7 +1125,7 @@ export function WordBankPage() {
         <>
           <button
             type="button"
-            className="fixed inset-0 z-[100] border-0 bg-black/60 p-0"
+            className="fixed inset-0 z-[100] border-0 bg-[var(--overlay-bg)] p-0"
             onClick={() => setShowNewDeckModal(false)}
             onKeyDown={(e) => {
               if (e.key === "Escape") {
@@ -1139,7 +1139,7 @@ export function WordBankPage() {
           />
           <dialog
             ref={modalRef}
-            className="fixed left-1/2 top-1/2 z-[101] flex w-[420px] max-w-[90vw] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[#2f2f2f] bg-bg-card p-7 text-text-primary"
+            className="fixed left-1/2 top-1/2 z-[101] flex w-[420px] max-w-[90vw] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
             open
             aria-label="Create new deck"
           >
@@ -1173,12 +1173,12 @@ export function WordBankPage() {
         <>
           <button
             type="button"
-            className="fixed inset-0 z-[100] border-0 bg-black/60 p-0"
+            className="fixed inset-0 z-[100] border-0 bg-[var(--overlay-bg)] p-0"
             onClick={() => setShowEditDeckModal(false)}
             aria-label="Close edit deck modal"
           />
           <dialog
-            className="fixed left-1/2 top-1/2 z-[101] flex w-[420px] max-w-[90vw] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[#2f2f2f] bg-bg-card p-7 text-text-primary"
+            className="fixed left-1/2 top-1/2 z-[101] flex w-[420px] max-w-[90vw] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
             open
             aria-label="Edit deck"
           >
@@ -1228,12 +1228,12 @@ export function WordBankPage() {
         <>
           <button
             type="button"
-            className="fixed inset-0 z-[100] border-0 bg-black/60 p-0"
+            className="fixed inset-0 z-[100] border-0 bg-[var(--overlay-bg)] p-0"
             onClick={() => setShowDeleteConfirm(false)}
             aria-label="Close delete confirmation"
           />
           <dialog
-            className="fixed left-1/2 top-1/2 z-[101] flex w-[420px] max-w-[90vw] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[#2f2f2f] bg-bg-card p-7 text-text-primary"
+            className="fixed left-1/2 top-1/2 z-[101] flex w-[420px] max-w-[90vw] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
             open
             aria-label="Delete deck confirmation"
           >
@@ -1270,7 +1270,7 @@ export function WordBankPage() {
         <>
           <button
             type="button"
-            className="fixed inset-0 z-[100] border-0 bg-black/60 p-0"
+            className="fixed inset-0 z-[100] border-0 bg-[var(--overlay-bg)] p-0"
             onClick={() => {
               setShowEditWordModal(false);
               setEditingWord(null);
@@ -1278,7 +1278,7 @@ export function WordBankPage() {
             aria-label="Close edit word modal"
           />
           <dialog
-            className="fixed left-1/2 top-1/2 z-[101] flex w-[500px] max-w-[90vw] max-h-[90vh] overflow-auto -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[#2f2f2f] bg-bg-card p-7 text-text-primary"
+            className="fixed left-1/2 top-1/2 z-[101] flex w-[500px] max-w-[90vw] max-h-[90vh] overflow-auto -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
             open
             aria-label="Edit word"
           >

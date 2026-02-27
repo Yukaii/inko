@@ -6,19 +6,19 @@ export default {
     extend: {
       colors: {
         accent: {
-          orange: "#ff6b35",
-          teal: "#00d4aa",
+          orange: "var(--accent-orange)",
+          teal: "var(--accent-teal)",
         },
         bg: {
-          page: "#1a1a1a",
-          card: "#212121",
-          elevated: "#2d2d2d",
-          placeholder: "#3d3d3d",
+          page: "var(--bg-page)",
+          card: "var(--bg-card)",
+          elevated: "var(--bg-elevated)",
+          placeholder: "color-mix(in oklab, var(--text-secondary) 60%, var(--bg-page))",
         },
         text: {
-          primary: "#ffffff",
-          secondary: "#777777",
-          "on-accent": "#0d0d0d",
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          "on-accent": "var(--text-on-accent)",
         },
       },
       borderRadius: {

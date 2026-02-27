@@ -4,11 +4,34 @@ import { RepositoryError } from "../services/repository.js";
 import { buildServer } from "../server.js";
 import { createMagicToken, issueAccessToken } from "../lib/auth.js";
 import type { Mailer } from "../lib/mailer.js";
+import { DefaultThemes } from "@inko/shared";
 
 function makeRepositoryMock(): Repository {
   return {
-    getOrCreateUser: vi.fn(async (email: string) => ({ id: "user_1", email, createdAt: Date.now() })),
-    getUserById: vi.fn(async (userId: string) => ({ id: userId, email: "user@example.com", createdAt: Date.now() })),
+    getOrCreateUser: vi.fn(async (email: string) => ({
+      id: "user_1",
+      email,
+      displayName: "user",
+      themeMode: "dark" as const,
+      themes: DefaultThemes,
+      createdAt: Date.now(),
+    })),
+    getUserById: vi.fn(async (userId: string) => ({
+      id: userId,
+      email: "user@example.com",
+      displayName: "user",
+      themeMode: "dark" as const,
+      themes: DefaultThemes,
+      createdAt: Date.now(),
+    })),
+    updateUserProfile: vi.fn(async (userId: string, input) => ({
+      id: userId,
+      email: "user@example.com",
+      displayName: input.displayName,
+      themeMode: input.themeMode,
+      themes: input.themes,
+      createdAt: Date.now(),
+    })),
     listDecks: vi.fn(async () => []),
     createDeck: vi.fn(async () => ({
       id: "deck_1",
@@ -125,6 +148,36 @@ describe("API integration", () => {
 
     expect(meRes.statusCode).toBe(200);
     expect(meRes.json().id).toBe("user_1");
+    expect(meRes.json().displayName).toBe("user");
+
+    await app.close();
+  });
+
+  it("updates profile name and theme preferences via /api/me", async () => {
+    const app = await buildServer({ repository: repo, mailer });
+    const accessToken = await issueAccessToken("user_1", "user@example.com");
+
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/me",
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: {
+        displayName: "Yukai",
+        themeMode: "light",
+        themes: {
+          ...DefaultThemes,
+          light: {
+            ...DefaultThemes.light,
+            accentOrange: "#ff9900",
+          },
+        },
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().displayName).toBe("Yukai");
+    expect(res.json().themeMode).toBe("light");
+    expect(res.json().themes.light.accentOrange).toBe("#ff9900");
 
     await app.close();
   });
@@ -205,6 +258,63 @@ describe("API integration", () => {
       headers: auth,
     });
     expect(dashboardRes.statusCode).toBe(200);
+
+    await app.close();
+  });
+
+  it("rejects access to protected endpoints without bearer token", async () => {
+    const app = await buildServer({ repository: repo, mailer });
+
+    const protectedRequests = [
+      app.inject({ method: "GET", url: "/api/me" }),
+      app.inject({ method: "GET", url: "/api/decks" }),
+      app.inject({ method: "POST", url: "/api/practice/session/start", payload: { deckId: "deck_1" } }),
+      app.inject({ method: "GET", url: "/api/dashboard/summary" }),
+    ];
+
+    const responses = await Promise.all(protectedRequests);
+    for (const response of responses) {
+      expect(response.statusCode).toBe(401);
+      expect(response.json().message).toContain("Missing bearer token");
+    }
+
+    await app.close();
+  });
+
+  it("rejects protected endpoints with invalid bearer token", async () => {
+    const app = await buildServer({ repository: repo, mailer });
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/decks",
+      headers: { authorization: "Bearer invalid.token.value" },
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.json().message).toContain("Invalid token");
+
+    await app.close();
+  });
+
+  it("returns bad request when practice submit is missing wordId query param", async () => {
+    const app = await buildServer({ repository: repo, mailer });
+    const accessToken = await issueAccessToken("user_1", "user@example.com");
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/practice/session/session_1/card/submit",
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: {
+        handwritingCompleted: true,
+        typingInput: "勉強",
+        typingMs: 1800,
+        audioPlayed: true,
+        listeningConfidence: 4,
+      },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json().message).toContain("wordId query param is required");
 
     await app.close();
   });

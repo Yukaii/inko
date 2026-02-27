@@ -2,6 +2,7 @@ import type {
   CreateDeckInput,
   CreateWordInput,
   SubmitPracticeCardInput,
+  UpdateProfileInput,
   UpdateDeckInput,
   UpdateWordInput,
 } from "@inko/shared";
@@ -43,6 +44,8 @@ export const api = {
     }),
 
   me: (token: string) => request<any>("/api/me", {}, token),
+  updateMe: (token: string, input: UpdateProfileInput) =>
+    request<any>("/api/me", { method: "PATCH", body: JSON.stringify(input) }, token),
   dashboard: (token: string) => request<any>("/api/dashboard/summary", {}, token),
 
   listDecks: (token: string) => request<any[]>("/api/decks", {}, token),

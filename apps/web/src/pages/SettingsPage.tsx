@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 
 export function SettingsPage() {
@@ -45,7 +46,7 @@ export function SettingsPage() {
               <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">General</h2>
               
               <div className="flex flex-col gap-0">
-                <div className="flex items-center justify-between border-b border-[#1f1f1f] py-4">
+                <div className="flex items-center justify-between border-b border-[var(--border-subtle)] py-4">
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium">Language</span>
                     <span className="text-[13px] text-text-secondary">Currently fixed to Japanese</span>
@@ -53,12 +54,14 @@ export function SettingsPage() {
                   <span className="font-mono text-sm text-text-secondary">日本語</span>
                 </div>
 
-                <div className="flex items-center justify-between border-b border-[#1f1f1f] py-4">
+                <div className="flex items-center justify-between border-b border-[var(--border-subtle)] py-4">
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium">Theme</span>
-                    <span className="text-[13px] text-text-secondary">Dark mode only for now</span>
+                    <span className="text-[13px] text-text-secondary">Use Profile to toggle and customize dark/light palettes</span>
                   </div>
-                  <span className="font-mono text-sm text-text-secondary">Dark</span>
+                  <Link to="/profile" className="font-mono text-xs text-accent-orange hover:underline">
+                    Theme Editor
+                  </Link>
                 </div>
 
                 <div className="flex items-center justify-between py-4">
@@ -77,16 +80,19 @@ export function SettingsPage() {
               <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">Account</h2>
               
               <div className="flex flex-col gap-0">
-                <div className="flex items-center justify-between border-b border-[#1f1f1f] py-4">
+                <div className="flex items-center justify-between border-b border-[var(--border-subtle)] py-4">
                   <div className="flex flex-col gap-1">
-                    <span className="text-sm font-medium">Authentication</span>
-                    <span className="text-[13px] text-text-secondary">Managed via Convex Auth</span>
+                    <span className="text-sm font-medium">Profile</span>
+                    <span className="text-[13px] text-text-secondary">View account details and session controls</span>
                   </div>
+                  <Link to="/profile" className="font-mono text-xs text-accent-orange hover:underline">
+                    Open Profile
+                  </Link>
                 </div>
               </div>
 
-              <div className="border-t border-[#1f1f1f] pt-4">
-                <button type="button" className="bg-[#3d1f1f] text-[#ff6b6b] hover:bg-[#4d2525]" onClick={() => setToken(null)}>
+              <div className="border-t border-[var(--border-subtle)] pt-4">
+                <button type="button" className="bg-[var(--danger-bg)] text-[var(--danger-text)] hover:bg-[var(--danger-bg-hover)]" onClick={() => setToken(null)}>
                   Sign Out
                 </button>
               </div>
