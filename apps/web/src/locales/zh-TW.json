@@ -211,6 +211,8 @@
       "deleting": "刪除中...",
       "clear_selection": "清除選取",
       "showing_count": "本頁顯示 {{count}} 個單字",
+      "total_count": "共 {{count}} 個單字",
+      "page_summary": "第{{page}}頁 ・ {{shown}}/{{total}}",
       "all_tags": "所有標籤",
       "target": "目標",
       "reading": "讀音",

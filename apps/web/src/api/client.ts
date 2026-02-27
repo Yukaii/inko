@@ -131,7 +131,7 @@ export const api = {
     if (options?.limit) params.set("limit", String(options.limit));
     const query = params.toString();
     const suffix = query ? `?${query}` : "";
-    return request<{ words: WordDTO[]; nextCursor: string | null; isDone: boolean }>(
+    return request<{ words: WordDTO[]; nextCursor: string | null; isDone: boolean; totalCount: number }>(
       `/api/decks/${deckId}/words/page${suffix}`,
       {},
       token,

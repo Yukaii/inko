@@ -211,6 +211,8 @@
       "deleting": "Deleting...",
       "clear_selection": "Clear selection",
       "showing_count": "Showing {{count}} words on this page",
+      "total_count": "Total {{count}} words",
+      "page_summary": "P{{page}} · {{shown}}/{{total}}",
       "all_tags": "All Tags",
       "target": "Target",
       "reading": "Reading",

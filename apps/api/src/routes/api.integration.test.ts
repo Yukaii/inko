@@ -53,6 +53,12 @@ function makeRepositoryMock(): Repository {
       createdAt: Date.now(),
     })),
     listDeckWords: vi.fn(async () => []),
+    listDeckWordsPage: vi.fn(async () => ({
+      words: [],
+      nextCursor: null,
+      isDone: true,
+      totalCount: 0,
+    })),
     createWord: vi.fn(async () => ({
       id: "word_1",
       userId: "user_1",
@@ -285,6 +291,19 @@ describe("API integration", () => {
       headers: auth,
     });
     expect(listWordsRes.statusCode).toBe(200);
+
+    const listWordsPageRes = await app.inject({
+      method: "GET",
+      url: "/api/decks/deck_1/words/page?limit=100",
+      headers: auth,
+    });
+    expect(listWordsPageRes.statusCode).toBe(200);
+    expect(listWordsPageRes.json()).toEqual({
+      words: [],
+      nextCursor: null,
+      isDone: true,
+      totalCount: 0,
+    });
 
     const startRes = await app.inject({
       method: "POST",
