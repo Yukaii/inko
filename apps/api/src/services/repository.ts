@@ -83,7 +83,7 @@ type ConvexPracticeSession = {
 };
 
 const CONVEX_ARRAY_ARG_LIMIT = 8192;
-const BATCH_WORDS_CHUNK_SIZE = 1000;
+const BATCH_WORDS_CHUNK_SIZE = 200;
 const DECK_DELETE_PAGE_SIZE = 500;
 
 function chunkArray<T>(items: T[], chunkSize: number): T[][] {
