@@ -75,7 +75,7 @@ const MOCK_CARDS_EN: SimulatorCard[] = [
 const MOCK_CARDS_ZH_TW: SimulatorCard[] = [
   {
     target: "heart",
-    reading: "ㄏㄚˋ ㄊ",
+    reading: "/hɑːrt/",
     meaning: "心、心臟",
     answer: "heart",
     language: "zh-TW",
@@ -89,7 +89,7 @@ const MOCK_CARDS_ZH_TW: SimulatorCard[] = [
   },
   {
     target: "adventure",
-    reading: "ㄜˋ ㄉ ㄨㄟㄣ ㄔㄜˋ",
+    reading: "/ədˈven.tʃər/",
     meaning: "冒險",
     answer: "adventure",
     language: "zh-TW",
