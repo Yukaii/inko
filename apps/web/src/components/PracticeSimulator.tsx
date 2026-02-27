@@ -7,49 +7,126 @@ type SimulatorCard = {
   reading: string;
   meaning: string;
   answer: string;
-  language: "ja" | "en";
+  language: "ja" | "en" | "zh-TW";
 };
 
-const MOCK_CARDS: SimulatorCard[] = [
+const MOCK_CARDS_JA: SimulatorCard[] = [
+  {
+    target: "heart",
+    reading: "/hɑːrt/",
+    meaning: "心、心臓",
+    answer: "heart",
+    language: "ja",
+  },
+  {
+    target: "學習",
+    reading: "ㄒㄩㄝˊ ㄒㄧˊ",
+    meaning: "学ぶ、学習",
+    answer: "xuexi",
+    language: "ja",
+  },
+  {
+    target: "adventure",
+    reading: "/ədˈven.tʃər/",
+    meaning: "冒険",
+    answer: "adventure",
+    language: "ja",
+  },
+  {
+    target: "記憶",
+    reading: "ㄐㄧˋ ㄧˋ",
+    meaning: "記憶",
+    answer: "jiyi",
+    language: "ja",
+  },
+];
+
+const MOCK_CARDS_EN: SimulatorCard[] = [
   {
     target: "心",
     reading: "こころ",
     meaning: "heart / spirit",
     answer: "kokoro",
-    language: "ja",
+    language: "en",
   },
   {
-    target: "学び",
-    reading: "まなび",
-    meaning: "learning / study",
-    answer: "manabi",
-    language: "ja",
+    target: "學習",
+    reading: "ㄒㄩㄝˊ ㄒㄧˊ",
+    meaning: "to learn / study",
+    answer: "xuexi",
+    language: "en",
   },
   {
     target: "冒険",
     reading: "ぼうけん",
     meaning: "adventure",
     answer: "bouken",
-    language: "ja",
+    language: "en",
+  },
+  {
+    target: "記憶",
+    reading: "ㄐㄧˋ ㄧˋ",
+    meaning: "memory / recall",
+    answer: "jiyi",
+    language: "en",
+  },
+];
+
+const MOCK_CARDS_ZH_TW: SimulatorCard[] = [
+  {
+    target: "heart",
+    reading: "ㄏㄚˋ ㄊ",
+    meaning: "心、心臟",
+    answer: "heart",
+    language: "zh-TW",
+  },
+  {
+    target: "学ぶ",
+    reading: "まなぶ",
+    meaning: "學習",
+    answer: "manabu",
+    language: "zh-TW",
+  },
+  {
+    target: "adventure",
+    reading: "ㄜˋ ㄉ ㄨㄟㄣ ㄔㄜˋ",
+    meaning: "冒險",
+    answer: "adventure",
+    language: "zh-TW",
   },
   {
     target: "記憶",
     reading: "きおく",
-    meaning: "memory / recall",
+    meaning: "記憶、回憶",
     answer: "kioku",
-    language: "ja",
+    language: "zh-TW",
   },
 ];
 
 export function PracticeSimulator() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [cardIndex, setCardIndex] = useState(0);
   const [typed, setTyped] = useState("");
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [streak, setStreak] = useState(0);
-  
+
+  // Select card set based on current language
+  const currentLang = i18n.language;
+  const MOCK_CARDS =
+    currentLang === 'ja' ? MOCK_CARDS_JA :
+    currentLang === 'zh-TW' ? MOCK_CARDS_ZH_TW :
+    MOCK_CARDS_EN;
+
   const card = MOCK_CARDS[cardIndex];
   const typingTimerRef = useRef<number | null>(null);
+
+  // Reset simulator when language changes
+  useEffect(() => {
+    setCardIndex(0);
+    setTyped("");
+    setStreak(0);
+    setIsTransitioning(false);
+  }, [currentLang]);
 
   useEffect(() => {
     if (isTransitioning) return;
