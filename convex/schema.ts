@@ -91,6 +91,7 @@ export default defineSchema({
     listeningDueAt: v.number(),
     lastPracticedAt: v.optional(v.number()),
   })
+    .index("by_user", ["userId"])
     .index("by_user_word", ["userId", "wordId"])
     .index("by_user_shape_due", ["userId", "shapeDueAt"])
     .index("by_user_typing_due", ["userId", "typingDueAt"])
