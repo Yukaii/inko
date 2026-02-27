@@ -255,7 +255,7 @@ export function LandingPage() {
                 <a href="#features" className="text-text-secondary hover:text-accent-teal transition-colors">Features</a>
                 <a href="#how-it-works" className="text-text-secondary hover:text-accent-teal transition-colors">How it Works</a>
               </div>
-              <div className="flex flex-col gap-3">
+              {/* <div className="flex flex-col gap-3">
                 <span className="font-bold text-text-primary mb-2">Support</span>
                 <a href="#" className="text-text-secondary hover:text-accent-orange transition-colors">Help Center</a>
                 <a href="#" className="text-text-secondary hover:text-accent-orange transition-colors">Contact Us</a>
@@ -265,7 +265,7 @@ export function LandingPage() {
                 <span className="font-bold text-text-primary mb-2">Legal</span>
                 <a href="#" className="text-text-secondary hover:text-text-primary transition-colors">Privacy Policy</a>
                 <a href="#" className="text-text-secondary hover:text-text-primary transition-colors">Terms of Service</a>
-              </div>
+              </div> */}
             </div>
           </div>
           <div className="h-[1px] w-full bg-[#2D2D2D] mb-6" />
