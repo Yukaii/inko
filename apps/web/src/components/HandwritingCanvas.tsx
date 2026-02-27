@@ -15,10 +15,11 @@ export function HandwritingCanvas({ onChanged }: Props) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const rootStyles = getComputedStyle(document.documentElement);
     ctx.lineWidth = 4;
     ctx.lineCap = "round";
-    ctx.strokeStyle = "#ffffff";
-    ctx.fillStyle = "#2d2d2d";
+    ctx.strokeStyle = rootStyles.getPropertyValue("--text-primary").trim() || "#ffffff";
+    ctx.fillStyle = rootStyles.getPropertyValue("--bg-elevated").trim() || "#2d2d2d";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }, []);
 
@@ -62,7 +63,8 @@ export function HandwritingCanvas({ onChanged }: Props) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.fillStyle = "#2d2d2d";
+    const rootStyles = getComputedStyle(document.documentElement);
+    ctx.fillStyle = rootStyles.getPropertyValue("--bg-elevated").trim() || "#2d2d2d";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     setHasStrokes(false);
     onChanged(false);

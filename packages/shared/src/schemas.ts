@@ -1,10 +1,54 @@
 import { z } from "zod";
 
 export const LanguageSchema = z.literal("ja");
+export const ThemeModeSchema = z.union([z.literal("dark"), z.literal("light")]);
+export const HexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+
+export const ThemePaletteSchema = z.object({
+  accentOrange: HexColorSchema,
+  accentTeal: HexColorSchema,
+  bgPage: HexColorSchema,
+  bgCard: HexColorSchema,
+  bgElevated: HexColorSchema,
+  textPrimary: HexColorSchema,
+  textSecondary: HexColorSchema,
+  textOnAccent: HexColorSchema,
+});
+
+export const ThemeConfigSchema = z.object({
+  dark: ThemePaletteSchema,
+  light: ThemePaletteSchema,
+});
+
+export const DefaultThemes = {
+  dark: {
+    accentOrange: "#ff6b35",
+    accentTeal: "#00d4aa",
+    bgPage: "#1a1a1a",
+    bgCard: "#212121",
+    bgElevated: "#2d2d2d",
+    textPrimary: "#ffffff",
+    textSecondary: "#777777",
+    textOnAccent: "#0d0d0d",
+  },
+  light: {
+    accentOrange: "#ff6b35",
+    accentTeal: "#0f766e",
+    bgPage: "#f6f4ef",
+    bgCard: "#ffffff",
+    bgElevated: "#ece7df",
+    textPrimary: "#111827",
+    textSecondary: "#4b5563",
+    textOnAccent: "#111827",
+  },
+} satisfies z.infer<typeof ThemeConfigSchema>;
 
 export const UserSchema = z.object({
   id: z.string(),
   email: z.string().email(),
+  displayName: z.string().min(1).max(60),
+  themeMode: ThemeModeSchema,
+  themes: ThemeConfigSchema,
   createdAt: z.number(),
 });
 
@@ -52,6 +96,11 @@ export const SessionSummarySchema = z.object({
 
 export const MagicLinkRequestSchema = z.object({ email: z.string().email() });
 export const MagicLinkVerifySchema = z.object({ token: z.string().min(16) });
+export const UpdateProfileSchema = z.object({
+  displayName: z.string().trim().min(1).max(60),
+  themeMode: ThemeModeSchema,
+  themes: ThemeConfigSchema,
+});
 
 export const CreateDeckSchema = z.object({
   name: z.string().min(1),
@@ -105,3 +154,7 @@ export type CreateWordInput = z.infer<typeof CreateWordSchema>;
 export type UpdateWordInput = z.infer<typeof UpdateWordSchema>;
 export type StartPracticeSessionInput = z.infer<typeof StartPracticeSessionSchema>;
 export type SubmitPracticeCardInput = z.infer<typeof SubmitPracticeCardSchema>;
+export type ThemeMode = z.infer<typeof ThemeModeSchema>;
+export type ThemePalette = z.infer<typeof ThemePaletteSchema>;
+export type ThemeConfig = z.infer<typeof ThemeConfigSchema>;
+export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;

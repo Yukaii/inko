@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { MagicLinkRequestSchema, MagicLinkVerifySchema } from "@inko/shared";
+import { MagicLinkRequestSchema, MagicLinkVerifySchema, UpdateProfileSchema } from "@inko/shared";
 import { consumeMagicToken, createMagicToken, issueAccessToken } from "../lib/auth.js";
 import type { Mailer } from "../lib/mailer.js";
 import { repository, type Repository } from "../services/repository.js";
@@ -42,6 +42,15 @@ export async function authRoutes(app: FastifyInstance, repo: Repository = reposi
 
   app.get("/api/me", { preHandler: requireAuth }, async (request, reply) => {
     const user = await repo.getUserById(request.auth!.userId);
+    if (!user) {
+      return reply.notFound("User not found");
+    }
+    return user;
+  });
+
+  app.patch("/api/me", { preHandler: requireAuth }, async (request, reply) => {
+    const body = UpdateProfileSchema.parse(request.body);
+    const user = await repo.updateUserProfile(request.auth!.userId, body);
     if (!user) {
       return reply.notFound("User not found");
     }

@@ -291,7 +291,7 @@ export function PracticePage() {
   // Session done screen
   if (sessionDone) {
     return (
-      <section className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-center overflow-hidden bg-[#0e0e0e]" aria-label="Practice complete">
+      <section className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-center overflow-hidden bg-bg-page" aria-label="Practice complete">
         <div className="flex flex-col items-center gap-4">
           <div className="mb-2 text-5xl text-accent-teal" aria-hidden="true">&#x2714;</div>
           <h1 className="m-0 text-4xl text-text-primary [font-family:var(--font-display)]">Session Complete</h1>
@@ -311,9 +311,9 @@ export function PracticePage() {
               </div>
             </div>
           ) : null}
-          <button type="button" className="mt-8 rounded-[10px] border border-[#2f2f2f] bg-bg-elevated px-6 py-3 text-sm font-medium text-text-primary hover:border-accent-orange" onClick={() => navigate("/dashboard")}>
+          <button type="button" className="mt-8 rounded-[10px] border border-[var(--border-muted)] bg-bg-elevated px-6 py-3 text-sm font-medium text-text-primary hover:border-accent-orange" onClick={() => navigate("/dashboard")}>
             Back to Dashboard
-            <kbd className="ml-3 rounded border border-[#333] bg-[#222] px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">b</kbd>
+            <kbd className="ml-3 rounded border border-[var(--border-strong)] bg-bg-card px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">b</kbd>
           </button>
         </div>
       </section>
@@ -323,7 +323,7 @@ export function PracticePage() {
   // Loading state
   if (!card) {
     return (
-      <section className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-center overflow-hidden bg-[#0e0e0e]" aria-label="Loading practice">
+      <section className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-center overflow-hidden bg-bg-page" aria-label="Loading practice">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-pulse text-base text-text-secondary">Loading...</div>
         </div>
@@ -334,7 +334,7 @@ export function PracticePage() {
   return (
     <section
       ref={zoneRef}
-      className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-center overflow-hidden bg-[#0e0e0e]"
+      className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-center overflow-hidden bg-bg-page"
       tabIndex={-1}
       aria-label="Practice session"
       onKeyDown={handleKeyDown}
@@ -343,7 +343,7 @@ export function PracticePage() {
       {/* Minimal top bar */}
       <div className="fixed inset-x-0 top-0 z-[210] flex items-center justify-between px-6 py-4 opacity-60 transition-opacity hover:opacity-100 focus-within:opacity-100">
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2a2a2a] bg-[#1a1a1a] px-3.5 py-1.5 text-sm text-accent-orange [font-family:var(--font-display)]" aria-label={`Current streak: ${cardStreak}`}>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-muted)] bg-bg-page px-3.5 py-1.5 text-sm text-accent-orange [font-family:var(--font-display)]" aria-label={`Current streak: ${cardStreak}`}>
             {cardStreak > 0 ? (
               <>
                 <span className="text-base" aria-hidden="true">&#x1F525;</span>
@@ -359,12 +359,12 @@ export function PracticePage() {
             </span>
           ) : null}
         </div>
-        <button type="button" className="inline-flex items-center gap-2 rounded-lg border border-[#2a2a2a] bg-transparent px-3.5 py-1.5 text-[13px] font-normal text-text-secondary hover:border-[#444] hover:text-text-primary" onClick={() => requestFinish()}>
+        <button type="button" className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-1.5 text-[13px] font-normal text-text-secondary hover:border-[var(--border-strong)] hover:text-text-primary" onClick={() => requestFinish()}>
           end session
-          <kbd className="rounded border border-[#333] bg-[#222] px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">esc</kbd>
+          <kbd className="rounded border border-[var(--border-strong)] bg-bg-card px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">esc</kbd>
         </button>
       </div>
-      {finishError ? <div className="fixed left-1/2 top-14 z-[220] -translate-x-1/2 rounded-lg border border-[#5b2c2c] bg-[rgba(61,31,31,0.92)] px-3 py-2 text-xs text-[#ff8a8a]">{finishError}</div> : null}
+      {finishError ? <div className="fixed left-1/2 top-14 z-[220] -translate-x-1/2 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-toast-bg)] px-3 py-2 text-xs text-[var(--danger-text)]">{finishError}</div> : null}
 
       {/* Center focus area */}
       <div className={`flex flex-col items-center gap-4 transition-all ${cardTransition ? "-translate-y-3 opacity-0" : ""}`}>
@@ -378,7 +378,7 @@ export function PracticePage() {
 
         {/* Reading hint (small, below kanji) */}
         {card.reading ? (
-          <div className="-mt-1 text-lg text-[#4a4a4a] [font-family:var(--font-jp)]" lang="ja">{card.reading}</div>
+          <div className="-mt-1 text-lg text-text-secondary [font-family:var(--font-jp)]" lang="ja">{card.reading}</div>
         ) : null}
 
         {/* Monkeytype-style character display */}
@@ -390,17 +390,17 @@ export function PracticePage() {
                 c.state === "correct"
                   ? "text-accent-teal"
                   : c.state === "wrong"
-                    ? "text-[#ff4444] underline decoration-[#ff444466]"
+                    ? "text-[var(--danger-text)] underline decoration-[color:color-mix(in_oklab,var(--danger-text)_40%,transparent)]"
                     : c.state === "cursor"
                       ? "text-text-primary underline decoration-accent-orange"
-                      : "text-[#333]"
+                      : "text-text-secondary"
               }
             >
               {c.char}
             </span>
           ))}
           {romajiChars.length === 0 ? (
-            <span className="text-lg tracking-[0.02em] text-[#333]">
+            <span className="text-lg tracking-[0.02em] text-text-secondary">
               type romaji...
             </span>
           ) : null}
@@ -432,9 +432,9 @@ export function PracticePage() {
         {/* Feedback line */}
         <div className="mt-2 min-h-6 text-sm" aria-live="polite">
           {lastSubmitAccepted === false ? (
-            <span className="text-sm text-[#ff6b6b]">not quite &mdash; try again</span>
+            <span className="text-sm text-[var(--danger-text)]">not quite &mdash; try again</span>
           ) : typingInput && !typingFeedback.onTrack ? (
-            <span className="text-[13px] text-[#ff6b6b]">off track</span>
+            <span className="text-[13px] text-[var(--danger-text)]">off track</span>
           ) : typingInput && typingFeedback.onTrack ? (
             <span className="font-mono text-[13px] text-accent-teal">{typingFeedback.progress}%</span>
           ) : null}
@@ -443,7 +443,7 @@ export function PracticePage() {
 
       {/* Subtle progress bar at bottom */}
       <div className="fixed inset-x-0 bottom-0 z-[210]">
-        <div className="h-[3px] overflow-hidden bg-[#1a1a1a]" aria-hidden="true">
+        <div className="h-[3px] overflow-hidden bg-bg-page" aria-hidden="true">
           <div
             className={`h-full transition-[width] duration-100 ${typingFeedback.complete ? "bg-accent-teal" : "bg-gradient-to-r from-accent-orange to-accent-teal"}`}
             style={{ width: `${typingFeedback.progress}%` }}

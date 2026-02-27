@@ -11,10 +11,46 @@
   --text-primary: #ffffff;
   --text-secondary: #777777;
   --text-on-accent: #0d0d0d;
+  --border-subtle: color-mix(in oklab, var(--text-secondary) 25%, var(--bg-page));
+  --border-muted: color-mix(in oklab, var(--text-secondary) 40%, var(--bg-page));
+  --border-strong: color-mix(in oklab, var(--text-secondary) 55%, var(--bg-page));
+  --danger-bg: #3d1f1f;
+  --danger-bg-hover: #4d2525;
+  --danger-text: #ff6b6b;
+  --danger-border: color-mix(in oklab, var(--danger-text) 45%, var(--bg-page));
+  --danger-toast-bg: color-mix(in oklab, var(--danger-bg) 92%, transparent);
+  --overlay-bg: color-mix(in oklab, #000000 60%, transparent);
+  --overlay-bg-strong: color-mix(in oklab, #000000 80%, transparent);
   --radius: 16px;
   --font-display: "Oswald", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
   --font-jp: "Noto Sans JP", sans-serif;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --accent-orange: #ff6b35;
+  --accent-teal: #0f766e;
+  --bg-page: #f6f4ef;
+  --bg-card: #ffffff;
+  --bg-elevated: #ece7df;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-on-accent: #111827;
+  --border-subtle: color-mix(in oklab, var(--text-secondary) 22%, var(--bg-page));
+  --border-muted: color-mix(in oklab, var(--text-secondary) 35%, var(--bg-page));
+  --border-strong: color-mix(in oklab, var(--text-secondary) 48%, var(--bg-page));
+  --danger-bg: #fce8e8;
+  --danger-bg-hover: #f8d7d7;
+  --danger-text: #c62828;
+  --danger-border: color-mix(in oklab, var(--danger-text) 30%, var(--bg-page));
+  --danger-toast-bg: color-mix(in oklab, var(--danger-bg) 94%, transparent);
+  --overlay-bg: color-mix(in oklab, #000000 45%, transparent);
+  --overlay-bg-strong: color-mix(in oklab, #000000 65%, transparent);
+  color-scheme: light;
 }
 
 @layer base {
@@ -22,9 +58,16 @@
     @apply box-border;
   }
 
+  html,
+  body {
+    @apply min-h-screen;
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+  }
+
   body {
     @apply m-0 text-text-primary [font-family:var(--font-mono)];
-    background: radial-gradient(circle at top right, #2b2b2b, #161616 60%);
+    background: linear-gradient(160deg, var(--bg-elevated) 0%, var(--bg-page) 30%, var(--bg-page) 100%);
   }
 
   a {
@@ -41,7 +84,9 @@
   input,
   textarea,
   select {
-    @apply w-full rounded-[10px] border border-[#3a3a3a] bg-[#141414] px-3 py-2.5;
+    @apply w-full rounded-[10px] border px-3 py-2.5;
+    border-color: var(--border-muted);
+    background: color-mix(in oklab, var(--bg-card) 80%, var(--bg-page));
   }
 
   button {

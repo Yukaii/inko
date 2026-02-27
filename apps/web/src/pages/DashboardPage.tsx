@@ -15,6 +15,11 @@ export function DashboardPage() {
     queryKey: ["dashboard"],
     queryFn: () => api.dashboard(token ?? ""),
   });
+  const meQuery = useQuery({
+    queryKey: ["me"],
+    queryFn: () => api.me(token ?? ""),
+    enabled: Boolean(token),
+  });
 
   const decksQuery = useQuery({
     queryKey: ["decks"],
@@ -121,7 +126,9 @@ export function DashboardPage() {
       {/* Welcome Header */}
       <header className="mb-2">
         <p className="mb-2 text-sm text-text-secondary">welcome_back,</p>
-        <h1 className="m-0 text-[42px] font-semibold [font-family:var(--font-display)]">Good day, learner</h1>
+        <h1 className="m-0 text-[42px] font-semibold [font-family:var(--font-display)]">
+          Good day, {(meQuery.data as { displayName?: string } | undefined)?.displayName ?? "learner"}
+        </h1>
       </header>
 
       {/* Stats Row */}
@@ -149,7 +156,7 @@ export function DashboardPage() {
         <section className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
             <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">Quick Practice</h2>
-            <span className="inline-flex items-center gap-1 rounded border border-[#2f2f2f] bg-bg-elevated px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">
+            <span className="inline-flex items-center gap-1 rounded border border-[var(--border-muted)] bg-bg-elevated px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">
               <kbd className="font-mono">p</kbd> to focus
             </span>
           </div>
@@ -163,7 +170,7 @@ export function DashboardPage() {
               <li
                 key={deck.id}
                 data-deck-index={index}
-                className="relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-base border border-[#2f2f2f] bg-bg-card p-4 text-left transition-all hover:-translate-y-0.5 hover:border-accent-orange focus:-translate-y-0.5 focus:border-accent-orange"
+                className="relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-base border border-[var(--border-muted)] bg-bg-card p-4 text-left transition-all hover:-translate-y-0.5 hover:border-accent-orange focus:-translate-y-0.5 focus:border-accent-orange"
                 tabIndex={focusedDeckIndex === index ? 0 : -1}
                 onClick={() => navigate(`/practice/${deck.id}`)}
                 onKeyDown={(e) => {
@@ -214,7 +221,7 @@ export function DashboardPage() {
             });
             
             return (
-              <div key={session.sessionId} className="flex items-center justify-between border-b border-[#1f1f1f] px-5 py-3 last:border-b-0">
+              <div key={session.sessionId} className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-3 last:border-b-0">
                 <span className="text-[13px] text-text-secondary">{formattedDate}</span>
                 <span className="font-mono text-[13px]">
                   {session.cardsCompleted} cards · {Math.floor(duration / 60)}:{String(duration % 60).padStart(2, '0')}
