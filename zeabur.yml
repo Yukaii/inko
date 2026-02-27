@@ -30,7 +30,7 @@ spec:
             type: HTTP
         env:
           ZBPACK_DOCKERFILE_NAME:
-            default: "API"
+            default: "api"
           ZBPACK_IGNORE_DOCKERFILE:
             default: "false"
           PORT:
