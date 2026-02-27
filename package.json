@@ -1,11 +1,12 @@
 {
   "name": "inko",
-  "private": true,
   "version": "0.1.0",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "convex": "^1.20.0",
+    "typescript": "^5.8.2"
+  },
+  "private": true,
   "scripts": {
     "build": "bun run --filter @inko/shared build && bun run --filter @inko/api build && bun run --filter @inko/web build",
     "dev": "concurrently \"bun run --filter @inko/api dev\" \"bun run --filter @inko/web dev\"",
@@ -15,12 +16,8 @@
     "convex:codegen": "bunx convex codegen",
     "seed:starter": "bunx convex run seed:seedStarterData '{\"email\":\"user@example.com\"}'"
   },
-  "devDependencies": {
-    "concurrently": "^9.1.2",
-    "convex": "^1.20.0",
-    "typescript": "^5.8.2"
-  },
-  "dependencies": {
-    "@google/gemini-cli": "^0.30.0"
-  }
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }
