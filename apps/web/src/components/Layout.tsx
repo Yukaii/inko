@@ -117,61 +117,66 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const shortcuts = getShortcutsList();
 
   return (
-    <div className="app-shell">
+    <div className="grid h-screen overflow-hidden md:grid-cols-[220px_minmax(0,1fr)] md:grid-rows-1 grid-cols-1 grid-rows-[1fr_auto]">
       {/* Desktop Sidebar */}
-      <aside className="sidebar">
-        <div className="logo" role="banner">
+      <aside className="hidden h-screen flex-col gap-3 overflow-y-auto border-r border-[#2f2f2f] bg-bg-page p-6 md:flex">
+        <div className="mb-4 text-[22px] text-accent-orange [font-family:var(--font-display)]" role="banner">
           <span lang="ja">inkō</span>
         </div>
-        <nav className="nav-list" aria-label="Main navigation">
+        <nav className="flex flex-col gap-1" aria-label="Main navigation">
           {NAV_LINKS.map((link, index) => (
             <NavLink
               key={link.to}
-              className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+              className={({ isActive }) =>
+                `flex items-center justify-between whitespace-nowrap rounded-xl px-3.5 py-2.5 text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary focus:bg-bg-elevated focus:text-text-primary ${isActive ? "bg-bg-elevated text-text-primary" : ""}`
+              }
               to={link.to}
               tabIndex={0}
               aria-current={location.pathname === link.to ? "page" : undefined}
             >
-              <span className="nav-link-label">{link.label}</span>
-              <kbd className="nav-link-shortcut" aria-label={`Shortcut: press ${index + 1}`}>
+              <span>{link.label}</span>
+              <kbd
+                className="shrink-0 rounded border border-[#2f2f2f] bg-bg-card px-1.5 py-0.5 font-mono text-[11px] text-text-secondary opacity-60 transition-all"
+                aria-label={`Shortcut: press ${index + 1}`}
+              >
                 {index + 1}
               </kbd>
             </NavLink>
           ))}
         </nav>
-        <div className="sidebar-footer">
+        <div className="mt-auto border-t border-[#2f2f2f] pt-4">
           <button
             type="button"
-            className="keyboard-help-btn"
+            className="flex w-full items-center gap-2 rounded-[10px] border border-dashed border-[#3a3a3a] bg-transparent px-3.5 py-2.5 text-[13px] font-normal text-text-secondary transition-all hover:border-accent-orange hover:bg-bg-elevated hover:text-text-primary focus:border-accent-orange focus:bg-bg-elevated focus:text-text-primary"
             onClick={() => setShowHelp(true)}
             aria-label="Show keyboard shortcuts (Shift+?)"
           >
-            <kbd>?</kbd>
+            <kbd className="rounded border border-[#2f2f2f] bg-bg-card px-1.5 py-0.5 font-mono text-[11px]">?</kbd>
             <span>shortcuts</span>
           </button>
         </div>
       </aside>
 
       {/* Mobile Bottom Nav */}
-      <nav className="mobile-nav" aria-label="Mobile navigation">
+      <nav className="fixed inset-x-0 bottom-0 z-[9999] flex h-16 items-center justify-around border-t border-[#2f2f2f] bg-bg-page px-2 shadow-[0_-2px_10px_rgba(0,0,0,0.3)] md:hidden" aria-label="Mobile navigation">
         {NAV_LINKS.map((link) => {
           const isActive = location.pathname === link.to;
           return (
             <NavLink
               key={link.to}
-              className={`mobile-nav-item ${isActive ? "active" : ""}`}
+              className={`flex max-w-20 flex-1 flex-col items-center justify-center gap-1 bg-transparent px-4 py-2 transition-colors ${isActive ? "text-accent-orange" : "text-text-secondary hover:text-text-primary focus:text-text-primary"}`}
               to={link.to}
               aria-current={isActive ? "page" : undefined}
             >
-              <link.Icon className="mobile-nav-icon" />
-              <span className="mobile-nav-label">{link.mobileLabel}</span>
+              <link.Icon className="h-[22px] w-[22px]" />
+              <span className="text-[11px] font-medium">{link.mobileLabel}</span>
             </NavLink>
           );
         })}
 
       </nav>
 
-      <main className="main" tabIndex={-1}>
+      <main id="main-content" className="h-screen overflow-y-auto px-5 pt-5 pb-[84px] md:px-10 md:py-8" tabIndex={-1}>
         {children}
       </main>
 
@@ -243,82 +248,92 @@ function KeyboardHelpModal({
   return (
     <button
       type="button"
-      className="keyboard-help-overlay"
+      className="fixed inset-0 z-[1000] flex w-full cursor-default items-center justify-center border-0 bg-black/80 p-5"
       onClick={onClose}
       onKeyDown={handleOverlayKeyDown}
       aria-label="Close keyboard shortcuts help"
     >
       <section
         ref={modalRef}
-        className="keyboard-help-modal"
+        className="max-h-[80vh] w-full max-w-[500px] overflow-y-auto rounded-base border border-[#2f2f2f] bg-bg-card"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } }}
         aria-modal="true"
         aria-label="Keyboard shortcuts"
       >
-        <header className="keyboard-help-header">
-          <h2>Keyboard Shortcuts</h2>
-          <button type="button" className="keyboard-help-close" onClick={onClose} aria-label="Close">
+        <header className="flex items-center justify-between border-b border-[#2f2f2f] px-6 py-5">
+          <h2 className="[font-family:var(--font-display)] text-2xl text-text-primary">Keyboard Shortcuts</h2>
+          <button type="button" className="border-0 bg-transparent p-1 text-2xl leading-none text-text-secondary transition-colors hover:text-text-primary focus:text-text-primary" onClick={onClose} aria-label="Close">
             ×
           </button>
         </header>
-        <div className="keyboard-help-content">
+        <div className="flex flex-col gap-6 p-6">
           <section>
-            <h3>Navigation</h3>
-            <dl className="keyboard-shortcuts-list">
-              <div className="keyboard-shortcut-row">
-                <dt>
-                  <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>
+            <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">Navigation</h3>
+            <dl className="flex flex-col gap-2">
+              <div className="flex items-center gap-4 text-sm">
+                <dt className="flex min-w-[100px] items-center gap-1">
+                  <kbd className="rounded border border-[#3a3a3a] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">1</kbd>
+                  <kbd className="rounded border border-[#3a3a3a] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">2</kbd>
+                  <kbd className="rounded border border-[#3a3a3a] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">3</kbd>
                 </dt>
-                <dd>Go to Dashboard / Word Bank / Settings</dd>
+                <dd className="m-0 text-text-secondary">Go to Dashboard / Word Bank / Settings</dd>
               </div>
-              <div className="keyboard-shortcut-row">
-                <dt>
-                  <kbd>g</kbd> <span>then</span> <kbd>d</kbd>
+              <div className="flex items-center gap-4 text-sm">
+                <dt className="flex min-w-[100px] items-center gap-1">
+                  <kbd className="rounded border border-[#3a3a3a] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">g</kbd>
+                  <span className="text-xs text-text-secondary">then</span>
+                  <kbd className="rounded border border-[#3a3a3a] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">d</kbd>
                 </dt>
-                <dd>Go to Dashboard</dd>
+                <dd className="m-0 text-text-secondary">Go to Dashboard</dd>
               </div>
-              <div className="keyboard-shortcut-row">
-                <dt>
-                  <kbd>g</kbd> <span>then</span> <kbd>w</kbd>
+              <div className="flex items-center gap-4 text-sm">
+                <dt className="flex min-w-[100px] items-center gap-1">
+                  <kbd className="rounded border border-[#3a3a3a] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">g</kbd>
+                  <span className="text-xs text-text-secondary">then</span>
+                  <kbd className="rounded border border-[#3a3a3a] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">w</kbd>
                 </dt>
-                <dd>Go to Word Bank</dd>
+                <dd className="m-0 text-text-secondary">Go to Word Bank</dd>
               </div>
-              <div className="keyboard-shortcut-row">
-                <dt>
-                  <kbd>g</kbd> <span>then</span> <kbd>s</kbd>
+              <div className="flex items-center gap-4 text-sm">
+                <dt className="flex min-w-[100px] items-center gap-1">
+                  <kbd className="rounded border border-[#3a3a3a] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">g</kbd>
+                  <span className="text-xs text-text-secondary">then</span>
+                  <kbd className="rounded border border-[#3a3a3a] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">s</kbd>
                 </dt>
-                <dd>Go to Settings</dd>
+                <dd className="m-0 text-text-secondary">Go to Settings</dd>
               </div>
             </dl>
           </section>
           <section>
-            <h3>Global</h3>
-            <dl className="keyboard-shortcuts-list">
-              <div className="keyboard-shortcut-row">
-                <dt>
-                  <kbd>Shift</kbd> + <kbd>?</kbd>
+            <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">Global</h3>
+            <dl className="flex flex-col gap-2">
+              <div className="flex items-center gap-4 text-sm">
+                <dt className="flex min-w-[100px] items-center gap-1">
+                  <kbd className="rounded border border-[#3a3a3a] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">Shift</kbd>
+                  <span>+</span>
+                  <kbd className="rounded border border-[#3a3a3a] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">?</kbd>
                 </dt>
-                <dd>Toggle this help</dd>
+                <dd className="m-0 text-text-secondary">Toggle this help</dd>
               </div>
-              <div className="keyboard-shortcut-row">
-                <dt>
-                  <kbd>Esc</kbd>
+              <div className="flex items-center gap-4 text-sm">
+                <dt className="flex min-w-[100px] items-center gap-1">
+                  <kbd className="rounded border border-[#3a3a3a] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">Esc</kbd>
                 </dt>
-                <dd>Close dialogs / Cancel</dd>
+                <dd className="m-0 text-text-secondary">Close dialogs / Cancel</dd>
               </div>
             </dl>
           </section>
           {shortcuts.length > 0 && (
             <section>
-              <h3>Page Specific</h3>
-              <dl className="keyboard-shortcuts-list">
+              <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">Page Specific</h3>
+              <dl className="flex flex-col gap-2">
                 {shortcuts.map((s) => (
-                  <div key={s.key} className="keyboard-shortcut-row">
-                    <dt>
-                      <kbd>{s.key}</kbd>
+                  <div key={s.key} className="flex items-center gap-4 text-sm">
+                    <dt className="flex min-w-[100px] items-center gap-1">
+                      <kbd className="rounded border border-[#3a3a3a] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">{s.key}</kbd>
                     </dt>
-                    <dd>{s.description}</dd>
+                    <dd className="m-0 text-text-secondary">{s.description}</dd>
                   </div>
                 ))}
               </dl>

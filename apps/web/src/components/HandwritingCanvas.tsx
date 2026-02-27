@@ -69,10 +69,10 @@ export function HandwritingCanvas({ onChanged }: Props) {
   };
 
   return (
-    <div className="card" style={{ display: "grid", gap: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div className="grid gap-3 rounded-base bg-bg-card p-5">
+      <div className="flex items-center justify-between">
         <strong>Handwriting</strong>
-        <button className="secondary" onClick={clearCanvas}>
+        <button className="bg-bg-elevated text-text-primary" onClick={clearCanvas}>
           Clear
         </button>
       </div>
@@ -80,7 +80,7 @@ export function HandwritingCanvas({ onChanged }: Props) {
         ref={canvasRef}
         width={640}
         height={320}
-        style={{ width: "100%", borderRadius: 12 }}
+        className="w-full rounded-xl"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
