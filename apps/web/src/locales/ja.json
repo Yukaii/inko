@@ -56,6 +56,11 @@
     "decks": "デッキ",
     "shortcuts_help": "キーボードショートカット"
   },
+  "pwa": {
+    "update_available": "新しいバージョンを利用できます。最新のアプリを読み込むには再読み込みしてください。",
+    "refresh_now": "今すぐ更新",
+    "refreshing": "更新中..."
+  },
   "landing": {
     "nav": {
       "how_it_works": "使い方",
