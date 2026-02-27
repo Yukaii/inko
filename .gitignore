@@ -4,6 +4,7 @@ node_modules
 dist
 coverage
 .convex
+packages/shared/src/*.js
 apps/web/.vite
 apps/web/playwright-report
 apps/web/test-results
