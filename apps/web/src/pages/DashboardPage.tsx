@@ -156,8 +156,9 @@ export function DashboardPage() {
         <section className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
             <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">Quick Practice</h2>
-            <span className="inline-flex items-center gap-1 rounded border border-[var(--border-muted)] bg-bg-elevated px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">
-              <kbd className="font-mono">p</kbd> to focus
+            <span className="inline-flex items-center gap-1 rounded border border-[var(--border-strong)] bg-bg-elevated px-2 py-1 font-mono text-[11px] text-text-primary shadow-sm">
+              <kbd className="rounded bg-bg-card px-1.5 py-0.5 font-mono">p</kbd>
+              <span>to focus</span>
             </span>
           </div>
           <ul

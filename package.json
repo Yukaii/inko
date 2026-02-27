@@ -13,7 +13,7 @@
     "lint": "bun run --filter @inko/shared lint && bun run --filter @inko/api lint && bun run --filter @inko/web lint",
     "convex:dev": "bunx convex dev",
     "convex:codegen": "bunx convex codegen",
-    "seed:starter": "bunx convex run seed:seedStarterData '{\"email\":\"yukai@example.com\"}'"
+    "seed:starter": "bunx convex run seed:seedStarterData '{\"email\":\"user@example.com\"}'"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

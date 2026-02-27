@@ -612,7 +612,7 @@ export function WordBankPage() {
               <div className="mt-auto flex gap-2">
                 <Link to={`/practice/${deck.id}`} onClick={(e) => e.stopPropagation()} className="flex min-w-0 flex-1 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-lg bg-accent-orange px-2.5 py-2 text-xs font-semibold text-text-on-accent no-underline">
                   <span>Practice</span>
-                  <kbd className="shrink-0 rounded border border-[var(--border-strong)] bg-bg-card px-1 py-[1px] font-mono text-[9px] opacity-70">p</kbd>
+                  <kbd className="shrink-0 rounded border border-[var(--border-strong)] bg-bg-page px-1 py-[1px] font-mono text-[9px] text-text-primary">p</kbd>
                 </Link>
                 <button
                   type="button"
@@ -623,7 +623,7 @@ export function WordBankPage() {
                   }}
                 >
                   <span>Manage</span>
-                  <kbd className="shrink-0 rounded border border-[var(--border-strong)] bg-bg-card px-1 py-[1px] font-mono text-[9px] opacity-70">Enter</kbd>
+                  <kbd className="shrink-0 rounded border border-[var(--border-muted)] bg-bg-card px-1 py-[1px] font-mono text-[9px] text-text-secondary">Enter</kbd>
                 </button>
               </div>
               <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">

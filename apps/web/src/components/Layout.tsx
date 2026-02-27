@@ -236,7 +236,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="relative" ref={profileMenuRef}>
             <button
               type="button"
-              className="flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary focus:bg-bg-elevated focus:text-text-primary"
+              className="flex w-full items-center justify-between rounded-xl bg-transparent px-3.5 py-2.5 text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary focus:bg-bg-elevated focus:text-text-primary"
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               aria-expanded={showProfileMenu}
               aria-haspopup="menu"
@@ -264,7 +264,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </NavLink>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[var(--danger-text)] transition-colors hover:bg-[var(--danger-bg)]"
+                  className="flex w-full items-center gap-2 rounded-lg bg-transparent px-3 py-2 text-sm text-[var(--danger-text)] transition-colors hover:bg-[var(--danger-bg)]"
                   onClick={handleSignOut}
                 >
                   <LogoutIcon className="h-4 w-4" />
