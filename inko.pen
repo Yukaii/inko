@@ -2851,6 +2851,7 @@
               "id": "YHL6t",
               "name": "Nav Bar",
               "width": "fill_container",
+              "fill": "#1A1A1A99",
               "padding": [
                 16,
                 48
@@ -2889,7 +2890,8 @@
                           "fill": "$text-secondary",
                           "content": "features",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -2898,7 +2900,8 @@
                           "fill": "$text-secondary",
                           "content": "how it works",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -2907,7 +2910,8 @@
                           "fill": "$text-secondary",
                           "content": "pricing",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -2963,9 +2967,10 @@
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
                   "content": "type it until you own it",
+                  "lineHeight": 1.1,
                   "textAlign": "center",
                   "fontFamily": "Oswald",
-                  "fontSize": 56,
+                  "fontSize": 72,
                   "fontWeight": "700"
                 },
                 {
@@ -2974,12 +2979,13 @@
                   "name": "Subheadline",
                   "fill": "$text-secondary",
                   "textGrowth": "fixed-width",
-                  "width": 700,
+                  "width": 600,
                   "content": "The flashcard app that makes you prove you know it. Type your answers, build muscle memory, and never forget again.",
                   "lineHeight": 1.5,
                   "textAlign": "center",
                   "fontFamily": "JetBrains Mono",
-                  "fontSize": 16
+                  "fontSize": 18,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "frame",
@@ -3042,6 +3048,28 @@
                       ]
                     }
                   ]
+                },
+                {
+                  "type": "frame",
+                  "id": "QoEAZ",
+                  "name": "Badge",
+                  "fill": "$bg-elevated",
+                  "cornerRadius": 20,
+                  "padding": [
+                    6,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "inJqY",
+                      "fill": "$accent-teal",
+                      "content": "THE_FUTURE_OF_RETENTION",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 10,
+                      "fontWeight": "bold"
+                    }
+                  ]
                 }
               ]
             },
@@ -3062,12 +3090,54 @@
               "children": [
                 {
                   "type": "frame",
+                  "id": "tbvwu",
+                  "name": "Mockup Header",
+                  "width": 1103,
+                  "height": 39,
+                  "fill": "#1a1a1a",
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "u21wG",
+                      "fill": "#ff5f56",
+                      "width": 10,
+                      "height": 10
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "qZwUT",
+                      "fill": "#ffbd2e",
+                      "width": 10,
+                      "height": 10
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "tDXwx",
+                      "fill": "#27c93f",
+                      "width": 10,
+                      "height": 10
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
                   "id": "8Bz1X",
                   "name": "Screenshot Placeholder",
                   "width": 1100,
                   "height": 500,
-                  "fill": "$bg-elevated",
-                  "cornerRadius": "$radius",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "./images/generated-1772173662547.png",
+                    "mode": "fill"
+                  },
+                  "cornerRadius": 16,
                   "layout": "vertical",
                   "justifyContent": "center",
                   "alignItems": "center",
@@ -3079,7 +3149,8 @@
                       "fill": "$text-secondary",
                       "content": "screenshot_placeholder",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -3087,7 +3158,7 @@
                   "type": "frame",
                   "id": "zcJQA",
                   "name": "Trust Line",
-                  "gap": 10,
+                  "gap": 48,
                   "alignItems": "center",
                   "children": [
                     {
@@ -3115,7 +3186,8 @@
                       "fill": "$text-secondary",
                       "content": "// trusted by 10,000+ learners",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 11
+                      "fontSize": 11,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "rectangle",
@@ -3134,6 +3206,51 @@
                       "fill": "$accent-teal",
                       "width": 6,
                       "height": 6
+                    },
+                    {
+                      "type": "text",
+                      "id": "leu89",
+                      "fill": "$text-secondary",
+                      "content": "TRUSTED_BY_LEARNERS_AT:",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 10,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "VUq3l",
+                      "fill": "#555555",
+                      "content": "// MIT",
+                      "fontFamily": "Oswald",
+                      "fontSize": 16,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "9R4SV",
+                      "fill": "#555555",
+                      "content": "// STANFORD",
+                      "fontFamily": "Oswald",
+                      "fontSize": 16,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "q6Ukx",
+                      "fill": "#555555",
+                      "content": "// HARVARD",
+                      "fontFamily": "Oswald",
+                      "fontSize": 16,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "text",
+                      "id": "oFX0g",
+                      "fill": "#555555",
+                      "content": "// OXFORD",
+                      "fontFamily": "Oswald",
+                      "fontSize": 16,
+                      "fontWeight": "bold"
                     }
                   ]
                 }
@@ -3161,7 +3278,6 @@
               "width": "fill_container",
               "layout": "vertical",
               "gap": 8,
-              "alignItems": "center",
               "children": [
                 {
                   "type": "text",
@@ -3180,7 +3296,8 @@
                   "fill": "$text-secondary",
                   "content": "Three steps to never forgetting again",
                   "fontFamily": "JetBrains Mono",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -3260,7 +3377,8 @@
                           "content": "Add flashcards with questions and answers for any subject",
                           "lineHeight": 1.5,
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -3335,7 +3453,8 @@
                           "content": "Practice by typing out answers from memory — no multiple choice shortcuts",
                           "lineHeight": 1.5,
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -3410,7 +3529,8 @@
                           "content": "Spaced repetition ensures you review at the perfect time",
                           "lineHeight": 1.5,
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -3486,7 +3606,8 @@
                   "content": "Built for learners who want real retention, not just recognition.",
                   "textAlign": "center",
                   "fontFamily": "JetBrains Mono",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -3538,7 +3659,8 @@
                       "content": "No multiple choice. No matching. Type your answers from memory to build real neural pathways.",
                       "lineHeight": 1.5,
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -3583,7 +3705,8 @@
                       "content": "Smart scheduling surfaces cards right before you forget. Every review is perfectly timed.",
                       "lineHeight": 1.5,
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -3628,7 +3751,8 @@
                       "content": "Visual dashboards show mastery levels, streaks, and weak spots so you know exactly where to focus.",
                       "lineHeight": 1.5,
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -3682,7 +3806,8 @@
                       "content": "Create decks for any subject — languages, code syntax, med terms, history dates. Your knowledge, your way.",
                       "lineHeight": 1.5,
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -3727,7 +3852,8 @@
                       "content": "Daily streaks and scoring keep you motivated. Consistency beats cramming every time.",
                       "lineHeight": 1.5,
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -3772,7 +3898,8 @@
                       "content": "Works on any device with a keyboard. Practice on your commute, at your desk, or in bed.",
                       "lineHeight": 1.5,
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -4013,6 +4140,7 @@
                       "lineHeight": 1.5,
                       "fontFamily": "JetBrains Mono",
                       "fontSize": 13,
+                      "fontWeight": "normal",
                       "fontStyle": "italic"
                     },
                     {
@@ -4067,6 +4195,7 @@
                       "lineHeight": 1.5,
                       "fontFamily": "JetBrains Mono",
                       "fontSize": 13,
+                      "fontWeight": "normal",
                       "fontStyle": "italic"
                     },
                     {
@@ -4121,6 +4250,7 @@
                       "lineHeight": 1.5,
                       "fontFamily": "JetBrains Mono",
                       "fontSize": 13,
+                      "fontWeight": "normal",
                       "fontStyle": "italic"
                     },
                     {
@@ -4175,7 +4305,7 @@
               "type": "frame",
               "id": "0iIw6",
               "name": "ctaInner",
-              "width": 800,
+              "width": 1200,
               "fill": {
                 "type": "gradient",
                 "gradientType": "linear",
@@ -4195,10 +4325,10 @@
                   }
                 ]
               },
-              "cornerRadius": "$radius",
+              "cornerRadius": 24,
               "layout": "vertical",
               "gap": 24,
-              "padding": 60,
+              "padding": 80,
               "alignItems": "center",
               "children": [
                 {
@@ -4206,10 +4336,10 @@
                   "id": "tb62X",
                   "name": "ctaHeadline",
                   "fill": "$text-primary",
-                  "content": "stop_forgetting",
+                  "content": "Master anything by typing.",
                   "textAlign": "center",
                   "fontFamily": "Oswald",
-                  "fontSize": 48,
+                  "fontSize": 64,
                   "fontWeight": "700"
                 },
                 {
@@ -4223,7 +4353,8 @@
                   "lineHeight": 1.5,
                   "textAlign": "center",
                   "fontFamily": "JetBrains Mono",
-                  "fontSize": 14
+                  "fontSize": 14,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "frame",
@@ -4274,7 +4405,8 @@
                       "fill": "$text-secondary",
                       "content": "// it&apos;s free, forever",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -4330,7 +4462,8 @@
                       "content": "Type it until you own it. The flashcard app that builds real recall through active typing practice.",
                       "lineHeight": 1.5,
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 11
+                      "fontSize": 11,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -4364,7 +4497,8 @@
                           "fill": "$text-secondary",
                           "content": "features",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -4373,7 +4507,8 @@
                           "fill": "$text-secondary",
                           "content": "pricing",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -4382,7 +4517,8 @@
                           "fill": "$text-secondary",
                           "content": "changelog",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -4410,7 +4546,8 @@
                           "fill": "$text-secondary",
                           "content": "about",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -4419,7 +4556,8 @@
                           "fill": "$text-secondary",
                           "content": "blog",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -4428,7 +4566,8 @@
                           "fill": "$text-secondary",
                           "content": "contact",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -4456,7 +4595,8 @@
                           "fill": "$text-secondary",
                           "content": "privacy",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -4465,7 +4605,8 @@
                           "fill": "$text-secondary",
                           "content": "terms",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -4496,7 +4637,8 @@
                   "fill": "#555555",
                   "content": "© 2026 inko. all rights reserved.",
                   "fontFamily": "JetBrains Mono",
-                  "fontSize": 11
+                  "fontSize": 11,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -4505,7 +4647,8 @@
                   "fill": "#555555",
                   "content": "// built with care for learners",
                   "fontFamily": "JetBrains Mono",
-                  "fontSize": 11
+                  "fontSize": 11,
+                  "fontWeight": "normal"
                 }
               ]
             }
