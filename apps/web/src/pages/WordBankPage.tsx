@@ -246,7 +246,7 @@ export function WordBankPage() {
   const wordsPageLabel = wordsCursorHistory.length + 1;
   const isWordsLoading = wordsQuery.isLoading;
   const showWordActionsColumn = isWordsLoading || pagedWords.length > 0;
-  const wordsTableColumnCount = showWordActionsColumn ? 5 : 4;
+  const wordsTableColumnCount = showWordActionsColumn ? 6 : 5;
 
   const parseCSVLine = (line: string): string[] => {
     const result: string[] = [];
@@ -615,6 +615,7 @@ export function WordBankPage() {
                       {t("common.prev")}
                     </button>
                     <span className="text-xs text-text-secondary">{t("common.page")} {wordsPageLabel}</span>
+                    <span className="text-xs text-text-secondary">{t("word_bank.words.showing_count", { count: pagedWords.length })}</span>
                     <button
                       type="button"
                       className="bg-bg-elevated px-3 py-1.5 text-xs rounded-lg border-0 cursor-pointer text-text-primary hover:bg-bg-hover transition-colors"
@@ -675,6 +676,7 @@ export function WordBankPage() {
                         <th className="sticky top-0 z-20 px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] bg-bg-elevated">{t("word_bank.words.target")}</th>
                         <th className="sticky top-0 z-20 px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] md:table-cell hidden bg-bg-elevated">{t("word_bank.words.reading")}</th>
                         <th className="sticky top-0 z-20 px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] bg-bg-elevated">{t("word_bank.words.meaning")}</th>
+                        <th className="sticky top-0 z-20 px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] lg:table-cell hidden bg-bg-elevated">{t("word_bank.add.tags")}</th>
                         {showWordActionsColumn ? <th className="sticky top-0 z-20 w-20 px-4 py-3 bg-bg-elevated"></th> : null}
                       </tr>
                       </thead>
@@ -709,6 +711,7 @@ export function WordBankPage() {
                           <td className={`px-4 py-4 font-bold text-text-primary ${activeDeck?.language === "ja" ? "[font-family:var(--font-jp)] text-lg" : ""}`}>{word.target}</td>
                           <td className={`px-4 py-4 text-text-secondary md:table-cell hidden ${activeDeck?.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}>{word.reading ?? "-"}</td>
                           <td className="px-4 py-4 text-text-secondary">{word.meaning}</td>
+                          <td className="px-4 py-4 text-text-secondary lg:table-cell hidden max-w-[240px] truncate">{(word.tags ?? []).length > 0 ? word.tags.join(", ") : "-"}</td>
                           {showWordActionsColumn ? (
                             <td className="px-4 py-4 text-right">
                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
