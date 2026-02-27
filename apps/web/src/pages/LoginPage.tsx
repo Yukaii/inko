@@ -64,52 +64,61 @@ export function LoginPage() {
   };
 
   return (
-    <div className="mx-auto mt-20 max-w-[520px] rounded-base bg-bg-card p-5">
-      <h1 className="mt-0 text-[42px] [font-family:var(--font-display)]">Practice starts here</h1>
-      <p className="text-text-secondary">email magic link auth for local MVP</p>
-      <div className="grid gap-3">
-        <div className="flex flex-col gap-1">
-          <label htmlFor="email-input" className="text-xs uppercase tracking-[0.04em] text-text-secondary">
-            Email
-          </label>
-          <input
-            id="email-input"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="email"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                requestLink();
-              }
-            }}
-          />
+    <div className="flex min-h-screen flex-col items-center justify-center bg-bg-primary px-4 py-12">
+      <div className="w-full max-w-[520px] rounded-base bg-bg-card p-6 shadow-sm">
+        <div className="mb-6 text-center">
+          <h1 className="mb-2 text-[42px] leading-tight [font-family:var(--font-display)]">Practice starts here</h1>
+          <p className="text-text-secondary">email magic link auth for local MVP</p>
         </div>
-        <button type="button" onClick={requestLink} disabled={loading}>
-          Request Magic Link
-        </button>
-        <div className="mt-2 flex flex-col gap-1">
-          <label htmlFor="token-input" className="text-xs uppercase tracking-[0.04em] text-text-secondary">
-            Token
-          </label>
-          <input
-            id="token-input"
-            value={tokenInput}
-            onChange={(e) => setTokenInput(e.target.value)}
-            placeholder="paste token if needed"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                verifyLink();
-              }
-            }}
-          />
+        <div className="grid gap-4">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="email-input" className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">
+              Email
+            </label>
+            <input
+              id="email-input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  requestLink();
+                }
+              }}
+            />
+          </div>
+          <button type="button" onClick={requestLink} disabled={loading}>
+            Request Magic Link
+          </button>
+          <div className="my-2 flex items-center gap-3">
+            <div className="h-px flex-1 bg-border-primary" />
+            <span className="text-xs text-text-tertiary">or</span>
+            <div className="h-px flex-1 bg-border-primary" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="token-input" className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">
+              Token
+            </label>
+            <input
+              id="token-input"
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
+              placeholder="paste token here"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  verifyLink();
+                }
+              }}
+            />
+          </div>
+          <button type="button" className="bg-bg-elevated text-text-primary hover:bg-bg-hover" onClick={verifyLink} disabled={loading}>
+            Verify Token
+          </button>
         </div>
-        <button type="button" className="bg-bg-elevated text-text-primary" onClick={verifyLink} disabled={loading}>
-          Verify Token
-        </button>
+        {message ? <p className="mb-0 mt-4 text-accent-teal">{message}</p> : null}
       </div>
-      {message ? <p className="mb-0 text-accent-teal">{message}</p> : null}
     </div>
   );
 }
