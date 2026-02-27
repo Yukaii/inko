@@ -54,6 +54,7 @@ export default defineSchema({
     name: v.string(),
     language: languageValidator,
     archived: v.boolean(),
+    wordCount: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_user", ["userId"])
