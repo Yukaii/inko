@@ -79,6 +79,7 @@ export default defineSchema({
     position: v.number(),
   })
     .index("by_deck", ["deckId"])
+    .index("by_word", ["wordId"])
     .index("by_deck_word", ["deckId", "wordId"]),
 
   word_channel_stats: defineTable({
@@ -93,6 +94,7 @@ export default defineSchema({
     lastPracticedAt: v.optional(v.number()),
   })
     .index("by_user", ["userId"])
+    .index("by_word", ["wordId"])
     .index("by_user_word", ["userId", "wordId"])
     .index("by_user_shape_due", ["userId", "shapeDueAt"])
     .index("by_user_typing_due", ["userId", "typingDueAt"])

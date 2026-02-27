@@ -182,30 +182,6 @@ export const createWordsBatch = mutation({
   },
 });
 
-export const listDeckWords = query({
-  args: {
-    deckId: v.id("decks"),
-  },
-  handler: async (ctx, args) => {
-    const links = await ctx.db
-      .query("deck_words")
-      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
-      .collect();
-
-    const words = await Promise.all(
-      links
-        .sort((a, b) => a.position - b.position)
-        .map(async (link) => ({ link, word: await ctx.db.get(link.wordId) })),
-    );
-
-    return words
-      .filter((x) => !!x.word)
-      .map((x) => ({
-        ...x.word,
-      }));
-  },
-});
-
 export const listDeckWordsPage = query({
   args: {
     deckId: v.id("decks"),
@@ -343,7 +319,7 @@ export const deleteWord = mutation({
   handler: async (ctx, args) => {
     const links = await ctx.db
       .query("deck_words")
-      .filter((q) => q.eq(q.field("wordId"), args.wordId))
+      .withIndex("by_word", (q) => q.eq("wordId", args.wordId))
       .collect();
 
     const deckIds = [...new Set(links.map((link) => link.deckId))];
@@ -359,7 +335,7 @@ export const deleteWord = mutation({
 
     const stats = await ctx.db
       .query("word_channel_stats")
-      .filter((q) => q.eq(q.field("wordId"), args.wordId))
+      .withIndex("by_word", (q) => q.eq("wordId", args.wordId))
       .collect();
 
     await Promise.all(stats.map((s) => ctx.db.delete(s._id)));
@@ -391,7 +367,7 @@ export const deleteWordsBatch = mutation({
 
       const links = await ctx.db
         .query("deck_words")
-        .filter((q) => q.eq(q.field("wordId"), wordId))
+        .withIndex("by_word", (q) => q.eq("wordId", wordId))
         .collect();
       await Promise.all(links.map((link) => ctx.db.delete(link._id)));
 
@@ -405,7 +381,7 @@ export const deleteWordsBatch = mutation({
 
       const stats = await ctx.db
         .query("word_channel_stats")
-        .filter((q) => q.eq(q.field("wordId"), wordId))
+        .withIndex("by_word", (q) => q.eq("wordId", wordId))
         .collect();
       await Promise.all(stats.map((s) => ctx.db.delete(s._id)));
 
