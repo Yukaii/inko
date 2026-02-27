@@ -62,7 +62,7 @@
       "get_started": "始める"
     },
     "hero": {
-      "badge": "記憶の未来へ",
+      "badge": "記憶の未来",
       "title": "打って、覚える。",
       "subtitle": "本当に覚えているか、タイピングで証明する。手を動かしてマッスルメモリーを構築し、二度と忘れない学習を。",
       "cta_primary": "学習を始める",
@@ -144,8 +144,8 @@
     "to_focus": "フォーカスする",
     "start_practice": "練習を開始",
     "no_decks": "デッキがありません。",
-    "head_to": "最初のデッキを作成するには、",
-    "create_first_deck": "へ移動してください。",
+    "head_to": "",
+    "create_first_deck": "へ移動して最初のデッキを作成してください。",
     "recent_sessions": "最近のセッション",
     "cards_count": "{{count}} 枚のカード",
     "no_sessions": "完了したセッションはまだありません。"
