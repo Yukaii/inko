@@ -71,36 +71,9 @@ export function LandingPage() {
             <div className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
             <div className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
           </div>
-          <div className="flex h-[300px] md:h-[500px] items-center justify-center rounded-b-2xl bg-bg-elevated border border-[#1a1a1a] border-t-0 shadow-2xl relative overflow-hidden">
-             <img src="/images/generated-1772173662547.png" alt="App Screenshot" className="object-cover w-full h-full opacity-80" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-            <span className="font-mono text-sm text-text-secondary absolute">
-              [screenshot_placeholder]
-            </span>
+          <div className="flex h-[300px] md:h-[500px] items-start justify-center rounded-b-2xl bg-bg-elevated border border-[#1a1a1a] border-t-0 shadow-2xl relative overflow-hidden">
+             <img src="/images/localhost_5173_dashboard.png" alt="App Dashboard Screenshot" className="object-cover object-top w-full h-full" />
           </div>
-        </div>
-
-        {/* Trust Line */}
-        <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 font-mono text-xs md:text-sm text-text-secondary opacity-80">
-          <div className="h-1.5 w-1.5 rounded-full bg-accent-teal hidden md:block" />
-          <div className="h-1.5 w-1.5 rounded-full bg-accent-teal hidden md:block" />
-          <span>// trusted by 10,000+ learners</span>
-          <div className="h-1.5 w-1.5 rounded-full bg-accent-teal hidden md:block" />
-          <div className="h-1.5 w-1.5 rounded-full bg-accent-teal hidden md:block" />
-          <span className="font-bold hidden lg:block ml-4">
-            TRUSTED_BY_LEARNERS_AT:
-          </span>
-          <span className="font-display text-base font-bold text-[#555] hidden lg:block">
-            // MIT
-          </span>
-          <span className="font-display text-base font-bold text-[#555] hidden lg:block">
-            // STANFORD
-          </span>
-          <span className="font-display text-base font-bold text-[#555] hidden xl:block">
-            // HARVARD
-          </span>
-          <span className="font-display text-base font-bold text-[#555] hidden xl:block">
-            // OXFORD
-          </span>
         </div>
       </section>
 
@@ -219,8 +192,7 @@ export function LandingPage() {
             Master anything by typing.
           </h2>
           <p className="max-w-[550px] font-mono text-sm md:text-base leading-relaxed text-text-secondary">
-            Join thousands of learners who type their way to lasting knowledge.
-            Free to start, no credit card required.
+            Type your way to lasting knowledge. Free to start.
           </p>
           <div className="flex flex-col items-center gap-4 mt-4">
             <Link
