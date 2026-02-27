@@ -1,5 +1,6 @@
 import {
   DefaultThemes,
+  type CreateWordsBatchInput,
   type CreateDeckInput,
   type CreateWordInput,
   type LanguageCode,
@@ -212,6 +213,23 @@ export const repository = {
     });
     if (!word) throw new Error("Failed to create word");
     return toWordDTO(word as ConvexWord);
+  },
+
+  async createWordsBatch(userId: string, deckId: string, input: CreateWordsBatchInput) {
+    const deck = (await convex.query("decks:getDeckById", { deckId })) as ConvexDeck | null;
+    if (!deck) throw new RepositoryError("Deck not found", 404);
+    if (deck.userId !== userId) throw new RepositoryError("Forbidden", 403);
+
+    const words = (await convex.mutation("decks:createWordsBatch", {
+      userId,
+      deckId,
+      words: input.words.map((word) => ({
+        ...word,
+        tags: word.tags ?? [],
+      })),
+    })) as ConvexWord[];
+
+    return words.map(toWordDTO);
   },
 
   async updateWord(userId: string, wordId: string, input: UpdateWordInput) {

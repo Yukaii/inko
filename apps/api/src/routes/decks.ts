@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import {
   CreateDeckSchema,
+  CreateWordsBatchSchema,
   CreateWordSchema,
   UpdateDeckSchema,
   UpdateWordSchema,
@@ -51,6 +52,17 @@ export async function deckRoutes(app: FastifyInstance, repo: Repository = reposi
       const body = CreateWordSchema.parse(request.body);
       const { deckId } = request.params as { deckId: string };
       return await repo.createWord(request.auth!.userId, deckId, body);
+    } catch (error) {
+      rethrowAsHttp(app, error);
+    }
+  });
+
+  app.post("/api/decks/:deckId/words/batch", { preHandler: requireAuth }, async (request) => {
+    try {
+      const body = CreateWordsBatchSchema.parse(request.body);
+      const { deckId } = request.params as { deckId: string };
+      const words = await repo.createWordsBatch(request.auth!.userId, deckId, body);
+      return { created: words.length, words };
     } catch (error) {
       rethrowAsHttp(app, error);
     }

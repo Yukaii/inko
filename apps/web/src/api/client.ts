@@ -1,5 +1,6 @@
 import type {
   CreateDeckInput,
+  CreateWordsBatchInput,
   CreateWordInput,
   SubmitPracticeCardInput,
   UpdateProfileInput,
@@ -63,6 +64,13 @@ export const api = {
 
   createWord: (token: string, deckId: string, input: CreateWordInput) =>
     request<any>(`/api/decks/${deckId}/words`, { method: "POST", body: JSON.stringify(input) }, token),
+
+  createWordsBatch: (token: string, deckId: string, input: CreateWordsBatchInput) =>
+    request<{ created: number; words: any[] }>(
+      `/api/decks/${deckId}/words/batch`,
+      { method: "POST", body: JSON.stringify(input) },
+      token,
+    ),
 
   updateWord: (token: string, wordId: string, input: UpdateWordInput) =>
     request<any>(`/api/words/${wordId}`, { method: "PATCH", body: JSON.stringify(input) }, token),

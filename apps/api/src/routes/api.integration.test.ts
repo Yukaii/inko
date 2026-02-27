@@ -65,6 +65,20 @@ function makeRepositoryMock(): Repository {
       audioUrl: undefined,
       tags: ["n5"],
     })),
+    createWordsBatch: vi.fn(async (_userId: string, _deckId: string, input: { words: Array<{ target: string; meaning: string }> }) =>
+      input.words.map((word, index) => ({
+        id: `word_${index + 1}`,
+        userId: "user_1",
+        language: "ja",
+        target: word.target,
+        reading: undefined,
+        romanization: undefined,
+        meaning: word.meaning,
+        example: undefined,
+        audioUrl: undefined,
+        tags: [],
+      })),
+    ),
     updateWord: vi.fn(async () => ({
       id: "word_1",
       userId: "user_1",
@@ -219,6 +233,20 @@ describe("API integration", () => {
       },
     });
     expect(createWordRes.statusCode).toBe(200);
+
+    const createBatchRes = await app.inject({
+      method: "POST",
+      url: "/api/decks/deck_1/words/batch",
+      headers: auth,
+      payload: {
+        words: [
+          { target: "食べる", meaning: "to eat" },
+          { target: "飲む", meaning: "to drink" },
+        ],
+      },
+    });
+    expect(createBatchRes.statusCode).toBe(200);
+    expect(createBatchRes.json().created).toBe(2);
 
     const listWordsRes = await app.inject({
       method: "GET",
