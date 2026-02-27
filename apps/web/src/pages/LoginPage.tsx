@@ -37,12 +37,12 @@ export function LoginPage() {
   };
 
   return (
-    <div style={{ maxWidth: 520, margin: "80px auto" }} className="card">
-      <h1 style={{ marginTop: 0, fontFamily: "var(--font-display)", fontSize: 42 }}>Practice starts here</h1>
-      <p style={{ color: "var(--text-secondary)" }}>email magic link auth for local MVP</p>
-      <div style={{ display: "grid", gap: 12 }}>
-        <div className="form-group">
-          <label htmlFor="email-input" style={{ fontSize: 12, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+    <div className="mx-auto mt-20 max-w-[520px] rounded-base bg-bg-card p-5">
+      <h1 className="mt-0 text-[42px] [font-family:var(--font-display)]">Practice starts here</h1>
+      <p className="text-text-secondary">email magic link auth for local MVP</p>
+      <div className="grid gap-3">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="email-input" className="text-xs uppercase tracking-[0.04em] text-text-secondary">
             Email
           </label>
           <input
@@ -61,8 +61,8 @@ export function LoginPage() {
         <button type="button" onClick={requestLink} disabled={loading}>
           Request Magic Link
         </button>
-        <div className="form-group" style={{ marginTop: 8 }}>
-          <label htmlFor="token-input" style={{ fontSize: 12, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+        <div className="mt-2 flex flex-col gap-1">
+          <label htmlFor="token-input" className="text-xs uppercase tracking-[0.04em] text-text-secondary">
             Token
           </label>
           <input
@@ -78,11 +78,11 @@ export function LoginPage() {
             }}
           />
         </div>
-        <button type="button" className="secondary" onClick={verifyLink} disabled={loading}>
+        <button type="button" className="bg-bg-elevated text-text-primary" onClick={verifyLink} disabled={loading}>
           Verify Token
         </button>
       </div>
-      {message ? <p style={{ color: "var(--accent-teal)", marginBottom: 0 }}>{message}</p> : null}
+      {message ? <p className="mb-0 text-accent-teal">{message}</p> : null}
     </div>
   );
 }
