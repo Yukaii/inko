@@ -1246,14 +1246,17 @@ export function WordBankPage() {
                 onChange={(e) => setEditingDeck({ ...editingDeck, name: e.target.value })}
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-start gap-3">
               <input
                 type="checkbox"
                 id={`${formId}-archive`}
                 checked={editingDeck.archived}
                 onChange={(e) => setEditingDeck({ ...editingDeck, archived: e.target.checked })}
+                className="!mt-0.5 !h-4 !w-4 shrink-0 cursor-pointer"
               />
-              <label htmlFor={`${formId}-archive`} className="mb-0">Archive deck (hide from dashboard)</label>
+              <label htmlFor={`${formId}-archive`} className="min-w-0 flex-1 cursor-pointer text-sm text-text-primary">
+                Archive deck (hide from dashboard)
+              </label>
             </div>
             <div className="mt-2 flex justify-end gap-2.5">
               <button
