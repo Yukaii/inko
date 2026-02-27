@@ -3,70 +3,94 @@
 This project uses:
 - Frontend (`apps/web`) on GitHub Pages
 - API (`apps/api`) on Zeabur
-- Data/functions on self-hosted Convex (also on Zeabur)
+- Self-hosted Convex (backend + dashboard) on Zeabur
 
-## 1. Self-hosted Convex on Zeabur
+## 1. Zeabur template (multi-service)
 
-This repo includes two Convex service Dockerfiles:
+This repo now includes a multi-service template:
+- `zeabur.yml`
 
-- `convex-backend.Dockerfile` (Convex backend, ports `3210` and `3211`)
-- `convex-dashboard.Dockerfile` (Convex dashboard, port `6791`)
+It deploys 3 services into one Zeabur project:
+- `API` (Git source from this repo)
+- `Convex Backend` (official prebuilt image)
+- `Convex Dashboard` (official prebuilt image)
 
-Create 2 Zeabur services from this repository:
-- Service A: `convex-backend`
-- Service B: `convex-dashboard`
+`zeabur.yml` is intended to work with:
+- Zeabur CLI (`template deploy`)
+- Zeabur review-app automation that consumes template YAML
 
-Set each service to use the matching Dockerfile by name:
-- backend service: `convex-backend.Dockerfile`
-- dashboard service: `convex-dashboard.Dockerfile`
+## 2. Deploy with Zeabur CLI
 
-Backend service environment variables:
-- `INSTANCE_NAME=inko-prod`
-- `INSTANCE_SECRET=<strong random secret>`
+Official CLI repo:
+- [zeabur/cli](https://github.com/zeabur/cli)
 
-Backend service storage:
-- mount persistent volume to `/convex/data`
+Local command flow:
 
-Dashboard service environment variables:
-- `NEXT_PUBLIC_DEPLOYMENT_URL=https://<your-convex-backend-domain>`
+```bash
+npx -y zeabur@latest auth login --token <ZEABUR_TOKEN>
 
-Important:
-- Keep Convex backend and dashboard in the same region.
-- If Convex backend URL changes, update `NEXT_PUBLIC_DEPLOYMENT_URL` in dashboard and `CONVEX_URL` in API service.
-- Self-hosted Convex admin key setup is required after first boot. In the backend service terminal, run:
+npx -y zeabur@latest template deploy \
+  -i=false \
+  --file zeabur.yml \
+  --project-id <ZEABUR_PROJECT_ID> \
+  --var BACKEND_DOMAIN=<convex-backend-subdomain> \
+  --var CONVEX_INSTANCE_SECRET=<hex-secret>
+```
+
+Generate Convex instance secret:
+
+```bash
+openssl rand -hex 32
+```
+
+Notes:
+- `BACKEND_DOMAIN` is the Zeabur-generated subdomain (without `.zeabur.app`).
+- `CONVEX_INSTANCE_SECRET` must be hex. Non-hex values will crash Convex backend on startup.
+- Template currently pins GitHub repo id for `Yukaii/inko`. If you fork/rename repo, update `spec.services[API].spec.source.repo` in `zeabur.yml`.
+
+## 3. GitHub Action for CLI deploy
+
+Workflow file:
+- `.github/workflows/deploy-zeabur-template.yml`
+
+Required GitHub secrets:
+- `ZEABUR_TOKEN`
+- `ZEABUR_PROJECT_ID`
+- `ZEABUR_BACKEND_DOMAIN`
+- `ZEABUR_CONVEX_INSTANCE_SECRET` (output of `openssl rand -hex 32`)
+
+This workflow is `workflow_dispatch` (manual trigger) to avoid accidental production redeploys.
+
+## 4. Self-hosted Convex runtime notes
+
+Convex backend service requirements:
+- persistent volume mounted to `/convex/data`
+- secure hex `INSTANCE_SECRET` value
+
+If backend logs show `Couldn't hexdecode key`, fix by replacing `INSTANCE_SECRET` with a valid hex secret and redeploying/restarting the service.
+
+After first boot, generate admin key in Convex backend service terminal:
 
 ```bash
 ./generate_admin_key.sh
 ```
 
-## 2. Zeabur backend deployment (`apps/api`)
+`CONVEX_URL` for API should point to Convex backend public URL:
+- `https://<BACKEND_DOMAIN>.zeabur.app`
 
-This repo includes:
-- `Dockerfile` (root): builds and runs the API with Bun
-- `zbpack.json`: explicit build/start commands for Zeabur
-
-Required environment variables in Zeabur:
-- `PORT=4000` (or Zeabur-provided port)
-- `CONVEX_URL=https://<your-convex-backend-domain>`
-- `JWT_SECRET=<strong random secret, min 16 chars>`
-- `FRONTEND_URL=<your github pages url>`
-
-Health check endpoint:
-- `GET /health`
-
-## 3. GitHub Pages frontend deployment (`apps/web`)
+## 5. Frontend on GitHub Pages
 
 Workflow file:
 - `.github/workflows/deploy-frontend-pages.yml`
 
 Required GitHub repository secret:
-- `VITE_API_URL=https://<your-zeabur-backend-domain>`
+- `VITE_API_URL=https://<your-zeabur-api-domain>`
 
 Notes:
 - Workflow builds Vite with repo base path: `/<repo-name>/`
 - Workflow copies `index.html` to `404.html` for SPA fallback on GitHub Pages
 
-## 4. CI checks
+## 6. CI checks
 
 Workflow file:
 - `.github/workflows/ci.yml`
@@ -77,11 +101,13 @@ Runs on PRs and pushes to `main`:
 - test
 - build
 
-## 5. Recommended production checklist
+## 7. Recommended production checklist
 
-- Convex backend + dashboard running on Zeabur
-- Convex backend has persistent volume at `/convex/data`
-- Zeabur API env vars configured correctly
-- `FRONTEND_URL` and `VITE_API_URL` point to each other correctly
+- `zeabur.yml` deployed successfully (3 services created)
+- Convex backend volume mounted at `/convex/data`
+- API `JWT_SECRET` replaced with strong value
+- Convex `INSTANCE_SECRET` is valid hex
+- API `FRONTEND_URL` matches GitHub Pages domain
+- `VITE_API_URL` points to API domain
 - CORS requests from GitHub Pages domain succeed
-- `/health` returns `{"ok": true}` after deploy
+- API `/health` returns `{"ok": true}`
