@@ -2,46 +2,40 @@ import { describe, expect, it } from "vitest";
 import { canSubmitCard, getTypingFeedback } from "./PracticePage.js";
 
 describe("canSubmitCard", () => {
-  it("requires handwriting and audio", () => {
+  it("requires correct romaji typing", () => {
     expect(
       canSubmitCard({
-        handwritingCompleted: false,
-        typingInput: "勉強",
+        typingInput: "manabu",
         expected: "勉強",
         reading: "べんきょう",
-        audioPlayed: true,
+        romanization: "benkyou",
       }),
     ).toBe(false);
 
     expect(
       canSubmitCard({
-        handwritingCompleted: true,
-        typingInput: "勉強",
+        typingInput: "BENKYOU",
         expected: "勉強",
         reading: "べんきょう",
-        audioPlayed: false,
+        romanization: "benkyou",
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 
-  it("accepts exact target or reading", () => {
+  it("falls back to reading match when romanization is missing", () => {
     expect(
       canSubmitCard({
-        handwritingCompleted: true,
-        typingInput: "勉強",
+        typingInput: "benkyou",
         expected: "勉強",
         reading: "べんきょう",
-        audioPlayed: true,
       }),
     ).toBe(true);
 
     expect(
       canSubmitCard({
-        handwritingCompleted: true,
-        typingInput: "べんきょう",
+        typingInput: "BENKYOU",
         expected: "勉強",
         reading: "べんきょう",
-        audioPlayed: true,
       }),
     ).toBe(true);
   });
@@ -50,26 +44,28 @@ describe("canSubmitCard", () => {
 describe("getTypingFeedback", () => {
   it("tracks prefix streak when input is on target", () => {
     const feedback = getTypingFeedback({
-      typingInput: "べん",
+      typingInput: "ben",
       expected: "勉強",
       reading: "べんきょう",
+      romanization: "benkyou",
     });
 
     expect(feedback.onTrack).toBe(true);
-    expect(feedback.currentStreak).toBe(2);
-    expect(feedback.target).toBe("べんきょう");
-    expect(feedback.progress).toBe(40);
+    expect(feedback.currentStreak).toBe(3);
+    expect(feedback.target).toBe("benkyou");
+    expect(feedback.progress).toBe(43);
   });
 
   it("resets streak when mistyped", () => {
     const feedback = getTypingFeedback({
-      typingInput: "べx",
+      typingInput: "bex",
       expected: "勉強",
       reading: "べんきょう",
+      romanization: "benkyou",
     });
 
     expect(feedback.onTrack).toBe(false);
     expect(feedback.currentStreak).toBe(0);
-    expect(feedback.accuracy).toBe(50);
+    expect(feedback.accuracy).toBe(67);
   });
 });
