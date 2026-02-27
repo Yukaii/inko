@@ -45,6 +45,7 @@ export function WordBankPage() {
   const [focusedDeckIndex, setFocusedDeckIndex] = useState(-1);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isResizingRef = useRef(false);
 
@@ -297,7 +298,7 @@ export function WordBankPage() {
       {/* Deck Sidebar Panel */}
       <aside 
         ref={sidebarRef}
-        className={`hidden md:flex flex-col border-r border-[var(--border-subtle)] bg-bg-card transition-all duration-300 relative h-full ${isPanelCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'opacity-100'}`}
+        className={`hidden md:flex flex-col border-r border-[var(--border-subtle)] bg-bg-card relative h-full ${isPanelCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'opacity-100'} ${isResizing ? '' : 'transition-[width,opacity] duration-150 ease-out'}`}
         style={{ width: isPanelCollapsed ? 0 : sidebarWidth }}
       >
         <div className="flex flex-col h-full overflow-y-auto p-6 gap-8">
@@ -315,12 +316,20 @@ export function WordBankPage() {
             
             <nav className="flex flex-col gap-1" ref={deckGridRef} onKeyDown={handleDeckKeyDown}>
               {decks.map((deck, index) => (
-                <button
+                <div
                   key={deck.id}
                   data-deck-index={index}
-                  type="button"
                   className={`group flex items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-all border-0 cursor-pointer ${selectedDeckId === deck.id ? 'bg-bg-elevated text-text-primary border-l-2 border-accent-orange' : 'bg-transparent text-text-secondary hover:bg-bg-elevated hover:text-text-primary'}`}
                   onClick={selectDeck(deck.id)}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
+                    setSelectedDeckId(deck.id);
+                    setWordsCursor(null);
+                    setWordsCursorHistory([]);
+                    setSelectedWordIds(new Set());
+                    setWordSearch("");
+                  }}
                   tabIndex={focusedDeckIndex === index ? 0 : -1}
                 >
                   <div className="flex flex-col min-w-0">
@@ -338,9 +347,9 @@ export function WordBankPage() {
                         }}
                       >
                         <Pencil size={12} />
-                      </button>
+                     </button>
                   </div>
-                </button>
+                </div>
               ))}
             </nav>
           </section>
@@ -459,10 +468,13 @@ export function WordBankPage() {
         {/* Resize Handle */}
         {!isPanelCollapsed && (
           <div
-            className="absolute right-0 top-0 h-full w-4 cursor-col-resize z-30 group"
+            className="absolute right-0 top-0 h-full w-6 cursor-col-resize z-30 group"
             onMouseDown={(e) => {
               e.preventDefault();
               isResizingRef.current = true;
+              setIsResizing(true);
+              document.body.style.cursor = "col-resize";
+              document.body.style.userSelect = "none";
               const startX = e.clientX;
               const startWidth = sidebarWidth;
               
@@ -476,6 +488,9 @@ export function WordBankPage() {
               
               const handleMouseUp = () => {
                 isResizingRef.current = false;
+                setIsResizing(false);
+                document.body.style.cursor = "";
+                document.body.style.userSelect = "";
                 document.removeEventListener('mousemove', handleMouseMove);
                 document.removeEventListener('mouseup', handleMouseUp);
               };
@@ -484,7 +499,7 @@ export function WordBankPage() {
               document.addEventListener('mouseup', handleMouseUp);
             }}
           >
-            <div className="absolute right-0 top-0 h-full w-[3px] bg-[var(--border-subtle)] group-hover:bg-accent-orange transition-colors" />
+            <div className="absolute right-0 top-0 h-full w-px bg-[var(--border-subtle)] group-hover:bg-accent-orange transition-colors" />
           </div>
         )}
         
@@ -492,7 +507,7 @@ export function WordBankPage() {
         <button 
           type="button"
           onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
-          className="absolute right-0 top-1/2 z-40 flex h-6 w-6 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-bg-card text-text-secondary shadow-md hover:text-text-primary cursor-pointer transition-transform duration-300"
+          className="absolute right-0 top-1/2 z-40 flex h-6 w-6 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-bg-card p-0 text-text-secondary shadow-md hover:text-text-primary cursor-pointer transition-transform duration-300"
           aria-label={isPanelCollapsed ? "Expand panel" : "Collapse panel"}
         >
           <ChevronLeft 
@@ -508,7 +523,7 @@ export function WordBankPage() {
           <button 
             type="button"
             onClick={() => setIsPanelCollapsed(false)}
-            className="hidden md:flex absolute left-4 top-20 z-10 h-8 w-8 items-center justify-center rounded-lg bg-bg-card border border-[var(--border-subtle)] text-text-secondary shadow-md hover:text-text-primary cursor-pointer animate-in fade-in zoom-in-95 duration-200"
+            className="hidden md:flex absolute left-4 top-20 z-10 h-8 w-8 items-center justify-center rounded-lg bg-bg-card border border-[var(--border-subtle)] p-0 text-text-secondary shadow-md hover:text-text-primary cursor-pointer animate-in fade-in zoom-in-95 duration-200"
           >
             <ChevronRight size={18} />
           </button>
