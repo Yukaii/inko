@@ -549,7 +549,7 @@ export function WordBankPage() {
           </button>
         )}
 
-        <div className="flex flex-col h-full p-5 md:p-10 gap-8 overflow-y-auto pb-32">
+        <div className="flex flex-col h-full p-5 md:p-10 gap-8 overflow-y-auto pb-0">
           <header className="flex flex-col gap-1">
             {selectedDeckId ? (
               <button
@@ -586,8 +586,8 @@ export function WordBankPage() {
               </div>
             </div>
           ) : (
-            <section className="flex flex-col gap-6">
-              <div className="flex flex-col gap-4">
+            <section className="flex flex-1 min-h-0 flex-col gap-6">
+              <div className="flex flex-1 min-h-0 flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
                   <div className="relative flex-1 max-w-md">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
@@ -652,11 +652,12 @@ export function WordBankPage() {
                   </div>
                 )}
 
-                <div className="rounded-2xl border border-[var(--border-subtle)] bg-bg-card overflow-hidden shadow-sm">
-                  <table className="w-full text-sm border-collapse">
-                    <thead className="bg-bg-elevated text-text-secondary border-b border-[var(--border-subtle)]">
+                <div className="flex flex-1 min-h-0 rounded-2xl border border-[var(--border-subtle)] bg-bg-card overflow-hidden shadow-sm">
+                  <div className="h-full w-full overflow-y-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead className="bg-bg-elevated text-text-secondary border-b border-[var(--border-subtle)]">
                       <tr>
-                        <th className="w-12 px-4 py-3 text-left">
+                        <th className="sticky top-0 z-20 w-12 px-4 py-3 text-left bg-bg-elevated">
                            <input
                             type="checkbox"
                             className="cursor-pointer"
@@ -669,13 +670,13 @@ export function WordBankPage() {
                             }}
                           />
                         </th>
-                        <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px]">{t("word_bank.words.target")}</th>
-                        <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] md:table-cell hidden">{t("word_bank.words.reading")}</th>
-                        <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px]">{t("word_bank.words.meaning")}</th>
-                        <th className="w-20 px-4 py-3"></th>
+                        <th className="sticky top-0 z-20 px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] bg-bg-elevated">{t("word_bank.words.target")}</th>
+                        <th className="sticky top-0 z-20 px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] md:table-cell hidden bg-bg-elevated">{t("word_bank.words.reading")}</th>
+                        <th className="sticky top-0 z-20 px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] bg-bg-elevated">{t("word_bank.words.meaning")}</th>
+                        <th className="sticky top-0 z-20 w-20 px-4 py-3 bg-bg-elevated"></th>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[var(--border-subtle)]">
+                      </thead>
+                      <tbody className="divide-y divide-[var(--border-subtle)]">
                       {isWordsLoading ? (
                         <tr>
                           <td className="px-4 py-10 text-center text-text-secondary" colSpan={5}>
@@ -732,8 +733,9 @@ export function WordBankPage() {
                           </td>
                         </tr>
                       ))}
-                    </tbody>
-                  </table>
+                      </tbody>
+                    </table>
+                  </div>
                   {!isWordsLoading && pagedWords.length === 0 && (
                     <div className="py-20 text-center text-text-secondary">
                       <p>{t("word_bank.words.no_words")}</p>
