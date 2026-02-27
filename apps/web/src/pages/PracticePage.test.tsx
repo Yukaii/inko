@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canSubmitCard, getTypingFeedback } from "./PracticePage.js";
+import { canSubmitCard, getPracticeCompletionTitle, getTypingFeedback } from "./PracticePage.js";
 
 describe("canSubmitCard", () => {
   it("requires correct romaji typing", () => {
@@ -77,5 +77,37 @@ describe("getTypingFeedback", () => {
     expect(feedback.onTrack).toBe(false);
     expect(feedback.currentStreak).toBe(0);
     expect(feedback.accuracy).toBe(67);
+  });
+});
+
+describe("getPracticeCompletionTitle", () => {
+  it("shows daily target reached when session is capped", () => {
+    expect(
+      getPracticeCompletionTitle({
+        sessionCapped: true,
+        cardsCompleted: 50,
+        sessionTargetCards: 50,
+      }),
+    ).toBe("Daily target reached");
+  });
+
+  it("shows daily target reached when completed cards hit target", () => {
+    expect(
+      getPracticeCompletionTitle({
+        sessionCapped: false,
+        cardsCompleted: 50,
+        sessionTargetCards: 50,
+      }),
+    ).toBe("Daily target reached");
+  });
+
+  it("shows session complete when target is not reached", () => {
+    expect(
+      getPracticeCompletionTitle({
+        sessionCapped: false,
+        cardsCompleted: 12,
+        sessionTargetCards: 50,
+      }),
+    ).toBe("Session Complete");
   });
 });

@@ -168,6 +168,8 @@ export const StartPracticeSessionSchema = z.object({
   deckId: z.string(),
 });
 
+export const PRACTICE_SESSION_CARD_CAP_DEFAULT = 50;
+
 export const SubmitPracticeCardSchema = z.object({
   handwritingCompleted: z.boolean(),
   typingInput: z.string(),
