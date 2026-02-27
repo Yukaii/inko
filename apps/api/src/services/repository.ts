@@ -38,6 +38,18 @@ type ConvexWord = {
   tags: string[];
 };
 
+type WordStatsRow = {
+  word: ConvexWord;
+  stat?: {
+    shapeStrength: number;
+    typingStrength: number;
+    listeningStrength: number;
+    shapeDueAt: number;
+    typingDueAt: number;
+    listeningDueAt: number;
+  };
+};
+
 export class RepositoryError extends Error {
   statusCode: number;
 
@@ -74,6 +86,36 @@ function toWordDTO(word: ConvexWord) {
     example: word.example,
     audioUrl: word.audioUrl,
     tags: word.tags,
+  };
+}
+
+function selectNextPracticeCard(rows: WordStatsRow[], deckId: string, excludedWordIds: Set<string>) {
+  const now = Date.now();
+  const sorted = rows
+    .filter((row) => !excludedWordIds.has(row.word._id))
+    .map((row) => {
+      const strength = row.stat
+        ? Math.min(row.stat.shapeStrength, row.stat.typingStrength, row.stat.listeningStrength)
+        : 50;
+      const dueAt = row.stat
+        ? Math.min(row.stat.shapeDueAt, row.stat.typingDueAt, row.stat.listeningDueAt)
+        : now;
+      return { ...row, strength, dueAt };
+    })
+    .sort((a, b) => a.strength - b.strength || a.dueAt - b.dueAt);
+
+  const selected = sorted[0]?.word;
+  if (!selected) return null;
+
+  return {
+    wordId: selected._id,
+    deckId,
+    target: selected.target,
+    reading: selected.reading,
+    romanization: selected.romanization,
+    meaning: selected.meaning,
+    example: selected.example,
+    audioUrl: selected.audioUrl,
   };
 }
 
@@ -180,39 +222,18 @@ export const repository = {
     const rows = (await convex.query("practice:listDeckWordsWithStats", {
       userId,
       deckId: input.deckId,
-    })) as Array<{ word: ConvexWord; stat?: any }>;
+    })) as WordStatsRow[];
 
     if (rows.length === 0) {
       throw new RepositoryError("No words available in deck", 409);
     }
 
-    const now = Date.now();
-    const sorted = rows
-      .map((row) => {
-        const strength = row.stat
-          ? Math.min(row.stat.shapeStrength, row.stat.typingStrength, row.stat.listeningStrength)
-          : 50;
-        const dueAt = row.stat
-          ? Math.min(row.stat.shapeDueAt, row.stat.typingDueAt, row.stat.listeningDueAt)
-          : now;
-        return { ...row, strength, dueAt };
-      })
-      .sort((a, b) => a.strength - b.strength || a.dueAt - b.dueAt);
-
-    const selected = sorted[0].word;
+    const card = selectNextPracticeCard(rows, input.deckId, new Set());
+    if (!card) throw new RepositoryError("No words available in deck", 409);
 
     return {
       sessionId: (session as any)._id as string,
-      card: {
-        wordId: selected._id,
-        deckId: input.deckId,
-        target: selected.target,
-        reading: selected.reading,
-        romanization: selected.romanization,
-        meaning: selected.meaning,
-        example: selected.example,
-        audioUrl: selected.audioUrl,
-      },
+      card,
     };
   },
 
@@ -246,7 +267,7 @@ export const repository = {
     if (!inDeck) throw new RepositoryError("Word not in session deck", 403);
 
     const shape = scoreShape(input.handwritingCompleted);
-    const typing = scoreTyping(input.typingInput, word.target, word.reading, input.typingMs);
+    const typing = scoreTyping(input.typingInput, word.target, word.reading, word.romanization, input.typingMs);
     const listening = scoreListening(input.listeningConfidence);
 
     if (typing === 0) {
@@ -294,10 +315,20 @@ export const repository = {
       typingMs: input.typingMs,
     });
 
+    const rows = (await convex.query("practice:listDeckWordsWithStats", {
+      userId,
+      deckId: session.deckId,
+    })) as WordStatsRow[];
+
+    const attempts = (await convex.query("practice:listAttemptsBySession", { sessionId })) as Array<{ wordId: string }>;
+    const attemptedWordIds = new Set(attempts.map((attempt) => attempt.wordId));
+    const nextCard = selectNextPracticeCard(rows, session.deckId, attemptedWordIds);
+
     return {
       accepted: true,
       scores: { shape, typing, listening },
       nextDueAt: new Date(nextDueAt(next)).toISOString(),
+      nextCard,
     };
   },
 

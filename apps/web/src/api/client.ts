@@ -73,7 +73,7 @@ export const api = {
     wordId: string,
     input: SubmitPracticeCardInput,
   ) =>
-    request<{ accepted: boolean; scores: any; nextDueAt: string }>(
+    request<{ accepted: boolean; scores: any; nextDueAt: string; nextCard?: any | null }>(
       `/api/practice/session/${sessionId}/card/submit?wordId=${wordId}`,
       { method: "POST", body: JSON.stringify(input) },
       token,

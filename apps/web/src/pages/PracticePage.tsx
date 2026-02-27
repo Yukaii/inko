@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
-import { HandwritingCanvas } from "../components/HandwritingCanvas.js";
 import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
-import { normalizeJapaneseInput } from "@inko/shared";
+import { isJapaneseTypingMatch, normalizeJapaneseInput, romajiToHiragana } from "@inko/shared";
 
 type PracticeCard = {
   wordId: string;
@@ -17,28 +16,27 @@ type PracticeCard = {
 };
 
 export function canSubmitCard(input: {
-  handwritingCompleted: boolean;
   typingInput: string;
   expected: string;
   reading?: string;
-  audioPlayed: boolean;
+  romanization?: string;
 }) {
-  if (!input.handwritingCompleted || !input.audioPlayed) return false;
-  const normalized = normalizeJapaneseInput(input.typingInput);
-  return normalized === normalizeJapaneseInput(input.expected) ||
-    (!!input.reading && normalized === normalizeJapaneseInput(input.reading));
+  return isJapaneseTypingMatch(input.typingInput, input.expected, input.reading, input.romanization);
 }
 
-export function getTypingFeedback(input: { typingInput: string; expected: string; reading?: string }) {
-  const typed = normalizeJapaneseInput(input.typingInput);
-  const candidates = [normalizeJapaneseInput(input.expected), input.reading ? normalizeJapaneseInput(input.reading) : ""].filter(
-    Boolean,
-  );
+export function getTypingFeedback(input: { typingInput: string; expected: string; reading?: string; romanization?: string }) {
+  const typedRomaji = normalizeJapaneseInput(input.typingInput).toLowerCase();
+  const typedKana = romajiToHiragana(typedRomaji);
+  const romajiTarget = input.romanization ? normalizeJapaneseInput(input.romanization).toLowerCase() : "";
+  const readingTarget = input.reading ? normalizeJapaneseInput(input.reading) : "";
+  const fallbackTarget = normalizeJapaneseInput(input.expected);
 
-  const defaultTarget = candidates[0] ?? "";
-  if (!typed || !defaultTarget) {
+  const target = romajiTarget || readingTarget || fallbackTarget;
+  const source = romajiTarget ? typedRomaji : readingTarget ? typedKana : normalizeJapaneseInput(input.typingInput);
+
+  if (!source || !target) {
     return {
-      target: defaultTarget,
+      target,
       matchedChars: 0,
       accuracy: 100,
       progress: 0,
@@ -48,34 +46,25 @@ export function getTypingFeedback(input: { typingInput: string; expected: string
     };
   }
 
-  let bestTarget = defaultTarget;
-  let bestMatchedChars = 0;
-  for (const candidate of candidates) {
-    let matchedChars = 0;
-    const limit = Math.min(typed.length, candidate.length);
-    while (matchedChars < limit && typed[matchedChars] === candidate[matchedChars]) {
-      matchedChars += 1;
-    }
-
-    if (matchedChars > bestMatchedChars) {
-      bestMatchedChars = matchedChars;
-      bestTarget = candidate;
-    }
+  let matchedChars = 0;
+  const limit = Math.min(source.length, target.length);
+  while (matchedChars < limit && source[matchedChars] === target[matchedChars]) {
+    matchedChars += 1;
   }
 
-  const onTrack = typed.startsWith(bestTarget.slice(0, typed.length));
-  const complete = typed === bestTarget;
-  const accuracy = typed.length === 0 ? 100 : Math.round((bestMatchedChars / typed.length) * 100);
-  const progress = bestTarget.length === 0 ? 0 : Math.min(100, Math.round((bestMatchedChars / bestTarget.length) * 100));
+  const onTrack = target.startsWith(source);
+  const complete = source === target;
+  const accuracy = source.length === 0 ? 100 : Math.round((matchedChars / source.length) * 100);
+  const progress = target.length === 0 ? 0 : Math.min(100, Math.round((matchedChars / target.length) * 100));
 
   return {
-    target: bestTarget,
-    matchedChars: bestMatchedChars,
+    target,
+    matchedChars,
     accuracy,
     progress,
     onTrack,
     complete,
-    currentStreak: onTrack ? typed.length : 0,
+    currentStreak: onTrack ? source.length : 0,
   };
 }
 
@@ -85,10 +74,7 @@ export function PracticePage() {
 
   const [sessionId, setSessionId] = useState("");
   const [card, setCard] = useState<PracticeCard | null>(null);
-  const [handwritingDone, setHandwritingDone] = useState(false);
   const [typingInput, setTypingInput] = useState("");
-  const [audioPlayed, setAudioPlayed] = useState(false);
-  const [listeningConfidence, setListeningConfidence] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [result, setResult] = useState<string>("");
   const [cardStreak, setCardStreak] = useState(0);
   const [bestCardStreak, setBestCardStreak] = useState(0);
@@ -109,18 +95,18 @@ export function PracticePage() {
       if (!card) throw new Error("No card");
       if (!token) throw new Error("Not authenticated");
       return api.submitPractice(token, sessionId, card.wordId, {
-        handwritingCompleted: handwritingDone,
+        handwritingCompleted: true,
         typingInput,
         typingMs: Date.now() - startedAtRef.current,
-        audioPlayed,
-        listeningConfidence,
+        audioPlayed: true,
+        listeningConfidence: 3,
       });
     },
     onSuccess: (res) => {
       setResult(
         res.accepted
           ? `Accepted: shape ${res.scores.shape}, typing ${res.scores.typing}, listening ${res.scores.listening}`
-          : "Rejected: complete handwriting, typing and audio first",
+          : "Rejected: typing does not match target",
       );
 
       if (res.accepted) {
@@ -130,10 +116,12 @@ export function PracticePage() {
           setBestCardStreak((best) => Math.max(best, next));
           return next;
         });
-        setHandwritingDone(false);
         setTypingInput("");
-        setAudioPlayed(false);
-        setListeningConfidence(3);
+        if (res.nextCard) {
+          setCard(res.nextCard as PracticeCard);
+        } else {
+          finishMutation.mutate();
+        }
         startedAtRef.current = Date.now();
       } else {
         setLastSubmitAccepted(false);
@@ -155,13 +143,12 @@ export function PracticePage() {
   const submitEnabled = useMemo(() => {
     if (!card) return false;
     return canSubmitCard({
-      handwritingCompleted: handwritingDone,
       typingInput,
       expected: card.target,
       reading: card.reading,
-      audioPlayed,
+      romanization: card.romanization,
     });
-  }, [audioPlayed, card, handwritingDone, typingInput]);
+  }, [card, typingInput]);
 
   const typingFeedback = useMemo(() => {
     if (!card) {
@@ -180,6 +167,7 @@ export function PracticePage() {
       typingInput,
       expected: card.target,
       reading: card.reading,
+      romanization: card.romanization,
     });
   }, [card, typingInput]);
 
@@ -219,77 +207,33 @@ export function PracticePage() {
         </div>
       </section>
 
-      <section className="practice-grid">
-        <HandwritingCanvas onChanged={setHandwritingDone} />
-
-        <div style={{ display: "grid", gap: 16 }}>
-          <div className="card" style={{ display: "grid", gap: 10 }}>
-            <strong>IME Typing</strong>
-            <input
-              value={typingInput}
-              onChange={(event) => setTypingInput(event.target.value)}
-              placeholder="Type target word or reading"
-            />
-            <div className="typing-feedback" aria-live="polite">
-              <div className="typing-feedback-topline">
-                <span>{typingFeedback.complete ? "locked_in" : typingFeedback.onTrack ? "on_track" : "mistyped"}</span>
-                <span>{typingFeedback.progress}%</span>
-              </div>
-              <div className="typing-progress-track" aria-hidden="true">
-                <div className="typing-progress-fill" style={{ width: `${typingFeedback.progress}%` }} />
-              </div>
-              <div className="typing-feedback-metrics">
-                <span>char streak: {typingFeedback.currentStreak}</span>
-                <span>accuracy: {typingFeedback.accuracy}%</span>
-                <span>speed: {typingSpeed} cpm</span>
-              </div>
-              <div className="typing-feedback-target">target: {typingFeedback.target || "-"}</div>
-            </div>
+      <section className="card" style={{ display: "grid", gap: 10 }}>
+        <strong>IME Typing</strong>
+        <input
+          value={typingInput}
+          onChange={(event) => setTypingInput(event.target.value)}
+          placeholder="Type romaji (lowercase)"
+        />
+        <div className="typing-feedback" aria-live="polite">
+          <div className="typing-feedback-topline">
+            <span>{typingFeedback.complete ? "locked_in" : typingFeedback.onTrack ? "on_track" : "mistyped"}</span>
+            <span>{typingFeedback.progress}%</span>
           </div>
-
-          <div className="card" style={{ display: "grid", gap: 10 }}>
-            <strong>Audio</strong>
-            {card.audioUrl ? (
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => {
-                  const player = new Audio(card.audioUrl);
-                  void player.play();
-                  setAudioPlayed(true);
-                }}
-              >
-                Play Audio
-              </button>
-            ) : (
-              <button type="button" className="secondary" onClick={() => setAudioPlayed(true)}>
-                Mark Audio Played
-              </button>
-            )}
-            <label>
-              Listening confidence
-              <select
-                value={listeningConfidence}
-                onChange={(event) => setListeningConfidence(Number(event.target.value) as 1 | 2 | 3 | 4 | 5)}
-              >
-                {[1, 2, 3, 4, 5].map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div className="typing-progress-track" aria-hidden="true">
+            <div className="typing-progress-fill" style={{ width: `${typingFeedback.progress}%` }} />
           </div>
+          <div className="typing-feedback-metrics">
+            <span>char streak: {typingFeedback.currentStreak}</span>
+            <span>accuracy: {typingFeedback.accuracy}%</span>
+            <span>speed: {typingSpeed} cpm</span>
+          </div>
+          <div className="typing-feedback-target">target: {typingFeedback.target || "-"}</div>
         </div>
       </section>
 
       <section className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", gap: 20 }}>
-          <span>shape: {handwritingDone ? "ready" : "pending"}</span>
-          <span>
-            typing: {typingInput ? (typingFeedback.onTrack ? "locked" : "fix input") : "pending"}
-          </span>
-          <span>listening: {audioPlayed ? "ready" : "pending"}</span>
+          <span>typing: {typingInput ? (typingFeedback.complete ? "ready" : "keep typing") : "pending"}</span>
         </div>
         <button type="button" onClick={() => submitMutation.mutate()} disabled={!submitEnabled || submitMutation.isPending}>
           submit_card
