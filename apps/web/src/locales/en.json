@@ -57,19 +57,19 @@
   },
   "landing": {
     "nav": {
-      "how_it_works": "how_it_works",
-      "features": "features",
-      "get_started": "get_started"
+      "how_it_works": "How It Works",
+      "features": "Features",
+      "get_started": "Get Started"
     },
     "hero": {
-      "badge": "THE_FUTURE_OF_RETENTION",
+      "badge": "The Future of Retention",
       "title": "type it until you own it",
       "subtitle": "The flashcard app that makes you prove you know it. Type your answers, build muscle memory, and never forget again.",
       "cta_primary": "Start Typing",
       "cta_secondary": "Learn More"
     },
     "how_it_works": {
-      "title": "// how_it_works",
+      "title": "// How It Works",
       "subtitle": "Three steps to never forgetting again",
       "step1": {
         "title": "Create Decks",
@@ -85,31 +85,31 @@
       }
     },
     "features": {
-      "badge": "// features",
-      "title": "everything_you_need",
+      "badge": "// Features",
+      "title": "Everything You Need",
       "subtitle": "Built for learners who want real retention, not just recognition.",
       "typing_first": {
-        "title": "typing_first",
+        "title": "Typing First",
         "desc": "No multiple choice. No matching. Type your answers from memory to build real neural pathways."
       },
       "spaced_repetition": {
-        "title": "spaced_repetition",
+        "title": "Spaced Repetition",
         "desc": "Smart scheduling surfaces cards right before you forget. Every review is perfectly timed."
       },
       "progress_tracking": {
-        "title": "progress_tracking",
+        "title": "Progress Tracking",
         "desc": "Visual dashboards show mastery levels, streaks, and weak spots so you know exactly where to focus."
       },
       "custom_decks": {
-        "title": "custom_decks",
+        "title": "Custom Decks",
         "desc": "Create decks for any subject — languages, code syntax, med terms, history dates. Your knowledge, your way."
       },
       "streak_system": {
-        "title": "streak_system",
+        "title": "Streak System",
         "desc": "Daily streaks and scoring keep you motivated. Consistency beats cramming every time."
       },
       "practice_anywhere": {
-        "title": "practice_anywhere",
+        "title": "Practice Anywhere",
         "desc": "Works on any device with a keyboard. Practice on your commute, at your desk, or in bed."
       }
     },
