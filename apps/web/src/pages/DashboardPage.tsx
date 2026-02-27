@@ -1,13 +1,22 @@
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 
 export function DashboardPage() {
   const { token } = useAuth();
+
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
-    queryFn: () => api.dashboard(token!),
+    queryFn: () => api.dashboard(token ?? ""),
   });
+
+  const decksQuery = useQuery({
+    queryKey: ["decks"],
+    queryFn: () => api.listDecks(token ?? ""),
+  });
+
+  const decks = decksQuery.data ?? [];
 
   if (isLoading) return <p>Loading...</p>;
 
@@ -41,12 +50,43 @@ export function DashboardPage() {
         </div>
       </section>
 
+      {/* ---- Quick Practice ---- */}
+      {decks.length > 0 && (
+        <section>
+          <h2 style={{ marginTop: 0, fontFamily: "var(--font-display)", fontSize: 28, marginBottom: 14 }}>
+            Quick Practice
+          </h2>
+          <div className="quick-practice-grid">
+            {decks
+              .filter((d) => !d.archived)
+              .map((deck) => (
+                <div key={deck.id} className="quick-practice-card">
+                  <div className="quick-practice-card-name">{deck.name}</div>
+                  <div className="quick-practice-card-meta">{deck.language.toUpperCase()}</div>
+                  <Link to={`/practice/${deck.id}`}>
+                    <button type="button" style={{ width: "100%" }}>Start Session</button>
+                  </Link>
+                </div>
+              ))}
+          </div>
+        </section>
+      )}
+
+      {decks.length === 0 && !decksQuery.isLoading && (
+        <section className="card empty-state">
+          <p>No decks yet.</p>
+          <p style={{ fontSize: 13 }}>
+            Head to the <Link to="/word-bank" style={{ color: "var(--accent-orange)" }}>Word Bank</Link> to create your first deck and start practicing.
+          </p>
+        </section>
+      )}
+
       <section className="card">
         <h2 style={{ marginTop: 0, fontFamily: "var(--font-display)", fontSize: 28 }}>Recent Sessions</h2>
         <div style={{ display: "grid", gap: 8 }}>
-          {(data?.recentSessions ?? []).map((session: any) => (
+          {(data?.recentSessions ?? []).map((session: { sessionId: string; cardsCompleted: number }) => (
             <div key={session.sessionId} style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>{session.sessionId}</span>
+              <span style={{ color: "var(--text-secondary)", fontSize: 13 }}>{session.sessionId.slice(0, 12)}...</span>
               <span>{session.cardsCompleted} cards</span>
             </div>
           ))}

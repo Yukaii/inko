@@ -201,6 +201,321 @@ button.secondary {
   gap: 12px;
 }
 
+/* --- Deck cards grid --- */
+.deck-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+button.deck-card {
+  background: var(--bg-card);
+  border: 1px solid #2f2f2f;
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  color: var(--text-primary);
+  text-align: left;
+  font-weight: normal;
+}
+
+button.deck-card:hover {
+  border-color: #444;
+}
+
+button.deck-card.selected {
+  border-color: var(--accent-orange);
+  box-shadow: 0 0 0 1px var(--accent-orange);
+}
+
+.deck-card-name {
+  font-family: var(--font-display);
+  font-size: 20px;
+  margin: 0;
+}
+
+.deck-card-meta {
+  color: var(--text-secondary);
+  font-size: 12px;
+  display: flex;
+  gap: 12px;
+}
+
+.deck-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.deck-card-actions button {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+/* --- New deck card (dashed) --- */
+button.deck-card-new {
+  background: transparent;
+  border: 2px dashed #3a3a3a;
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: border-color 0.15s, color 0.15s;
+  min-height: 140px;
+  font-weight: normal;
+}
+
+button.deck-card-new:hover {
+  border-color: var(--accent-orange);
+  color: var(--text-primary);
+}
+
+.deck-card-new .plus {
+  font-size: 28px;
+  line-height: 1;
+}
+
+/* --- Tabs --- */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.tab-bar button {
+  flex: 1;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tab-bar button.active {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* --- Import textarea --- */
+textarea.import-area {
+  min-height: 140px;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+/* --- Word table --- */
+.word-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.word-table th {
+  text-align: left;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 12px;
+  border-bottom: 1px solid #2f2f2f;
+}
+
+.word-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #1f1f1f;
+  font-size: 14px;
+}
+
+.word-table tr:last-child td {
+  border-bottom: none;
+}
+
+.word-table .target-cell {
+  font-family: var(--font-jp);
+  font-size: 16px;
+}
+
+.word-table .reading-cell {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.word-table .tags-cell {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+/* --- Section header with actions --- */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+}
+
+/* --- Quick-practice on dashboard --- */
+.quick-practice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.quick-practice-card {
+  background: var(--bg-card);
+  border: 1px solid #2f2f2f;
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.15s;
+}
+
+.quick-practice-card:hover {
+  border-color: var(--accent-orange);
+}
+
+.quick-practice-card-name {
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+
+.quick-practice-card-meta {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.quick-practice-card button {
+  margin-top: auto;
+  width: 100%;
+}
+
+/* --- Inline create deck form in modal overlay --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  border: none;
+  padding: 0;
+  cursor: default;
+}
+
+.modal,
+dialog.modal {
+  background: var(--bg-card);
+  border: 1px solid #2f2f2f;
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 400px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 101;
+  color: var(--text-primary);
+}
+
+.modal h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* --- Button sizes --- */
+button.sm {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+button.ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+button.ghost:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+
+button.danger {
+  background: #3d1f1f;
+  color: #ff6b6b;
+}
+
+button.danger:hover {
+  background: #4d2525;
+}
+
+/* --- Empty state --- */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+}
+
+.empty-state p {
+  margin: 4px 0;
+}
+
+/* --- Form group (stacked label + input) --- */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-group label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 @media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -222,5 +537,410 @@ button.secondary {
 
   .practice-grid {
     grid-template-columns: 1fr;
+  }
+
+  .deck-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =============================================
+   Zen Practice Mode (monkeytype-inspired)
+   ============================================= */
+
+/* Full-viewport container - takes over the main area */
+.zen-zone {
+  position: fixed;
+  inset: 0;
+  background: #0e0e0e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  outline: none;
+  cursor: text;
+  overflow: hidden;
+}
+
+/* Subtle radial glow behind center */
+.zen-zone::before {
+  content: "";
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 400px;
+  background: radial-gradient(ellipse, rgba(255, 107, 53, 0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Top bar: streak + end session */
+.zen-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  z-index: 210;
+  opacity: 0.5;
+  transition: opacity 0.3s;
+}
+
+.zen-finish-error {
+  position: fixed;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ff8a8a;
+  background: rgba(61, 31, 31, 0.92);
+  border: 1px solid #5b2c2c;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  z-index: 220;
+}
+
+.zen-zone:hover .zen-topbar,
+.zen-zone:focus-within .zen-topbar {
+  opacity: 1;
+}
+
+.zen-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.zen-streak-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 14px;
+  font-family: var(--font-display);
+  color: var(--accent-orange);
+}
+
+.zen-streak-zero {
+  color: var(--text-secondary);
+}
+
+.zen-streak-fire {
+  font-size: 16px;
+}
+
+.zen-best-streak {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.zen-end-btn {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.2s, border-color 0.2s;
+  font-weight: 400;
+}
+
+.zen-end-btn:hover {
+  color: var(--text-primary);
+  border-color: #444;
+}
+
+.zen-kbd {
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+/* Center focus area */
+.zen-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.zen-card-exit {
+  opacity: 0;
+  transform: translateY(-12px);
+}
+
+/* Meaning hint */
+.zen-meaning {
+  font-size: 16px;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+/* Large kanji target */
+.zen-target {
+  font-family: var(--font-jp);
+  font-size: 72px;
+  line-height: 1.1;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+
+/* Reading hint below kanji */
+.zen-reading {
+  font-family: var(--font-jp);
+  font-size: 18px;
+  color: #4a4a4a;
+  margin-top: -4px;
+}
+
+/* Monkeytype character track */
+.zen-romaji-track {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 28px;
+  letter-spacing: 0.08em;
+  min-height: 42px;
+  margin-top: 12px;
+}
+
+.zen-char {
+  display: inline-block;
+  transition: color 0.1s;
+}
+
+.zen-char-correct {
+  color: var(--accent-teal);
+}
+
+.zen-char-wrong {
+  color: #ff4444;
+  text-decoration: underline;
+  text-decoration-color: #ff444466;
+}
+
+.zen-char-cursor {
+  color: var(--text-primary);
+  position: relative;
+}
+
+/* Blinking cursor before the current character */
+.zen-char-cursor::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--accent-orange);
+  animation: zen-blink 1s ease-in-out infinite;
+}
+
+@keyframes zen-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.zen-char-pending {
+  color: #333;
+}
+
+.zen-romaji-placeholder {
+  font-size: 18px;
+  letter-spacing: 0.02em;
+}
+
+/* Hidden input - visually hidden but still focusable */
+.zen-hidden-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  pointer-events: none;
+  border: none;
+  padding: 0;
+}
+
+/* Screen-reader only label */
+.zen-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Feedback line */
+.zen-feedback {
+  min-height: 24px;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.zen-feedback-on {
+  color: var(--accent-teal);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.zen-feedback-off {
+  color: #ff6b6b;
+  font-size: 13px;
+}
+
+.zen-feedback-miss {
+  color: #ff6b6b;
+  font-size: 14px;
+  animation: zen-shake 0.3s ease-in-out;
+}
+
+@keyframes zen-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* Bottom progress bar */
+.zen-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0;
+  z-index: 210;
+}
+
+.zen-progress-track {
+  height: 3px;
+  background: #1a1a1a;
+  overflow: hidden;
+}
+
+.zen-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-orange), var(--accent-teal));
+  transition: width 120ms ease-out;
+}
+
+.zen-progress-complete {
+  background: var(--accent-teal);
+  box-shadow: 0 0 12px rgba(0, 212, 170, 0.4);
+}
+
+/* Loading state */
+.zen-loading {
+  font-size: 16px;
+  color: var(--text-secondary);
+  animation: zen-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes zen-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* Session complete screen */
+.zen-complete-icon {
+  font-size: 48px;
+  color: var(--accent-teal);
+  margin-bottom: 8px;
+}
+
+.zen-complete-title {
+  font-family: var(--font-display);
+  font-size: 36px;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.zen-complete-stats {
+  display: flex;
+  gap: 40px;
+  margin-top: 16px;
+}
+
+.zen-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.zen-stat-value {
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: var(--accent-orange);
+}
+
+.zen-stat-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.zen-back-btn {
+  margin-top: 32px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid #2f2f2f;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  font-weight: 500;
+}
+
+.zen-back-btn:hover {
+  border-color: var(--accent-orange);
+}
+
+/* Mobile adjustments for zen mode */
+@media (max-width: 600px) {
+  .zen-target {
+    font-size: 48px;
+  }
+
+  .zen-romaji-track {
+    font-size: 22px;
+  }
+
+  .zen-meaning {
+    font-size: 14px;
+  }
+
+  .zen-topbar {
+    padding: 12px 16px;
+  }
+
+  .zen-complete-stats {
+    gap: 24px;
+  }
+
+  .zen-stat-value {
+    font-size: 24px;
   }
 }

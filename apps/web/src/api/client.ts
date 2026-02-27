@@ -9,13 +9,17 @@ import type {
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
 async function request<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
+  const headers = new Headers(init.headers);
+  if (init.body !== undefined && init.body !== null && !headers.has("content-type")) {
+    headers.set("content-type", "application/json");
+  }
+  if (token && !headers.has("authorization")) {
+    headers.set("authorization", `Bearer ${token}`);
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: {
-      "content-type": "application/json",
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-      ...(init.headers ?? {}),
-    },
+    headers,
   });
 
   if (!res.ok) {
