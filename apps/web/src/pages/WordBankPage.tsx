@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Pencil, Trash2, ChevronLeft, ChevronRight, Search, BookOpen, ArrowLeft } from "lucide-react";
 import { LANGUAGE_LABELS, type LanguageCode, SUPPORTED_LANGUAGES } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
@@ -555,7 +555,7 @@ export function WordBankPage() {
                 onClick={() => navigate("/word-bank")}
                 className="mb-3 flex w-fit items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-bg-card px-2.5 py-1.5 text-xs font-medium text-text-secondary md:hidden"
               >
-                <span aria-hidden="true">←</span>
+                <ArrowLeft size={14} aria-hidden="true" />
                 <span>{t("word_bank.decks.title")} / {activeDeck?.name ?? ""}</span>
               </button>
             ) : null}
@@ -569,7 +569,7 @@ export function WordBankPage() {
 
           {!selectedDeckId ? (
             <div className="flex flex-1 flex-col items-center justify-center text-center p-12 bg-bg-card rounded-2xl border border-dashed border-[var(--border-strong)]">
-              <div className="text-4xl mb-4 opacity-20">📚</div>
+              <BookOpen className="mb-4 h-10 w-10 opacity-20" aria-hidden="true" />
               <h3 className="text-lg font-medium text-text-primary mb-2">{t("word_bank.words.select_deck")}</h3>
               <p className="text-sm text-text-secondary max-w-sm">{t("word_bank.words.select_deck_desc")}</p>
               <div className="md:hidden mt-6 grid grid-cols-1 gap-3 w-full max-w-xs">
@@ -588,7 +588,7 @@ export function WordBankPage() {
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
                   <div className="relative flex-1 max-w-md">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-sm">🔍</span>
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
                     <input
                       type="text"
                       placeholder={t("word_bank.words.search_placeholder")}
