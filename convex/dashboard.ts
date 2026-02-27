@@ -8,7 +8,9 @@ function dateString(ts: number): string {
 export const summary = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    const [words, stats, sessions, dailyStats] = await Promise.all([
+    const today = dateString(Date.now());
+
+    const [words, stats, sessions, completedToday] = await Promise.all([
       ctx.db
         .query("words")
         .withIndex("by_user", (q) => q.eq("userId", args.userId))
@@ -20,16 +22,16 @@ export const summary = query({
       ctx.db
         .query("practice_sessions")
         .withIndex("by_user", (q) => q.eq("userId", args.userId))
-        .collect(),
+        .order("desc")
+        .take(50),
       ctx.db
         .query("daily_stats")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
-        .collect(),
+        .withIndex("by_user_date", (q) => q.eq("userId", args.userId).eq("date", today))
+        .first(),
     ]);
 
     const now = Date.now();
     const dueToday = stats.filter((s) => Math.min(s.shapeDueAt, s.typingDueAt, s.listeningDueAt) <= now).length;
-    const completedToday = dailyStats.find((d) => d.date === dateString(now));
 
     return {
       totalWordsLearned: words.length,

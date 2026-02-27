@@ -63,6 +63,19 @@ export const api = {
 
   listWords: (token: string, deckId: string) => request<any[]>(`/api/decks/${deckId}/words`, {}, token),
 
+  listWordsPage: (token: string, deckId: string, options?: { cursor?: string | null; limit?: number }) => {
+    const params = new URLSearchParams();
+    if (options?.cursor) params.set("cursor", options.cursor);
+    if (options?.limit) params.set("limit", String(options.limit));
+    const query = params.toString();
+    const suffix = query ? `?${query}` : "";
+    return request<{ words: any[]; nextCursor: string | null; isDone: boolean }>(
+      `/api/decks/${deckId}/words/page${suffix}`,
+      {},
+      token,
+    );
+  },
+
   createWord: (token: string, deckId: string, input: CreateWordInput) =>
     request<any>(`/api/decks/${deckId}/words`, { method: "POST", body: JSON.stringify(input) }, token),
 

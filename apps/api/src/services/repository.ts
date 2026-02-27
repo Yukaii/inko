@@ -195,10 +195,41 @@ export const repository = {
     if (!deck) throw new RepositoryError("Deck not found", 404);
     if (deck.userId !== userId) throw new RepositoryError("Forbidden", 403);
 
-    const words = (await convex.query("decks:listDeckWords", {
-      deckId,
-    })) as ConvexWord[];
+    const words: ConvexWord[] = [];
+    let cursor: string | null = null;
+    const limit = 500;
+
+    do {
+      const page = (await convex.query("decks:listDeckWordsPage", {
+        deckId,
+        cursor,
+        limit,
+      })) as { page: ConvexWord[]; continueCursor: string; isDone: boolean };
+
+      words.push(...page.page);
+      cursor = page.isDone ? null : page.continueCursor;
+    } while (cursor !== null);
+
     return words.map(toWordDTO);
+  },
+
+  async listDeckWordsPage(userId: string, deckId: string, cursor: string | null, limit: number) {
+    const deck = (await convex.query("decks:getDeckById", { deckId })) as ConvexDeck | null;
+    if (!deck) throw new RepositoryError("Deck not found", 404);
+    if (deck.userId !== userId) throw new RepositoryError("Forbidden", 403);
+
+    const safeLimit = Math.max(1, Math.min(500, limit));
+    const page = (await convex.query("decks:listDeckWordsPage", {
+      deckId,
+      cursor,
+      limit: safeLimit,
+    })) as { page: ConvexWord[]; continueCursor: string; isDone: boolean };
+
+    return {
+      words: page.page.map(toWordDTO),
+      nextCursor: page.isDone ? null : page.continueCursor,
+      isDone: page.isDone,
+    };
   },
 
   async createWord(userId: string, deckId: string, input: CreateWordInput) {

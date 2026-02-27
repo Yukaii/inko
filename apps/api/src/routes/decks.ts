@@ -48,6 +48,18 @@ export async function deckRoutes(app: FastifyInstance, repo: Repository = reposi
     }
   });
 
+  app.get("/api/decks/:deckId/words/page", { preHandler: requireAuth }, async (request) => {
+    try {
+      const { deckId } = request.params as { deckId: string };
+      const query = request.query as { cursor?: string; limit?: string };
+      const cursor = query.cursor ?? null;
+      const limit = query.limit ? Number.parseInt(query.limit, 10) : 100;
+      return await repo.listDeckWordsPage(request.auth!.userId, deckId, cursor, limit);
+    } catch (error) {
+      rethrowAsHttp(app, error);
+    }
+  });
+
   app.post("/api/decks/:deckId/words", { preHandler: requireAuth }, async (request) => {
     try {
       const body = CreateWordSchema.parse(request.body);

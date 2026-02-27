@@ -10,7 +10,8 @@ import { registerShortcut } from "../hooks/useKeyboard.js";
 type AddTab = "single" | "import";
 const NEW_DECK_LANGUAGE_STORAGE_KEY = "inko:new-deck-language";
 const IMPORT_PREVIEW_PAGE_SIZE = 20;
-const IMPORT_BATCH_SIZE = 1000;
+const IMPORT_BATCH_SIZE = 10000;
+const WORDS_PAGE_SIZE = 100;
 
 function chunkArray<T>(items: T[], size: number): T[][] {
   if (size <= 0) return [items];
@@ -78,6 +79,8 @@ export function WordBankPage() {
   // Search and filter state
   const [wordSearch, setWordSearch] = useState("");
   const [expandedWordId, setExpandedWordId] = useState<string | null>(null);
+  const [wordsCursor, setWordsCursor] = useState<string | null>(null);
+  const [wordsCursorHistory, setWordsCursorHistory] = useState<Array<string | null>>([]);
 
   // Bulk selection state
   const [selectedWordIds, setSelectedWordIds] = useState<Set<string>>(new Set());
@@ -89,13 +92,17 @@ export function WordBankPage() {
   });
 
   const wordsQuery = useQuery({
-    queryKey: ["words", selectedDeckId],
+    queryKey: ["words-page", selectedDeckId, wordsCursor],
     enabled: !!selectedDeckId,
-    queryFn: () => api.listWords(token ?? "", selectedDeckId),
+    queryFn: () =>
+      api.listWordsPage(token ?? "", selectedDeckId, {
+        cursor: wordsCursor,
+        limit: WORDS_PAGE_SIZE,
+      }),
   });
 
   const decks = decksQuery.data ?? [];
-  const words = wordsQuery.data ?? [];
+  const words = wordsQuery.data?.words ?? [];
   const activeDeck = useMemo(() => decks.find((d) => d.id === selectedDeckId), [decks, selectedDeckId]);
   const activeDeckLanguage = (activeDeck?.language ?? "ja") as LanguageCode;
   const isJapaneseDeck = activeDeckLanguage === "ja";
@@ -291,14 +298,14 @@ export function WordBankPage() {
       }),
     onSuccess: async () => {
       setWordForm({ target: "", reading: "", romanization: "", meaning: "", example: "", audioUrl: "", tags: "" });
-      await queryClient.invalidateQueries({ queryKey: ["words", selectedDeckId] });
+      await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
     },
   });
 
   const deleteWord = useMutation({
     mutationFn: (wordId: string) => api.deleteWord(token ?? "", wordId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["words", selectedDeckId] });
+      await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
     },
   });
 
@@ -318,7 +325,7 @@ export function WordBankPage() {
     onSuccess: async () => {
       setShowEditWordModal(false);
       setEditingWord(null);
-      await queryClient.invalidateQueries({ queryKey: ["words", selectedDeckId] });
+      await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
     },
   });
 
@@ -333,7 +340,7 @@ export function WordBankPage() {
     },
     onSuccess: async () => {
       setSelectedWordIds(new Set());
-      await queryClient.invalidateQueries({ queryKey: ["words", selectedDeckId] });
+      await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
     },
   });
 
@@ -348,6 +355,11 @@ export function WordBankPage() {
       word.tags?.some((tag: string) => tag.toLowerCase().includes(searchLower))
     );
   }, [words, wordSearch]);
+
+  const pagedWords = filteredWords;
+  const hasPrevWordsPage = wordsCursorHistory.length > 0;
+  const hasNextWordsPage = !!wordsQuery.data?.nextCursor;
+  const wordsPageLabel = wordsCursorHistory.length + 1;
 
   // ---- bulk import ----
   const [importColumnMapping, setImportColumnMapping] = useState<Record<number, string>>({});
@@ -488,6 +500,7 @@ export function WordBankPage() {
       example?: string;
       tags: string[];
     }>;
+    const importedWords = [] as Array<Record<string, unknown>>;
 
     for (const row of rawImportData.rows) {
       const data = mapImportRow(row);
@@ -519,6 +532,7 @@ export function WordBankPage() {
             words: batch,
           });
           imported += result.created;
+          importedWords.push(...result.words);
         } catch {
           failed += batch.length;
         }
@@ -528,7 +542,12 @@ export function WordBankPage() {
     setImportStatus(`Done: ${imported} imported${failed ? `, ${failed} failed` : ""}`);
     setRawImportData(null);
     setImportColumnMapping({});
-    await queryClient.invalidateQueries({ queryKey: ["words", selectedDeckId] });
+    if (importedWords.length > 0) {
+      setWordsCursor(null);
+      setWordsCursorHistory([]);
+    }
+    await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+    await queryClient.refetchQueries({ queryKey: ["words-page", selectedDeckId], type: "active" });
     setTimeout(() => setImportStatus(null), 4000);
   };
 
@@ -557,7 +576,13 @@ export function WordBankPage() {
   const updateField = (field: keyof typeof wordForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setWordForm((prev) => ({ ...prev, [field]: e.target.value }));
 
-  const selectDeck = (id: string) => () => setSelectedDeckId(id);
+  const selectDeck = (id: string) => () => {
+    setSelectedDeckId(id);
+    setWordsCursor(null);
+    setWordsCursorHistory([]);
+    setSelectedWordIds(new Set());
+    setWordSearch("");
+  };
 
   // Modal focus trap
   const modalRef = useRef<HTMLDialogElement>(null);
@@ -1039,19 +1064,65 @@ export function WordBankPage() {
           )}
 
           {filteredWords.length > 0 ? (
-            <div className="rounded-base border border-[var(--border-muted)] overflow-hidden">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between text-xs text-text-secondary">
+                <span>
+                  Showing {pagedWords.length} words on this page
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="bg-bg-elevated px-2 py-1 text-xs"
+                    onClick={() => {
+                      const previousCursor = wordsCursorHistory[wordsCursorHistory.length - 1] ?? null;
+                      setWordsCursorHistory((prev) => prev.slice(0, -1));
+                      setWordsCursor(previousCursor);
+                      setSelectedWordIds(new Set());
+                    }}
+                    disabled={!hasPrevWordsPage}
+                  >
+                    Prev
+                  </button>
+                  <span>
+                    Page {wordsPageLabel}
+                  </span>
+                  <button
+                    type="button"
+                    className="bg-bg-elevated px-2 py-1 text-xs"
+                    onClick={() => {
+                      const nextCursor = wordsQuery.data?.nextCursor;
+                      if (!nextCursor) return;
+                      setWordsCursorHistory((prev) => [...prev, wordsCursor]);
+                      setWordsCursor(nextCursor);
+                      setSelectedWordIds(new Set());
+                    }}
+                    disabled={!hasNextWordsPage}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+              <div className="rounded-base border border-[var(--border-muted)] overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-bg-elevated">
                   <tr>
                     <th className="w-10 px-3 py-3 text-left">
                       <input
                         type="checkbox"
-                        checked={filteredWords.length > 0 && filteredWords.every((w: any) => selectedWordIds.has(w.id))}
+                        checked={pagedWords.length > 0 && pagedWords.every((w: any) => selectedWordIds.has(w.id))}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedWordIds(new Set(filteredWords.map((w: any) => w.id)));
+                            const nextIds = new Set(selectedWordIds);
+                            for (const row of pagedWords) {
+                              nextIds.add(row.id);
+                            }
+                            setSelectedWordIds(nextIds);
                           } else {
-                            setSelectedWordIds(new Set());
+                            const nextIds = new Set(selectedWordIds);
+                            for (const row of pagedWords) {
+                              nextIds.delete(row.id);
+                            }
+                            setSelectedWordIds(nextIds);
                           }
                         }}
                         className="cursor-pointer"
@@ -1065,7 +1136,7 @@ export function WordBankPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border-muted)]">
-                  {filteredWords.map((word: any) => (
+                  {pagedWords.map((word: any) => (
                     <>
                       <tr
                         key={word.id}
@@ -1184,6 +1255,7 @@ export function WordBankPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
             </div>
           ) : (
             <div className="rounded-base bg-bg-card p-10 text-center text-text-secondary">

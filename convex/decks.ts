@@ -191,6 +191,32 @@ export const listDeckWords = query({
   },
 });
 
+export const listDeckWordsPage = query({
+  args: {
+    deckId: v.id("decks"),
+    cursor: v.union(v.string(), v.null()),
+    limit: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const result = await ctx.db
+      .query("deck_words")
+      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+      .order("asc")
+      .paginate({
+        cursor: args.cursor,
+        numItems: args.limit,
+      });
+
+    const words = await Promise.all(result.page.map(async (link) => await ctx.db.get(link.wordId)));
+
+    return {
+      page: words.filter((word) => word !== null),
+      continueCursor: result.continueCursor,
+      isDone: result.isDone,
+    };
+  },
+});
+
 export const isWordInDeck = query({
   args: {
     deckId: v.id("decks"),
