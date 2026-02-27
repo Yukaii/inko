@@ -103,6 +103,7 @@ export default defineSchema({
     startedAt: v.number(),
     finishedAt: v.optional(v.number()),
     cardsCompleted: v.number(),
+    attemptedWordIds: v.optional(v.array(v.id("words"))),
   })
     .index("by_user", ["userId"])
     .index("by_user_deck", ["userId", "deckId"]),

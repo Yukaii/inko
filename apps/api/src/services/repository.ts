@@ -80,6 +80,7 @@ type ConvexPracticeSession = {
   startedAt: number;
   finishedAt?: number;
   cardsCompleted: number;
+  attemptedWordIds?: string[];
 };
 
 const CONVEX_ARRAY_ARG_LIMIT = 8192;
@@ -94,6 +95,13 @@ function chunkArray<T>(items: T[], chunkSize: number): T[][] {
   }
   return chunks;
 }
+
+export const PERFORMANCE_CONSTANTS = {
+  CONVEX_ARRAY_ARG_LIMIT,
+  BATCH_WORDS_CHUNK_SIZE,
+};
+
+export const testChunkArray = chunkArray;
 
 export class RepositoryError extends Error {
   statusCode: number;
@@ -174,12 +182,12 @@ function selectNextPracticeCard(rows: WordStatsRow[], deckId: string, excludedWo
   };
 }
 
-async function listPracticeCandidateRows(userId: string, deckId: string, maxRows = 300): Promise<WordStatsRow[]> {
+async function listPracticeCandidateRows(userId: string, deckId: string, maxRows = 120): Promise<WordStatsRow[]> {
   const rows: WordStatsRow[] = [];
   let cursor: string | null = null;
 
   while (rows.length < maxRows) {
-    const pageLimit = Math.min(100, maxRows - rows.length);
+    const pageLimit = Math.min(40, maxRows - rows.length);
     const result = (await convex.query("practice:listDeckWordsWithStatsPage", {
       userId,
       deckId,
@@ -550,8 +558,8 @@ export const repository = {
 
     const rows = await listPracticeCandidateRows(userId, session.deckId);
 
-    const attempts = (await convex.query("practice:listAttemptsBySession", { sessionId })) as Array<{ wordId: string }>;
-    const attemptedWordIds = new Set(attempts.map((attempt) => attempt.wordId));
+    const attemptedWordIds = new Set(session.attemptedWordIds ?? []);
+    attemptedWordIds.add(wordId);
     const nextCard = selectNextPracticeCard(rows, session.deckId, attemptedWordIds);
 
     return {

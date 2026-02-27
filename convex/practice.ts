@@ -12,6 +12,7 @@ export const startSession = mutation({
       deckId: args.deckId,
       startedAt: Date.now(),
       cardsCompleted: 0,
+      attemptedWordIds: [],
     });
 
     return await ctx.db.get(sessionId);
@@ -74,8 +75,11 @@ export const addAttempt = mutation({
     });
 
     const cardsCompleted = session.cardsCompleted + 1;
+    const attemptedWordIds = session.attemptedWordIds ?? [];
+    const hasWord = attemptedWordIds.some((id) => `${id}` === `${args.wordId}`);
     await ctx.db.patch(args.sessionId, {
       cardsCompleted,
+      attemptedWordIds: hasWord ? attemptedWordIds : [...attemptedWordIds, args.wordId],
     });
 
     return { ok: true, capped: false, cardsCompleted };
