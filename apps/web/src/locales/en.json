@@ -189,6 +189,7 @@
     },
     "import": {
       "instruction": "Upload a CSV/TSV file or paste data directly. Supported columns: target, reading, meaning, romanization, example, tags",
+      "format_hint": "Format: target, reading, meaning, romanization, example, tags",
       "choose_file": "Choose File",
       "or_paste": "or paste below",
       "preview": "Preview Import",

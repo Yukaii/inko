@@ -435,6 +435,7 @@ export function WordBankPage() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
+                  <p className="m-0 text-[11px] text-text-secondary">{t("word_bank.import.format_hint")}</p>
                   {!rawImportData ? (
                     <>
                       <textarea
