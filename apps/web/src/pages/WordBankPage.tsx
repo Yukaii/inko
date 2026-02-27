@@ -244,6 +244,7 @@ export function WordBankPage() {
   const hasPrevWordsPage = wordsCursorHistory.length > 0;
   const hasNextWordsPage = !!wordsQuery.data?.nextCursor;
   const wordsPageLabel = wordsCursorHistory.length + 1;
+  const isWordsLoading = wordsQuery.isLoading;
 
   const parseCSVLine = (line: string): string[] => {
     const result: string[] = [];
@@ -674,7 +675,13 @@ export function WordBankPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--border-subtle)]">
-                      {pagedWords.map((word: any) => (
+                      {isWordsLoading ? (
+                        <tr>
+                          <td className="px-4 py-10 text-center text-text-secondary" colSpan={5}>
+                            {t("common.loading")}
+                          </td>
+                        </tr>
+                      ) : pagedWords.map((word: any) => (
                         <tr key={word.id} className="hover:bg-bg-elevated/20 group">
                           <td className="px-4 py-4">
                              <input
@@ -726,7 +733,7 @@ export function WordBankPage() {
                       ))}
                     </tbody>
                   </table>
-                  {pagedWords.length === 0 && (
+                  {!isWordsLoading && pagedWords.length === 0 && (
                     <div className="py-20 text-center text-text-secondary">
                       <p>{t("word_bank.words.no_words")}</p>
                     </div>
