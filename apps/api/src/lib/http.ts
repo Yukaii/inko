@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { ZodError } from "zod";
 import { RepositoryError } from "../services/repository.js";
 
 export function rethrowAsHttp(app: FastifyInstance, error: unknown): never {
@@ -13,6 +14,10 @@ export function rethrowAsHttp(app: FastifyInstance, error: unknown): never {
       default:
         throw app.httpErrors.internalServerError(error.message);
     }
+  }
+
+  if (error instanceof ZodError) {
+    throw app.httpErrors.badRequest(error.message);
   }
 
   throw error;
