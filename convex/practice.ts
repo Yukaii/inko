@@ -159,33 +159,6 @@ export const upsertWordStats = mutation({
   },
 });
 
-export const listDeckWordsWithStats = query({
-  args: {
-    userId: v.id("users"),
-    deckId: v.id("decks"),
-  },
-  handler: async (ctx, args) => {
-    const links = await ctx.db
-      .query("deck_words")
-      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
-      .collect();
-
-    const rows = await Promise.all(
-      links.map(async (link) => {
-        const word = await ctx.db.get(link.wordId);
-        if (!word) return null;
-        const stat = await ctx.db
-          .query("word_channel_stats")
-          .withIndex("by_user_word", (q) => q.eq("userId", args.userId).eq("wordId", link.wordId))
-          .first();
-        return { word, stat };
-      }),
-    );
-
-    return rows.filter((row): row is NonNullable<typeof row> => !!row);
-  },
-});
-
 export const listDeckWordsWithStatsPage = query({
   args: {
     userId: v.id("users"),

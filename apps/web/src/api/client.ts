@@ -123,8 +123,6 @@ export const api = {
   deleteDeck: (token: string, deckId: string) =>
     request<{ ok: boolean }>(`/api/decks/${deckId}`, { method: "DELETE" }, token),
 
-  listWords: (token: string, deckId: string) => request<WordDTO[]>(`/api/decks/${deckId}/words`, {}, token),
-
   listWordsPage: (token: string, deckId: string, options?: { cursor?: string | null; limit?: number }) => {
     const params = new URLSearchParams();
     if (options?.cursor) params.set("cursor", options.cursor);

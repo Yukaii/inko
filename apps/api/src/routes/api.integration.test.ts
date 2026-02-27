@@ -52,7 +52,6 @@ function makeRepositoryMock(): Repository {
       archived: input.archived ?? false,
       createdAt: Date.now(),
     })),
-    listDeckWords: vi.fn(async () => []),
     listDeckWordsPage: vi.fn(async () => ({
       words: [],
       nextCursor: null,
@@ -295,13 +294,6 @@ describe("API integration", () => {
     expect(deleteBatchRes.statusCode).toBe(200);
     expect(deleteBatchRes.json().deleted).toBe(2);
 
-    const listWordsRes = await app.inject({
-      method: "GET",
-      url: "/api/decks/deck_1/words",
-      headers: auth,
-    });
-    expect(listWordsRes.statusCode).toBe(200);
-
     const listWordsPageRes = await app.inject({
       method: "GET",
       url: "/api/decks/deck_1/words/page?limit=100",
@@ -431,7 +423,7 @@ describe("API integration", () => {
   });
 
   it("maps repository forbidden errors to 403", async () => {
-    repo.listDeckWords = vi.fn(async () => {
+    repo.listDeckWordsPage = vi.fn(async () => {
       throw new RepositoryError("Forbidden", 403);
     });
 
@@ -440,7 +432,7 @@ describe("API integration", () => {
 
     const res = await app.inject({
       method: "GET",
-      url: "/api/decks/deck_other/words",
+      url: "/api/decks/deck_other/words/page?limit=100",
       headers: { authorization: `Bearer ${accessToken}` },
     });
 

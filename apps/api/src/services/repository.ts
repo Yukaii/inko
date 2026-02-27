@@ -278,29 +278,6 @@ export const repository = {
     return toDeckDTO(updatedDeck as ConvexDeck);
   },
 
-  async listDeckWords(userId: string, deckId: string) {
-    const deck = (await convex.query("decks:getDeckById", { deckId })) as ConvexDeck | null;
-    if (!deck) throw new RepositoryError("Deck not found", 404);
-    if (deck.userId !== userId) throw new RepositoryError("Forbidden", 403);
-
-    const words: ConvexWord[] = [];
-    let cursor: string | null = null;
-    const limit = 500;
-
-    do {
-      const page = (await convex.query("decks:listDeckWordsPage", {
-        deckId,
-        cursor,
-        limit,
-      })) as { page: ConvexWord[]; continueCursor: string; isDone: boolean };
-
-      words.push(...page.page);
-      cursor = page.isDone ? null : page.continueCursor;
-    } while (cursor !== null);
-
-    return words.map(toWordDTO);
-  },
-
   async listDeckWordsPage(userId: string, deckId: string, cursor: string | null, limit: number) {
     const deck = (await convex.query("decks:getDeckById", { deckId })) as ConvexDeck | null;
     if (!deck) throw new RepositoryError("Deck not found", 404);

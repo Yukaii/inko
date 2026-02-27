@@ -39,15 +39,6 @@ export async function deckRoutes(app: FastifyInstance, repo: Repository = reposi
     }
   });
 
-  app.get("/api/decks/:deckId/words", { preHandler: requireAuth }, async (request) => {
-    try {
-      const { deckId } = request.params as { deckId: string };
-      return await repo.listDeckWords(request.auth!.userId, deckId);
-    } catch (error) {
-      rethrowAsHttp(app, error);
-    }
-  });
-
   app.get("/api/decks/:deckId/words/page", { preHandler: requireAuth }, async (request) => {
     try {
       const { deckId } = request.params as { deckId: string };
