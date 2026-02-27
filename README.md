@@ -74,3 +74,9 @@ bunx convex run seed:seedStarterData '{"email":"you@example.com"}'
 - `/word-bank`
 - `/practice/:deckId`
 - `/settings`
+
+## Production Deployment
+
+Deployment setup and production prep are documented in:
+
+- `docs/deployment.md`
