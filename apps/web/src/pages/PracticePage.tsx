@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
+import { registerShortcut } from "../hooks/useKeyboard.js";
 import { isJapaneseTypingMatch, normalizeJapaneseInput, romajiToHiragana } from "@inko/shared";
 
 type PracticeCard = {
@@ -97,6 +98,19 @@ export function PracticePage() {
       startedAtRef.current = Date.now();
     });
   }, [deckId, token]);
+
+  // Register shortcut for going back to dashboard when session is done
+  useEffect(() => {
+    if (!sessionDone) return;
+
+    const cleanup = registerShortcut({
+      key: "b",
+      handler: () => navigate("/dashboard"),
+      description: "Back to dashboard",
+    });
+
+    return cleanup;
+  }, [sessionDone, navigate]);
 
   const focusInput = useCallback(() => {
     hiddenInputRef.current?.focus();
@@ -299,6 +313,7 @@ export function PracticePage() {
           ) : null}
           <button type="button" className="zen-back-btn" onClick={() => navigate("/dashboard")}>
             Back to Dashboard
+            <kbd className="zen-back-shortcut">b</kbd>
           </button>
         </div>
       </section>

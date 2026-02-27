@@ -41,16 +41,44 @@ export function LoginPage() {
       <h1 style={{ marginTop: 0, fontFamily: "var(--font-display)", fontSize: 42 }}>Practice starts here</h1>
       <p style={{ color: "var(--text-secondary)" }}>email magic link auth for local MVP</p>
       <div style={{ display: "grid", gap: 12 }}>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email" />
-        <button onClick={requestLink} disabled={loading}>
+        <div className="form-group">
+          <label htmlFor="email-input" style={{ fontSize: 12, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+            Email
+          </label>
+          <input
+            id="email-input"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="email"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                requestLink();
+              }
+            }}
+          />
+        </div>
+        <button type="button" onClick={requestLink} disabled={loading}>
           Request Magic Link
         </button>
-        <input
-          value={tokenInput}
-          onChange={(e) => setTokenInput(e.target.value)}
-          placeholder="paste token from API logs"
-        />
-        <button className="secondary" onClick={verifyLink} disabled={loading}>
+        <div className="form-group" style={{ marginTop: 8 }}>
+          <label htmlFor="token-input" style={{ fontSize: 12, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+            Token
+          </label>
+          <input
+            id="token-input"
+            value={tokenInput}
+            onChange={(e) => setTokenInput(e.target.value)}
+            placeholder="paste token from API logs"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                verifyLink();
+              }
+            }}
+          />
+        </div>
+        <button type="button" className="secondary" onClick={verifyLink} disabled={loading}>
           Verify Token
         </button>
       </div>

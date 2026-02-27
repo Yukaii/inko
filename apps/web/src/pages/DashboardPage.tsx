@@ -1,10 +1,15 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
+import { registerShortcut } from "../hooks/useKeyboard.js";
 
 export function DashboardPage() {
   const { token } = useAuth();
+  const navigate = useNavigate();
+  const practiceGridRef = useRef<HTMLUListElement>(null);
+  const [focusedDeckIndex, setFocusedDeckIndex] = useState(-1);
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
@@ -17,6 +22,91 @@ export function DashboardPage() {
   });
 
   const decks = decksQuery.data ?? [];
+  const activeDecks = decks.filter((d) => !d.archived);
+
+  // Register keyboard shortcuts
+  useEffect(() => {
+    const cleanups: Array<() => void> = [];
+
+    // 'w' to go to word bank
+    cleanups.push(
+      registerShortcut({
+        key: "w",
+        handler: () => navigate("/word-bank"),
+        description: "Go to Word Bank",
+      })
+    );
+
+    // 'p' to focus first practice deck
+    cleanups.push(
+      registerShortcut({
+        key: "p",
+        handler: () => {
+          if (activeDecks.length > 0) {
+            setFocusedDeckIndex(0);
+            const firstCard = practiceGridRef.current?.querySelector("[data-deck-index='0']") as HTMLElement;
+            firstCard?.focus();
+          }
+        },
+        description: "Focus first practice deck",
+      })
+    );
+
+    return () => {
+      for (const cleanup of cleanups) {
+        cleanup();
+      }
+    };
+  }, [navigate, activeDecks.length]);
+
+  // Handle arrow key navigation within practice grid
+  const handlePracticeKeyDown = (event: React.KeyboardEvent) => {
+    const maxIndex = activeDecks.length - 1;
+
+    switch (event.key) {
+      case "ArrowRight":
+        event.preventDefault();
+        setFocusedDeckIndex((prev) => {
+          const next = prev + 1;
+          if (next > maxIndex) return 0;
+          return next;
+        });
+        break;
+      case "ArrowLeft":
+        event.preventDefault();
+        setFocusedDeckIndex((prev) => {
+          const next = prev - 1;
+          if (next < 0) return maxIndex;
+          return next;
+        });
+        break;
+      case "Enter":
+        if (focusedDeckIndex >= 0 && focusedDeckIndex <= maxIndex) {
+          event.preventDefault();
+          const deck = activeDecks[focusedDeckIndex];
+          if (deck) {
+            navigate(`/practice/${deck.id}`);
+          }
+        }
+        break;
+      case "Home":
+        event.preventDefault();
+        setFocusedDeckIndex(0);
+        break;
+      case "End":
+        event.preventDefault();
+        setFocusedDeckIndex(maxIndex);
+        break;
+    }
+  };
+
+  // Focus the currently selected deck card
+  useEffect(() => {
+    if (focusedDeckIndex >= 0) {
+      const card = practiceGridRef.current?.querySelector(`[data-deck-index='${focusedDeckIndex}']`) as HTMLElement;
+      card?.focus();
+    }
+  }, [focusedDeckIndex]);
 
   if (isLoading) return <p>Loading...</p>;
 
@@ -27,7 +117,7 @@ export function DashboardPage() {
         <h1 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 46 }}>Good day, learner</h1>
       </header>
 
-      <section className="grid cols-4">
+      <section className="grid cols-4" aria-label="Statistics">
         <div className="card">
           <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>words_learned</div>
           <div className="metric-value">{data?.totalWordsLearned ?? 0}</div>
@@ -51,28 +141,48 @@ export function DashboardPage() {
       </section>
 
       {/* ---- Quick Practice ---- */}
-      {decks.length > 0 && (
+      {activeDecks.length > 0 && (
         <section>
-          <h2 style={{ marginTop: 0, fontFamily: "var(--font-display)", fontSize: 28, marginBottom: 14 }}>
-            Quick Practice
-          </h2>
-          <div className="quick-practice-grid">
-            {decks
-              .filter((d) => !d.archived)
-              .map((deck) => (
-                <div key={deck.id} className="quick-practice-card">
-                  <div className="quick-practice-card-name">{deck.name}</div>
-                  <div className="quick-practice-card-meta">{deck.language.toUpperCase()}</div>
-                  <Link to={`/practice/${deck.id}`}>
-                    <button type="button" style={{ width: "100%" }}>Start Session</button>
-                  </Link>
-                </div>
-              ))}
+          <div className="section-header" style={{ marginBottom: 14 }}>
+            <h2 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 28 }}>
+              Quick Practice
+            </h2>
+            <span className="keyboard-hint">
+              <kbd>p</kbd> to focus
+            </span>
           </div>
+          <ul
+            ref={practiceGridRef}
+            className="quick-practice-grid"
+            onKeyDown={handlePracticeKeyDown}
+            aria-label="Practice decks"
+          >
+            {activeDecks.map((deck, index) => (
+              <li
+                key={deck.id}
+                data-deck-index={index}
+                className="quick-practice-card"
+                tabIndex={focusedDeckIndex === index ? 0 : -1}
+                onClick={() => navigate(`/practice/${deck.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    navigate(`/practice/${deck.id}`);
+                  }
+                }}
+              >
+                <div className="quick-practice-card-name">{deck.name}</div>
+                <div className="quick-practice-card-meta">{deck.language.toUpperCase()}</div>
+                <button type="button" style={{ width: "100%", marginTop: "auto" }}>
+                  Start Session
+                </button>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
-      {decks.length === 0 && !decksQuery.isLoading && (
+      {activeDecks.length === 0 && !decksQuery.isLoading && (
         <section className="card empty-state">
           <p>No decks yet.</p>
           <p style={{ fontSize: 13 }}>

@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth.js";
+import { useKeyboardShortcuts } from "./hooks/useKeyboard.js";
 import { Layout } from "./components/Layout.js";
 import { LoginPage } from "./pages/LoginPage.js";
 import { DashboardPage } from "./pages/DashboardPage.js";
@@ -9,6 +10,9 @@ import { SettingsPage } from "./pages/SettingsPage.js";
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
+  // Initialize keyboard shortcuts system
+  useKeyboardShortcuts();
+
   if (!token) {
     return <Navigate to="/login" replace />;
   }
@@ -18,6 +22,9 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
 export function App() {
   return (
     <AuthProvider>
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route
