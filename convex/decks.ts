@@ -66,6 +66,7 @@ export const updateDeck = mutation({
   args: {
     deckId: v.id("decks"),
     name: v.optional(v.string()),
+    language: v.optional(languageValidator),
     archived: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
@@ -74,6 +75,7 @@ export const updateDeck = mutation({
 
     await ctx.db.patch(args.deckId, {
       ...(args.name !== undefined ? { name: args.name } : {}),
+      ...(args.language !== undefined ? { language: args.language } : {}),
       ...(args.archived !== undefined ? { archived: args.archived } : {}),
     });
 

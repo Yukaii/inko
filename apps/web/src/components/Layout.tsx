@@ -280,7 +280,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </div>
                 
                 {/* Language Selection in Dropdown */}
-                <div className="flex flex-col">
+                <div className="flex flex-col pt-1">
                   <button
                     type="button"
                     className="flex w-full items-center justify-between rounded-lg bg-transparent px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
