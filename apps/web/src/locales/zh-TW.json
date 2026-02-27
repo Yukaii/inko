@@ -219,7 +219,8 @@
       "try_different": "請嘗試不同的搜尋字詞或清除篩選。",
       "no_words": "還沒有單字。",
       "add_using_form": "使用上方表單新增單字。",
-      "select_deck": "選擇一個牌組以檢視及管理單字。"
+      "select_deck": "選擇一個牌組以檢視及管理單字。",
+      "select_deck_desc": "從側邊欄選擇一個牌組來管理詞彙。"
     },
     "new_deck": {
       "title": "建立新牌組",
@@ -290,6 +291,7 @@
     "end_confirm_title": "要結束這個練習階段嗎？",
     "end_confirm_desc": "這個階段的進度將被保存。",
     "confirm_exit": "確認退出",
+    "no_words_available": "此牌組目前沒有可練習的字詞。",
     "type_romaji": "輸入羅馬拼音...",
     "type_answer": "輸入答案...",
     "not_quite": "差一點 — 再試一次",

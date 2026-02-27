@@ -219,7 +219,8 @@
       "try_different": "別の検索語を試すか、フィルターをクリアしてください。",
       "no_words": "単語はまだありません。",
       "add_using_form": "上のフォームから単語を追加してください。",
-      "select_deck": "デッキを選択して、その単語を表示・管理します。"
+      "select_deck": "デッキを選択して、その単語を表示・管理します。",
+      "select_deck_desc": "サイドバーからデッキを選択して、語彙を管理します。"
     },
     "new_deck": {
       "title": "新しいデッキを作成",
@@ -290,6 +291,7 @@
     "end_confirm_title": "この練習セッションを終了しますか？",
     "end_confirm_desc": "このセッションの進捗は保存されます。",
     "confirm_exit": "終了を確認",
+    "no_words_available": "このデッキにはまだ単語がありません。",
     "type_romaji": "ローマ字を入力...",
     "type_answer": "答えを入力...",
     "not_quite": "惜しい — もう一度試してください",
