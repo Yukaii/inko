@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bulk Import Formatter"
+  short_description: "Normalize bulk import files to target schemas"
+  default_prompt: "Format and validate bulk import data for a target schema."
