@@ -12,11 +12,11 @@ async function loadDashboardStats(ctx: QueryCtx, userId: Id<"users">) {
   const now = Date.now();
   const today = dateString(now);
 
-  const [words, dueByShape, dueByTyping, dueByListening, completedToday] = await Promise.all([
+  const [decks, dueByShape, dueByTyping, dueByListening, completedToday] = await Promise.all([
     ctx.db
-      .query("words")
+      .query("decks")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .take(DASHBOARD_SCAN_LIMIT + 1),
+      .collect(),
     ctx.db
       .query("word_channel_stats")
       .withIndex("by_user_shape_due", (q) => q.eq("userId", userId).lte("shapeDueAt", now))
@@ -53,9 +53,12 @@ async function loadDashboardStats(ctx: QueryCtx, userId: Id<"users">) {
   collectDue(dueByTyping);
   collectDue(dueByListening);
 
+  const knownWordCount = decks.reduce((sum, deck) => sum + (deck.wordCount ?? 0), 0);
+  const hasMissingWordCount = decks.some((deck) => deck.wordCount === undefined);
+
   return {
-    totalWordsLearned: Math.min(words.length, DASHBOARD_SCAN_LIMIT),
-    totalWordsLearnedCapped: words.length > DASHBOARD_SCAN_LIMIT,
+    totalWordsLearned: knownWordCount,
+    totalWordsLearnedCapped: hasMissingWordCount,
     wordsDueToday: Math.min(dueWordIds.size, DASHBOARD_SCAN_LIMIT),
     wordsDueTodayCapped,
     learningStreak: completedToday?.streakCount ?? 0,
