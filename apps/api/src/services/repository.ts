@@ -2,9 +2,11 @@ import {
   DefaultThemes,
   type CreateDeckInput,
   type CreateWordInput,
+  type LanguageCode,
   type StartPracticeSessionInput,
   type SubmitPracticeCardInput,
   type ThemeConfig,
+  type TypingMode,
   type UpdateDeckInput,
   type UpdateProfileInput,
   type UpdateWordInput,
@@ -22,6 +24,7 @@ type ConvexUser = {
   email: string;
   displayName?: string;
   themeMode?: "dark" | "light";
+  typingMode?: TypingMode;
   themes?: ThemeConfig;
   createdAt: number;
 };
@@ -29,14 +32,14 @@ type ConvexDeck = {
   _id: string;
   userId: string;
   name: string;
-  language: "ja";
+  language: LanguageCode;
   archived: boolean;
   createdAt: number;
 };
 type ConvexWord = {
   _id: string;
   userId: string;
-  language: "ja";
+  language: LanguageCode;
   target: string;
   reading?: string;
   romanization?: string;
@@ -74,6 +77,7 @@ function toUserDTO(user: ConvexUser) {
     email: user.email,
     displayName: user.displayName ?? fallbackName.slice(0, 60),
     themeMode: user.themeMode ?? "dark",
+    typingMode: user.typingMode ?? "language_specific",
     themes: user.themes ?? DefaultThemes,
     createdAt: user.createdAt,
   };
@@ -126,6 +130,7 @@ function selectNextPracticeCard(rows: WordStatsRow[], deckId: string, excludedWo
   return {
     wordId: selected._id,
     deckId,
+    language: selected.language,
     target: selected.target,
     reading: selected.reading,
     romanization: selected.romanization,
@@ -264,10 +269,12 @@ export const repository = {
 
     const card = selectNextPracticeCard(rows, input.deckId, new Set());
     if (!card) throw new RepositoryError("No words available in deck", 409);
+    const user = (await convex.query("users:getById", { userId })) as ConvexUser | null;
 
     return {
       sessionId: (session as any)._id as string,
       card,
+      typingMode: user?.typingMode ?? "language_specific",
     };
   },
 
@@ -299,9 +306,18 @@ export const repository = {
       wordId,
     })) as boolean;
     if (!inDeck) throw new RepositoryError("Word not in session deck", 403);
+    const user = (await convex.query("users:getById", { userId })) as ConvexUser | null;
 
     const shape = scoreShape(input.handwritingCompleted);
-    const typing = scoreTyping(input.typingInput, word.target, word.reading, word.romanization, input.typingMs);
+    const typing = scoreTyping(
+      input.typingInput,
+      word.target,
+      word.reading,
+      word.romanization,
+      input.typingMs,
+      word.language,
+      user?.typingMode ?? "language_specific",
+    );
     const listening = scoreListening(input.listeningConfidence);
 
     if (typing === 0) {

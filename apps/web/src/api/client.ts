@@ -71,7 +71,7 @@ export const api = {
     request<{ ok: boolean }>(`/api/words/${wordId}`, { method: "DELETE" }, token),
 
   startPractice: (token: string, deckId: string) =>
-    request<{ sessionId: string; card: any }>(
+    request<{ sessionId: string; card: any; typingMode?: "language_specific" | "universal" }>(
       "/api/practice/session/start",
       { method: "POST", body: JSON.stringify({ deckId }) },
       token,

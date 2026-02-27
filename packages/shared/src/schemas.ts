@@ -1,7 +1,36 @@
 import { z } from "zod";
 
-export const LanguageSchema = z.literal("ja");
+export const SUPPORTED_LANGUAGES = [
+  "ja",
+  "ko",
+  "zh",
+  "es",
+  "fr",
+  "de",
+  "it",
+  "pt",
+  "ru",
+  "ar",
+  "hi",
+  "th",
+] as const;
+export const LanguageSchema = z.enum(SUPPORTED_LANGUAGES);
+export const LANGUAGE_LABELS: Record<z.infer<typeof LanguageSchema>, string> = {
+  ja: "Japanese",
+  ko: "Korean",
+  zh: "Chinese",
+  es: "Spanish",
+  fr: "French",
+  de: "German",
+  it: "Italian",
+  pt: "Portuguese",
+  ru: "Russian",
+  ar: "Arabic",
+  hi: "Hindi",
+  th: "Thai",
+};
 export const ThemeModeSchema = z.union([z.literal("dark"), z.literal("light")]);
+export const TypingModeSchema = z.union([z.literal("language_specific"), z.literal("universal")]);
 export const HexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 
 export const ThemePaletteSchema = z.object({
@@ -48,6 +77,7 @@ export const UserSchema = z.object({
   email: z.string().email(),
   displayName: z.string().min(1).max(60),
   themeMode: ThemeModeSchema,
+  typingMode: TypingModeSchema,
   themes: ThemeConfigSchema,
   createdAt: z.number(),
 });
@@ -77,6 +107,7 @@ export const WordSchema = z.object({
 export const PracticeCardSchema = z.object({
   wordId: z.string(),
   deckId: z.string(),
+  language: LanguageSchema,
   target: z.string(),
   reading: z.string().optional(),
   romanization: z.string().optional(),
@@ -99,6 +130,7 @@ export const MagicLinkVerifySchema = z.object({ token: z.string().min(16) });
 export const UpdateProfileSchema = z.object({
   displayName: z.string().trim().min(1).max(60),
   themeMode: ThemeModeSchema,
+  typingMode: TypingModeSchema.default("language_specific"),
   themes: ThemeConfigSchema,
 });
 
@@ -158,3 +190,5 @@ export type ThemeMode = z.infer<typeof ThemeModeSchema>;
 export type ThemePalette = z.infer<typeof ThemePaletteSchema>;
 export type ThemeConfig = z.infer<typeof ThemeConfigSchema>;
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
+export type LanguageCode = z.infer<typeof LanguageSchema>;
+export type TypingMode = z.infer<typeof TypingModeSchema>;

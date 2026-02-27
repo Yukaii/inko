@@ -111,6 +111,13 @@ const ROMAJI_TO_HIRAGANA = {
 function normalizeRomajiInput(input) {
     return normalizeJapaneseInput(input).toLowerCase();
 }
+export function normalizeTypingInput(input) {
+    return input
+        .normalize("NFKC")
+        .replace(/\s+/g, "")
+        .trim()
+        .toLowerCase();
+}
 function isConsonant(char) {
     return /[bcdfghjklmnpqrstvwxyz]/.test(char);
 }
@@ -165,16 +172,39 @@ export function romajiToHiragana(input) {
     return output;
 }
 export function isJapaneseTypingMatch(input, expected, fallbackReading, romanization) {
-    const reading = fallbackReading ? normalizeJapaneseInput(fallbackReading) : "";
-    const romajiTarget = romanization ? normalizeRomajiInput(romanization) : "";
-    const typedRomaji = normalizeRomajiInput(input);
-    if (romajiTarget) {
-        return typedRomaji === romajiTarget;
+    return isTypingMatch(input, expected, fallbackReading, romanization, "ja", "language_specific");
+}
+export function getTypingMatchTarget(expected, fallbackReading, romanization, language = "ja", typingMode = "language_specific") {
+    const languageSpecificJapanese = language === "ja" && typingMode === "language_specific";
+    if (languageSpecificJapanese) {
+        if (romanization)
+            return normalizeRomajiInput(romanization);
+        if (fallbackReading)
+            return normalizeJapaneseInput(fallbackReading);
+        return normalizeJapaneseInput(expected);
     }
-    if (reading) {
-        return romajiToHiragana(typedRomaji) === reading;
+    if (romanization)
+        return normalizeTypingInput(romanization);
+    if (fallbackReading)
+        return normalizeTypingInput(fallbackReading);
+    return normalizeTypingInput(expected);
+}
+export function getTypingMatchSource(input, fallbackReading, romanization, language = "ja", typingMode = "language_specific") {
+    const languageSpecificJapanese = language === "ja" && typingMode === "language_specific";
+    if (languageSpecificJapanese) {
+        const typedRomaji = normalizeRomajiInput(input);
+        if (romanization)
+            return typedRomaji;
+        if (fallbackReading)
+            return romajiToHiragana(typedRomaji);
+        return normalizeJapaneseInput(input);
     }
-    return normalizeJapaneseInput(input) === normalizeJapaneseInput(expected);
+    return normalizeTypingInput(input);
+}
+export function isTypingMatch(input, expected, fallbackReading, romanization, language = "ja", typingMode = "language_specific") {
+    const source = getTypingMatchSource(input, fallbackReading, romanization, language, typingMode);
+    const target = getTypingMatchTarget(expected, fallbackReading, romanization, language, typingMode);
+    return source === target;
 }
 export function normalizeJapaneseInput(input) {
     return input
@@ -182,8 +212,8 @@ export function normalizeJapaneseInput(input) {
         .replace(/\s+/g, "")
         .trim();
 }
-export function scoreTyping(input, expected, fallbackReading, romanization, typingMs) {
-    const correct = isJapaneseTypingMatch(input, expected, fallbackReading, romanization);
+export function scoreTyping(input, expected, fallbackReading, romanization, typingMs, language = "ja", typingMode = "language_specific") {
+    const correct = isTypingMatch(input, expected, fallbackReading, romanization, language, typingMode);
     if (!correct) {
         return 0;
     }

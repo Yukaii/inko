@@ -49,9 +49,9 @@ export function SettingsPage() {
                 <div className="flex items-center justify-between border-b border-[var(--border-subtle)] py-4">
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium">Language</span>
-                    <span className="text-[13px] text-text-secondary">Currently fixed to Japanese</span>
+                    <span className="text-[13px] text-text-secondary">Set per deck when creating a new deck</span>
                   </div>
-                  <span className="font-mono text-sm text-text-secondary">日本語</span>
+                  <span className="font-mono text-sm text-text-secondary">JA, KO, ZH, ES, FR, DE...</span>
                 </div>
 
                 <div className="flex items-center justify-between border-b border-[var(--border-subtle)] py-4">
@@ -108,7 +108,7 @@ export function SettingsPage() {
                   <span lang="ja">inkō</span>
                 </div>
                 <p className="m-0 mb-5 text-sm leading-relaxed text-text-secondary">
-                  A minimal, focused Japanese typing practice app inspired by monkeytype.
+                  A minimal, focused language typing practice app inspired by monkeytype.
                 </p>
                 <div className="flex justify-center gap-3 font-mono text-xs text-text-secondary">
                   <span>Version 0.1.0</span>

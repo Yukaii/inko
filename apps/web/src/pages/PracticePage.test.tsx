@@ -39,6 +39,16 @@ describe("canSubmitCard", () => {
       }),
     ).toBe(true);
   });
+
+  it("supports non-japanese cards", () => {
+    expect(
+      canSubmitCard({
+        typingInput: "HOLA",
+        expected: "hola",
+        language: "es",
+      }),
+    ).toBe(true);
+  });
 });
 
 describe("getTypingFeedback", () => {

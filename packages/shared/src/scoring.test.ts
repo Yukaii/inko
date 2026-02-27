@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { isJapaneseTypingMatch, normalizeJapaneseInput, romajiToHiragana, scoreListening, scoreTyping } from "./scoring.js";
+import {
+  isJapaneseTypingMatch,
+  isTypingMatch,
+  normalizeJapaneseInput,
+  romajiToHiragana,
+  scoreListening,
+  scoreTyping,
+} from "./scoring.js";
 
 describe("scoring", () => {
   it("normalizes full-width and spaces", () => {
@@ -26,5 +33,17 @@ describe("scoring", () => {
   it("maps listening confidence", () => {
     expect(scoreListening(1)).toBe(20);
     expect(scoreListening(5)).toBe(100);
+  });
+
+  it("supports non-japanese matching in language-specific mode", () => {
+    expect(isTypingMatch("hola", "hola", undefined, undefined, "es", "language_specific")).toBe(true);
+    expect(isTypingMatch("HOLA", "hola", undefined, undefined, "es", "language_specific")).toBe(true);
+    expect(isTypingMatch("holaa", "hola", undefined, undefined, "es", "language_specific")).toBe(false);
+  });
+
+  it("supports universal mode for japanese direct typing", () => {
+    expect(isTypingMatch("勉強", "勉強", "べんきょう", "benkyou", "ja", "universal")).toBe(false);
+    expect(isTypingMatch("benkyou", "勉強", "べんきょう", "benkyou", "ja", "universal")).toBe(true);
+    expect(scoreTyping("benkyou", "勉強", "べんきょう", "benkyou", 1500, "ja", "universal")).toBe(100);
   });
 });

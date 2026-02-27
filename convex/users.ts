@@ -23,6 +23,7 @@ export const getOrCreateByEmail = mutation({
       email: args.email,
       displayName: fallbackDisplayName(args.email).slice(0, 60),
       themeMode: "dark",
+      typingMode: "language_specific",
       themes: DefaultThemes,
       createdAt: now,
     });
@@ -43,6 +44,7 @@ export const updateProfile = mutation({
     userId: v.id("users"),
     displayName: v.string(),
     themeMode: v.union(v.literal("dark"), v.literal("light")),
+    typingMode: v.union(v.literal("language_specific"), v.literal("universal")),
     themes: v.object({
       dark: v.object({
         accentOrange: v.string(),
@@ -70,6 +72,7 @@ export const updateProfile = mutation({
     await ctx.db.patch(args.userId, {
       displayName: args.displayName,
       themeMode: args.themeMode,
+      typingMode: args.typingMode,
       themes: args.themes,
     });
 
