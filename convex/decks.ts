@@ -137,6 +137,7 @@ export const createWordsBatch = mutation({
 
     const createdWords: unknown[] = [];
     for (const [index, input] of args.words.entries()) {
+      const createdAt = Date.now();
       const wordId = await ctx.db.insert("words", {
         userId: args.userId,
         language: deck.language,
@@ -147,7 +148,7 @@ export const createWordsBatch = mutation({
         example: input.example,
         audioUrl: input.audioUrl,
         tags: input.tags,
-        createdAt: Date.now(),
+        createdAt,
       });
 
       await ctx.db.insert("deck_words", {
@@ -156,8 +157,19 @@ export const createWordsBatch = mutation({
         position: basePosition + index,
       });
 
-      const word = await ctx.db.get(wordId);
-      if (word) createdWords.push(word);
+      createdWords.push({
+        _id: wordId,
+        userId: args.userId,
+        language: deck.language,
+        target: input.target,
+        reading: input.reading,
+        romanization: input.romanization,
+        meaning: input.meaning,
+        example: input.example,
+        audioUrl: input.audioUrl,
+        tags: input.tags,
+        createdAt,
+      });
     }
 
     return createdWords;
