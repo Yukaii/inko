@@ -39,6 +39,26 @@ export function WordBankPage() {
     tags: "",
   });
 
+  // Word editing state
+  const [showEditWordModal, setShowEditWordModal] = useState(false);
+  const [editingWord, setEditingWord] = useState<{
+    id: string;
+    target: string;
+    reading: string;
+    romanization: string;
+    meaning: string;
+    example: string;
+    audioUrl: string;
+    tags: string[];
+  } | null>(null);
+
+  // Search and filter state
+  const [wordSearch, setWordSearch] = useState("");
+  const [expandedWordId, setExpandedWordId] = useState<string | null>(null);
+
+  // Bulk selection state
+  const [selectedWordIds, setSelectedWordIds] = useState<Set<string>>(new Set());
+
   // ---- queries ----
   const decksQuery = useQuery({
     queryKey: ["decks"],
@@ -250,6 +270,51 @@ export function WordBankPage() {
       await queryClient.invalidateQueries({ queryKey: ["words", selectedDeckId] });
     },
   });
+
+  const updateWord = useMutation({
+    mutationFn: () => {
+      if (!editingWord) throw new Error("No word being edited");
+      return api.updateWord(token ?? "", editingWord.id, {
+        target: editingWord.target,
+        reading: editingWord.reading || undefined,
+        romanization: editingWord.romanization || undefined,
+        meaning: editingWord.meaning,
+        example: editingWord.example || undefined,
+        audioUrl: editingWord.audioUrl || undefined,
+        tags: editingWord.tags,
+      });
+    },
+    onSuccess: async () => {
+      setShowEditWordModal(false);
+      setEditingWord(null);
+      await queryClient.invalidateQueries({ queryKey: ["words", selectedDeckId] });
+    },
+  });
+
+  const bulkDeleteWords = useMutation({
+    mutationFn: async () => {
+      const promises = Array.from(selectedWordIds).map((wordId) =>
+        api.deleteWord(token ?? "", wordId)
+      );
+      await Promise.all(promises);
+    },
+    onSuccess: async () => {
+      setSelectedWordIds(new Set());
+      await queryClient.invalidateQueries({ queryKey: ["words", selectedDeckId] });
+    },
+  });
+
+  // ---- filtered words ----
+  const filteredWords = useMemo(() => {
+    if (!wordSearch.trim()) return words;
+    const searchLower = wordSearch.toLowerCase();
+    return words.filter((word: any) =>
+      word.target?.toLowerCase().includes(searchLower) ||
+      word.reading?.toLowerCase().includes(searchLower) ||
+      word.meaning?.toLowerCase().includes(searchLower) ||
+      word.tags?.some((tag: string) => tag.toLowerCase().includes(searchLower))
+    );
+  }, [words, wordSearch]);
 
   // ---- bulk import ----
   const [importPreview, setImportPreview] = useState<Array<Record<string, string>> | null>(null);
@@ -832,41 +897,217 @@ export function WordBankPage() {
       {/* Words list */}
       {selectedDeckId && (
         <section className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">Words ({words.length})</h2>
+          {/* Header with search */}
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">
+              Words ({filteredWords.length}{wordSearch ? ` of ${words.length}` : ''})
+            </h2>
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                placeholder="Search words..."
+                value={wordSearch}
+                onChange={(e) => setWordSearch(e.target.value)}
+                className="w-full md:w-64"
+              />
+              {wordSearch && (
+                <button
+                  type="button"
+                  className="border-0 bg-transparent p-0 text-text-secondary hover:text-text-primary"
+                  onClick={() => setWordSearch('')}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
 
-          {words.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {words.map((word) => (
-                <div key={word.id} className="grid grid-cols-1 items-center gap-3 rounded-xl bg-bg-card px-5 py-4 md:grid-cols-[1fr_auto_auto] md:gap-5">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-xl [font-family:var(--font-jp)]" lang="ja">{word.target}</span>
-                    <span className="text-[13px] text-text-secondary [font-family:var(--font-jp)]" lang="ja">{word.reading ?? "-"}</span>
-                  </div>
-                  <div className="text-sm text-text-secondary">{word.meaning}</div>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      {(word.tags ?? []).map((t: string) => (
-                        <span key={t} className="rounded-md bg-bg-elevated px-2.5 py-[3px] text-[11px] text-text-secondary">{t}</span>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      className="border-0 bg-transparent px-2 py-1 text-xl leading-none text-[#666] hover:text-[#ff6b6b]"
-                      onClick={() => deleteWord.mutate(word.id)}
-                      disabled={deleteWord.isPending}
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-              ))}
+          {/* Bulk actions */}
+          {selectedWordIds.size > 0 && (
+            <div className="flex items-center gap-3 rounded-lg bg-bg-elevated p-3">
+              <span className="text-sm text-text-secondary">{selectedWordIds.size} selected</span>
+              <button
+                type="button"
+                className="border-0 bg-red-500/20 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/30"
+                onClick={() => {
+                  if (confirm(`Delete ${selectedWordIds.size} words?`)) {
+                    bulkDeleteWords.mutate();
+                  }
+                }}
+                disabled={bulkDeleteWords.isPending}
+              >
+                {bulkDeleteWords.isPending ? 'Deleting...' : 'Delete Selected'}
+              </button>
+              <button
+                type="button"
+                className="border-0 bg-transparent px-3 py-1.5 text-sm text-text-secondary"
+                onClick={() => setSelectedWordIds(new Set())}
+              >
+                Clear selection
+              </button>
+            </div>
+          )}
+
+          {filteredWords.length > 0 ? (
+            <div className="rounded-base border border-[#2f2f2f] overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-bg-elevated">
+                  <tr>
+                    <th className="w-10 px-3 py-3 text-left">
+                      <input
+                        type="checkbox"
+                        checked={filteredWords.length > 0 && filteredWords.every((w: any) => selectedWordIds.has(w.id))}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedWordIds(new Set(filteredWords.map((w: any) => w.id)));
+                          } else {
+                            setSelectedWordIds(new Set());
+                          }
+                        }}
+                        className="cursor-pointer"
+                      />
+                    </th>
+                    <th className="px-3 py-3 text-left font-medium text-text-secondary">Target</th>
+                    <th className="px-3 py-3 text-left font-medium text-text-secondary">Reading</th>
+                    <th className="px-3 py-3 text-left font-medium text-text-secondary">Meaning</th>
+                    <th className="px-3 py-3 text-left font-medium text-text-secondary">Tags</th>
+                    <th className="w-20 px-3 py-3 text-right"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#2f2f2f]">
+                  {filteredWords.map((word: any) => (
+                    <>
+                      <tr
+                        key={word.id}
+                        className={`hover:bg-bg-elevated/50 ${expandedWordId === word.id ? 'bg-bg-elevated/30' : ''}`}
+                      >
+                        <td className="px-3 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedWordIds.has(word.id)}
+                            onChange={(e) => {
+                              const newSet = new Set(selectedWordIds);
+                              if (e.target.checked) {
+                                newSet.add(word.id);
+                              } else {
+                                newSet.delete(word.id);
+                              }
+                              setSelectedWordIds(newSet);
+                            }}
+                            className="cursor-pointer"
+                          />
+                        </td>
+                        <td className="px-3 py-3 [font-family:var(--font-jp)]" lang="ja">{word.target}</td>
+                        <td className="px-3 py-3 text-text-secondary [font-family:var(--font-jp)]" lang="ja">{word.reading ?? '-'}</td>
+                        <td className="px-3 py-3 text-text-secondary">{word.meaning}</td>
+                        <td className="px-3 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {(word.tags ?? []).slice(0, 3).map((t: string) => (
+                              <span key={t} className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px] text-text-secondary">{t}</span>
+                            ))}
+                            {(word.tags ?? []).length > 3 && (
+                              <span className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px] text-text-secondary">+{(word.tags ?? []).length - 3}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              className="flex h-7 w-7 items-center justify-center rounded border-0 bg-transparent p-0 text-text-secondary hover:text-text-primary"
+                              onClick={() => setExpandedWordId(expandedWordId === word.id ? null : word.id)}
+                              aria-label={expandedWordId === word.id ? 'Collapse' : 'Expand'}
+                            >
+                              {expandedWordId === word.id ? '−' : '+'}
+                            </button>
+                            <button
+                              type="button"
+                              className="flex h-7 w-7 items-center justify-center rounded border-0 bg-transparent p-0 text-text-secondary hover:text-text-primary"
+                              onClick={() => {
+                                setEditingWord({
+                                  id: word.id,
+                                  target: word.target,
+                                  reading: word.reading ?? '',
+                                  romanization: word.romanization ?? '',
+                                  meaning: word.meaning,
+                                  example: word.example ?? '',
+                                  audioUrl: word.audioUrl ?? '',
+                                  tags: word.tags ?? [],
+                                });
+                                setShowEditWordModal(true);
+                              }}
+                              aria-label="Edit word"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              className="flex h-7 w-7 items-center justify-center rounded border-0 bg-transparent p-0 text-text-secondary hover:text-red-400"
+                              onClick={() => deleteWord.mutate(word.id)}
+                              disabled={deleteWord.isPending}
+                              aria-label="Delete word"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      {expandedWordId === word.id && (
+                        <tr className="bg-bg-elevated/20">
+                          <td colSpan={6} className="px-3 py-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                              {word.romanization && (
+                                <div>
+                                  <span className="text-[11px] uppercase tracking-wider text-text-secondary">Romanization</span>
+                                  <p className="mt-1 text-sm">{word.romanization}</p>
+                                </div>
+                              )}
+                              {word.example && (
+                                <div>
+                                  <span className="text-[11px] uppercase tracking-wider text-text-secondary">Example</span>
+                                  <p className="mt-1 text-sm [font-family:var(--font-jp)]" lang="ja">{word.example}</p>
+                                </div>
+                              )}
+                              {word.audioUrl && (
+                                <div>
+                                  <span className="text-[11px] uppercase tracking-wider text-text-secondary">Audio</span>
+                                  <audio controls className="mt-1 h-8 w-full" src={word.audioUrl}>
+                                    Your browser does not support the audio element.
+                                  </audio>
+                                </div>
+                              )}
+                              {(word.tags ?? []).length > 0 && (
+                                <div>
+                                  <span className="text-[11px] uppercase tracking-wider text-text-secondary">All Tags</span>
+                                  <div className="mt-1 flex flex-wrap gap-1">
+                                    {(word.tags ?? []).map((t: string) => (
+                                      <span key={t} className="rounded bg-bg-elevated px-2 py-1 text-[11px] text-text-secondary">{t}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
             <div className="rounded-base bg-bg-card p-10 text-center text-text-secondary">
-              <p>No words yet.</p>
-              <p className="mt-2 text-[13px]">Add words using the form above.</p>
+              {wordSearch ? (
+                <>
+                  <p>No words match your search.</p>
+                  <p className="mt-2 text-[13px]">Try a different search term or clear the filter.</p>
+                </>
+              ) : (
+                <>
+                  <p>No words yet.</p>
+                  <p className="mt-2 text-[13px]">Add words using the form above.</p>
+                </>
+              )}
             </div>
           )}
         </section>
@@ -1018,6 +1259,120 @@ export function WordBankPage() {
                 disabled={deleteDeck.isPending}
               >
                 {deleteDeck.isPending ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </dialog>
+        </>
+      )}
+
+      {/* Edit Word Modal */}
+      {showEditWordModal && editingWord && (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-[100] border-0 bg-black/60 p-0"
+            onClick={() => {
+              setShowEditWordModal(false);
+              setEditingWord(null);
+            }}
+            aria-label="Close edit word modal"
+          />
+          <dialog
+            className="fixed left-1/2 top-1/2 z-[101] flex w-[500px] max-w-[90vw] max-h-[90vh] overflow-auto -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[#2f2f2f] bg-bg-card p-7 text-text-primary"
+            open
+            aria-label="Edit word"
+          >
+            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">Edit Word</h2>
+            
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor={`${formId}-edit-target`}>Target word *</label>
+                  <input
+                    id={`${formId}-edit-target`}
+                    value={editingWord.target}
+                    onChange={(e) => setEditingWord({ ...editingWord, target: e.target.value })}
+                    className="[font-family:var(--font-jp)]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor={`${formId}-edit-meaning`}>Meaning *</label>
+                  <input
+                    id={`${formId}-edit-meaning`}
+                    value={editingWord.meaning}
+                    onChange={(e) => setEditingWord({ ...editingWord, meaning: e.target.value })}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor={`${formId}-edit-reading`}>Reading</label>
+                  <input
+                    id={`${formId}-edit-reading`}
+                    value={editingWord.reading}
+                    onChange={(e) => setEditingWord({ ...editingWord, reading: e.target.value })}
+                    className="[font-family:var(--font-jp)]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor={`${formId}-edit-romanization`}>Romanization</label>
+                  <input
+                    id={`${formId}-edit-romanization`}
+                    value={editingWord.romanization}
+                    onChange={(e) => setEditingWord({ ...editingWord, romanization: e.target.value })}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor={`${formId}-edit-example`}>Example sentence</label>
+                <input
+                  id={`${formId}-edit-example`}
+                  value={editingWord.example}
+                  onChange={(e) => setEditingWord({ ...editingWord, example: e.target.value })}
+                  className="[font-family:var(--font-jp)]"
+                />
+              </div>
+              
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor={`${formId}-edit-audio`}>Audio URL</label>
+                <input
+                  id={`${formId}-edit-audio`}
+                  value={editingWord.audioUrl}
+                  onChange={(e) => setEditingWord({ ...editingWord, audioUrl: e.target.value })}
+                  placeholder="https://..."
+                />
+              </div>
+              
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor={`${formId}-edit-tags`}>Tags (comma separated)</label>
+                <input
+                  id={`${formId}-edit-tags`}
+                  value={editingWord.tags.join(', ')}
+                  onChange={(e) => setEditingWord({ ...editingWord, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
+                  placeholder="e.g. n5, verb"
+                />
+              </div>
+            </div>
+            
+            <div className="mt-2 flex justify-end gap-2.5">
+              <button
+                type="button"
+                className="bg-bg-elevated text-text-primary"
+                onClick={() => {
+                  setShowEditWordModal(false);
+                  setEditingWord(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => updateWord.mutate()}
+                disabled={!editingWord.target.trim() || !editingWord.meaning.trim() || updateWord.isPending}
+              >
+                {updateWord.isPending ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </dialog>
