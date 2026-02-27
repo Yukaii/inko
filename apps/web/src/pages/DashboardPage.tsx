@@ -194,12 +194,29 @@ export function DashboardPage() {
       <section className="card">
         <h2 style={{ marginTop: 0, fontFamily: "var(--font-display)", fontSize: 28 }}>Recent Sessions</h2>
         <div style={{ display: "grid", gap: 8 }}>
-          {(data?.recentSessions ?? []).map((session: { sessionId: string; cardsCompleted: number }) => (
-            <div key={session.sessionId} style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "var(--text-secondary)", fontSize: 13 }}>{session.sessionId.slice(0, 12)}...</span>
-              <span>{session.cardsCompleted} cards</span>
-            </div>
-          ))}
+          {(data?.recentSessions ?? []).map((session: { 
+            sessionId: string; 
+            cardsCompleted: number; 
+            startedAt: number; 
+            finishedAt: number;
+          }) => {
+            const duration = Math.round(((session.finishedAt ?? Date.now()) - session.startedAt) / 1000);
+            const formattedDate = new Date(session.finishedAt ?? session.startedAt).toLocaleString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+            
+            return (
+              <div key={session.sessionId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ color: "var(--text-secondary)", fontSize: 13 }}>{formattedDate}</span>
+                <span style={{ fontSize: 13 }}>
+                  {session.cardsCompleted} cards · {Math.floor(duration / 60)}:{String(duration % 60).padStart(2, '0')}
+                </span>
+              </div>
+            );
+          })}
           {data?.recentSessions?.length === 0 ? (
             <p style={{ color: "var(--text-secondary)", margin: 0 }}>No completed sessions yet.</p>
           ) : null}

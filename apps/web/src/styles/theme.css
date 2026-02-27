@@ -255,6 +255,28 @@ button.deck-card.selected {
   flex: 1;
   padding: 8px 10px;
   font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.deck-action-shortcut {
+  background: var(--bg-page);
+  border: 1px solid #3a3a3a;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.deck-card-actions button:hover .deck-action-shortcut,
+.deck-card-actions button:focus .deck-action-shortcut {
+  opacity: 1;
+  border-color: var(--accent-orange);
+  color: var(--accent-orange);
 }
 
 /* --- New deck card (dashed) --- */
@@ -1110,6 +1132,7 @@ select:focus-visible {
   margin: 0;
   font-family: var(--font-display);
   font-size: 24px;
+  color: var(--text-primary);
 }
 
 .keyboard-help-close {

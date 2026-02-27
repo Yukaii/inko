@@ -143,6 +143,7 @@ export function WordBankPage() {
         });
         break;
       case "Enter":
+      case "e":
         if (focusedDeckIndex === maxIndex) {
           // New deck button
           event.preventDefault();
@@ -152,6 +153,15 @@ export function WordBankPage() {
           const deck = decks[focusedDeckIndex];
           if (deck) {
             setSelectedDeckId(deck.id);
+          }
+        }
+        break;
+      case "p":
+        if (focusedDeckIndex >= 0 && focusedDeckIndex < decks.length) {
+          event.preventDefault();
+          const deck = decks[focusedDeckIndex];
+          if (deck) {
+            navigate(`/practice/${deck.id}`);
           }
         }
         break;
@@ -348,7 +358,10 @@ export function WordBankPage() {
               </div>
               <div className="deck-card-actions">
                 <Link to={`/practice/${deck.id}`} onClick={(e) => e.stopPropagation()} style={{ flex: 1 }}>
-                  <button type="button" style={{ width: "100%" }}>Practice</button>
+                  <button type="button" style={{ width: "100%" }}>
+                    <span>Practice</span>
+                    <kbd className="deck-action-shortcut">p</kbd>
+                  </button>
                 </Link>
                 <button
                   type="button"
@@ -358,7 +371,8 @@ export function WordBankPage() {
                     setSelectedDeckId(deck.id);
                   }}
                 >
-                  Edit
+                  <span>Edit</span>
+                  <kbd className="deck-action-shortcut">Enter</kbd>
                 </button>
               </div>
             </button>
