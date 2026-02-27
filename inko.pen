@@ -96,7 +96,8 @@
                       "fill": "$text-primary",
                       "content": "dashboard",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -130,7 +131,8 @@
                       "fill": "$text-secondary",
                       "content": "practice",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -164,7 +166,8 @@
                       "fill": "$text-secondary",
                       "content": "word_bank",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -198,7 +201,8 @@
                       "fill": "$text-secondary",
                       "content": "review",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -232,7 +236,8 @@
                       "fill": "$text-secondary",
                       "content": "settings",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -269,7 +274,8 @@
                   "content": "unlock all channels and unlimited word banks",
                   "lineHeight": 1.5,
                   "fontFamily": "JetBrains Mono",
-                  "fontSize": 11
+                  "fontSize": 11,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "frame",
@@ -338,7 +344,8 @@
                       "fill": "$text-secondary",
                       "content": "welcome_back,",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "text",
@@ -357,7 +364,8 @@
                       "fill": "$text-secondary",
                       "content": "// write it. hear it. type it. remember it.",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -423,7 +431,8 @@
                       "fill": "$text-secondary",
                       "content": "// words_learned",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 9
+                      "fontSize": 9,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "text",
@@ -459,7 +468,8 @@
                           "fill": "$accent-teal",
                           "content": "+12 this week",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -483,7 +493,8 @@
                       "fill": "$text-secondary",
                       "content": "// due_today",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 9
+                      "fontSize": 9,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "text",
@@ -544,7 +555,8 @@
                       "fill": "$text-secondary",
                       "content": "// day_streak",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 9
+                      "fontSize": 9,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "text",
@@ -580,7 +592,8 @@
                           "fill": "$accent-teal",
                           "content": "personal best!",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -604,7 +617,8 @@
                       "fill": "$text-secondary",
                       "content": "// session_time",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 9
+                      "fontSize": 9,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "text",
@@ -640,7 +654,8 @@
                           "fill": "$text-secondary",
                           "content": "avg 45 min/day",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -693,7 +708,8 @@
                           "fill": "$text-secondary",
                           "content": "// last 7 days",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 9
+                          "fontSize": 9,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -971,7 +987,8 @@
                           "fill": "$text-secondary",
                           "content": "// multi-sensory",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 9
+                          "fontSize": 9,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1326,7 +1343,8 @@
                   "fill": "$text-secondary",
                   "content": "dashboard",
                   "fontFamily": "JetBrains Mono",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -1396,7 +1414,8 @@
                   "fill": "$text-secondary",
                   "content": "word_bank",
                   "fontFamily": "JetBrains Mono",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -1430,7 +1449,8 @@
                   "fill": "$text-secondary",
                   "content": "review",
                   "fontFamily": "JetBrains Mono",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -1464,7 +1484,8 @@
                   "fill": "$text-secondary",
                   "content": "settings",
                   "fontFamily": "JetBrains Mono",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             }
@@ -1505,7 +1526,8 @@
                       "fill": "$text-secondary",
                       "content": "// triple_input_mode",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 9
+                      "fontSize": 9,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "text",
@@ -1664,7 +1686,8 @@
                       "fill": "$accent-orange",
                       "content": "べんきょう",
                       "fontFamily": "Noto Sans JP",
-                      "fontSize": 16
+                      "fontSize": 16,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "text",
@@ -1673,7 +1696,8 @@
                       "fill": "$text-secondary",
                       "content": "benkyou",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -1700,7 +1724,8 @@
                       "fill": "$text-secondary",
                       "content": "// meaning",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 9
+                      "fontSize": 9,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "text",
@@ -1719,7 +1744,8 @@
                       "fill": "$text-secondary",
                       "content": "// example",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 9
+                      "fontSize": 9,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "text",
@@ -1730,7 +1756,8 @@
                       "width": "fill_container",
                       "content": "毎日日本語を勉強しています。",
                       "fontFamily": "Noto Sans JP",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -1756,7 +1783,8 @@
                       "fill": "$text-secondary",
                       "content": "// mastery",
                       "fontFamily": "JetBrains Mono",
-                      "fontSize": 9
+                      "fontSize": 9,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "text",
@@ -1868,7 +1896,8 @@
                               "fill": "$text-secondary",
                               "content": "waiting",
                               "fontFamily": "JetBrains Mono",
-                              "fontSize": 9
+                              "fontSize": 9,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -2103,7 +2132,8 @@
                                   "fill": "$text-secondary",
                                   "content": "ready",
                                   "fontFamily": "JetBrains Mono",
-                                  "fontSize": 9
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -2132,7 +2162,8 @@
                               "fill": "$text-secondary",
                               "content": "// type the reading in romaji",
                               "fontFamily": "JetBrains Mono",
-                              "fontSize": 9
+                              "fontSize": 9,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "frame",
@@ -2159,7 +2190,8 @@
                                   "fill": "$text-primary",
                                   "content": "benk",
                                   "fontFamily": "JetBrains Mono",
-                                  "fontSize": 16
+                                  "fontSize": 16,
+                                  "fontWeight": "normal"
                                 },
                                 {
                                   "type": "rectangle",
@@ -2331,7 +2363,8 @@
                                   "fill": "$accent-teal",
                                   "content": "played_1x",
                                   "fontFamily": "JetBrains Mono",
-                                  "fontSize": 9
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -2659,7 +2692,8 @@
                           "fill": "$text-secondary",
                           "content": "shape:",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -2697,7 +2731,8 @@
                           "fill": "$text-secondary",
                           "content": "typing:",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -2735,7 +2770,8 @@
                           "fill": "$text-secondary",
                           "content": "listen:",
                           "fontFamily": "JetBrains Mono",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -2785,6 +2821,1691 @@
                       "fontWeight": "600"
                     }
                   ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "I1xCW",
+      "x": 0,
+      "y": 1000,
+      "name": "Landing Page",
+      "width": 1440,
+      "fill": "$bg-page",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "mMWb5",
+          "name": "Hero Section",
+          "width": "fill_container",
+          "fill": "$bg-page",
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "YHL6t",
+              "name": "Nav Bar",
+              "width": "fill_container",
+              "padding": [
+                16,
+                48
+              ],
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "HTixe",
+                  "name": "Nav Left",
+                  "gap": 40,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "vyKrB",
+                      "name": "Logo",
+                      "fill": "$accent-orange",
+                      "content": "inko",
+                      "fontFamily": "Oswald",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "JSn6Y",
+                      "name": "Nav Links",
+                      "gap": 24,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "bnaC8",
+                          "name": "link1",
+                          "fill": "$text-secondary",
+                          "content": "features",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 13
+                        },
+                        {
+                          "type": "text",
+                          "id": "0rxrD",
+                          "name": "link2",
+                          "fill": "$text-secondary",
+                          "content": "how it works",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 13
+                        },
+                        {
+                          "type": "text",
+                          "id": "6h7ZR",
+                          "name": "link3",
+                          "fill": "$text-secondary",
+                          "content": "pricing",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 13
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "AIDYl",
+                  "name": "CTA Button",
+                  "fill": "$accent-orange",
+                  "cornerRadius": "$radius",
+                  "gap": 8,
+                  "padding": [
+                    10,
+                    20
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "0uJ3n",
+                      "name": "ctaText",
+                      "fill": "$text-on-accent",
+                      "content": "get_started",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "TBfXa",
+              "name": "Hero Content",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 32,
+              "padding": [
+                80,
+                120,
+                60,
+                120
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "A2e0V",
+                  "name": "Headline",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "type it until you own it",
+                  "textAlign": "center",
+                  "fontFamily": "Oswald",
+                  "fontSize": 56,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "R5EIM",
+                  "name": "Subheadline",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": 700,
+                  "content": "The flashcard app that makes you prove you know it. Type your answers, build muscle memory, and never forget again.",
+                  "lineHeight": 1.5,
+                  "textAlign": "center",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 16
+                },
+                {
+                  "type": "frame",
+                  "id": "Oqpd6",
+                  "name": "CTA Row",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gmdLC",
+                      "name": "Primary CTA",
+                      "fill": "$accent-orange",
+                      "cornerRadius": "$radius",
+                      "gap": 8,
+                      "padding": [
+                        14,
+                        28
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "YaBPa",
+                          "name": "primaryCtaText",
+                          "fill": "$text-on-accent",
+                          "content": "start_practicing",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "uVjb5",
+                      "name": "Secondary CTA",
+                      "cornerRadius": "$radius",
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "$text-primary"
+                      },
+                      "gap": 8,
+                      "padding": [
+                        14,
+                        28
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "HKmSX",
+                          "name": "secondaryCtaText",
+                          "fill": "$text-primary",
+                          "content": "// watch_demo",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "6EwtA",
+              "name": "Hero Bottom",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 32,
+              "padding": [
+                0,
+                120,
+                60,
+                120
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "8Bz1X",
+                  "name": "Screenshot Placeholder",
+                  "width": 1100,
+                  "height": 500,
+                  "fill": "$bg-elevated",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "wkGyN",
+                      "name": "screenshotText",
+                      "fill": "$text-secondary",
+                      "content": "screenshot_placeholder",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 13
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "zcJQA",
+                  "name": "Trust Line",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 3,
+                      "id": "p8iRE",
+                      "name": "dot1",
+                      "fill": "$accent-teal",
+                      "width": 6,
+                      "height": 6
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 3,
+                      "id": "sxC9j",
+                      "name": "dot2",
+                      "fill": "$accent-teal",
+                      "width": 6,
+                      "height": 6
+                    },
+                    {
+                      "type": "text",
+                      "id": "wpSl7",
+                      "name": "trustText",
+                      "fill": "$text-secondary",
+                      "content": "// trusted by 10,000+ learners",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 11
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 3,
+                      "id": "GCBme",
+                      "name": "dot3",
+                      "fill": "$accent-teal",
+                      "width": 6,
+                      "height": 6
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 3,
+                      "id": "NhQO0",
+                      "name": "dot4",
+                      "fill": "$accent-teal",
+                      "width": 6,
+                      "height": 6
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "oNUnX",
+          "name": "How It Works",
+          "width": "fill_container",
+          "fill": "$bg-card",
+          "layout": "vertical",
+          "gap": 32,
+          "padding": [
+            80,
+            120
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "iZEIe",
+              "name": "Section Header",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "d9rVI",
+                  "name": "sectionTitle",
+                  "fill": "$text-primary",
+                  "content": "// how_it_works",
+                  "fontFamily": "Oswald",
+                  "fontSize": 36,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "tRQ5r",
+                  "name": "sectionSub",
+                  "fill": "$text-secondary",
+                  "content": "Three steps to never forgetting again",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 13
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "bSPrK",
+              "name": "Step Cards Row",
+              "width": "fill_container",
+              "gap": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "NrMLE",
+                  "name": "Step 01",
+                  "width": "fill_container",
+                  "fill": "$bg-elevated",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "6Xlkp",
+                      "name": "Card Top",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "04RsN",
+                          "name": "card1Step",
+                          "fill": "$accent-teal",
+                          "content": "[01]",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "jVSXc",
+                          "name": "card1Icon",
+                          "width": 24,
+                          "height": 24,
+                          "iconFontName": "plus",
+                          "iconFontFamily": "lucide",
+                          "fill": "$accent-orange"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "PgBp9",
+                      "name": "Card Content",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "8lWBw",
+                          "name": "card1Title",
+                          "fill": "$text-primary",
+                          "content": "create_deck",
+                          "fontFamily": "Oswald",
+                          "fontSize": 20,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "HaJWO",
+                          "name": "card1Desc",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Add flashcards with questions and answers for any subject",
+                          "lineHeight": 1.5,
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 13
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "dkfFi",
+                  "name": "Step 02",
+                  "width": "fill_container",
+                  "fill": "$bg-elevated",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "5bYgI",
+                      "name": "Card Top",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "n3NTt",
+                          "name": "card2Step",
+                          "fill": "$accent-teal",
+                          "content": "[02]",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "mrs6D",
+                          "name": "card2Icon",
+                          "width": 24,
+                          "height": 24,
+                          "iconFontName": "keyboard",
+                          "iconFontFamily": "lucide",
+                          "fill": "$accent-orange"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FLKFE",
+                      "name": "Card Content",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "tpgLO",
+                          "name": "card2Title",
+                          "fill": "$text-primary",
+                          "content": "type_answers",
+                          "fontFamily": "Oswald",
+                          "fontSize": 20,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "QO1v9",
+                          "name": "card2Desc",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Practice by typing out answers from memory — no multiple choice shortcuts",
+                          "lineHeight": 1.5,
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 13
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "d0eiu",
+                  "name": "Step 03",
+                  "width": "fill_container",
+                  "fill": "$bg-elevated",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "yLnZb",
+                      "name": "Card Top",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "qlo7t",
+                          "name": "card3Step",
+                          "fill": "$accent-teal",
+                          "content": "[03]",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "AxEps",
+                          "name": "card3Icon",
+                          "width": 24,
+                          "height": 24,
+                          "iconFontName": "trending-up",
+                          "iconFontFamily": "lucide",
+                          "fill": "$accent-orange"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "SuTqi",
+                      "name": "Card Content",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "YX7F9",
+                          "name": "card3Title",
+                          "fill": "$text-primary",
+                          "content": "track_mastery",
+                          "fontFamily": "Oswald",
+                          "fontSize": 20,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "wzYDm",
+                          "name": "card3Desc",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Spaced repetition ensures you review at the perfect time",
+                          "lineHeight": 1.5,
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 13
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Fuf29",
+          "name": "Features Grid",
+          "width": "fill_container",
+          "fill": "$bg-page",
+          "layout": "vertical",
+          "gap": 48,
+          "padding": [
+            80,
+            120
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "Hr0OD",
+              "name": "Features Header",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "lmyvq",
+                  "name": "featBadge",
+                  "fill": "$bg-elevated",
+                  "cornerRadius": "$radius",
+                  "padding": [
+                    6,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "8ZccM",
+                      "name": "featBadgeText",
+                      "fill": "$accent-teal",
+                      "content": "// features",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 11,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "FlK6v",
+                  "name": "featTitle",
+                  "fill": "$text-primary",
+                  "content": "everything_you_need",
+                  "fontFamily": "Oswald",
+                  "fontSize": 36,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "YP8e1",
+                  "name": "featSub",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": 500,
+                  "content": "Built for learners who want real retention, not just recognition.",
+                  "textAlign": "center",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 13
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "QQvoq",
+              "name": "Features Row 1",
+              "width": "fill_container",
+              "gap": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "y9Ihv",
+                  "name": "Feature Card 1",
+                  "width": "fill_container",
+                  "fill": "$bg-card",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "1RKvn",
+                      "name": "icon1",
+                      "width": 24,
+                      "height": 24,
+                      "iconFontName": "keyboard",
+                      "iconFontFamily": "lucide",
+                      "fill": "$accent-orange"
+                    },
+                    {
+                      "type": "text",
+                      "id": "YVTld",
+                      "name": "title1",
+                      "fill": "$text-primary",
+                      "content": "typing_first",
+                      "fontFamily": "Oswald",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "MUIBh",
+                      "name": "desc1",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "No multiple choice. No matching. Type your answers from memory to build real neural pathways.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 13
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "5qbj1",
+                  "name": "Feature Card 2",
+                  "width": "fill_container",
+                  "fill": "$bg-card",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "KW9H9",
+                      "name": "icon2",
+                      "width": 24,
+                      "height": 24,
+                      "iconFontName": "repeat",
+                      "iconFontFamily": "lucide",
+                      "fill": "$accent-orange"
+                    },
+                    {
+                      "type": "text",
+                      "id": "x9rXp",
+                      "name": "title2",
+                      "fill": "$text-primary",
+                      "content": "spaced_repetition",
+                      "fontFamily": "Oswald",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "2ATL9",
+                      "name": "desc2",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Smart scheduling surfaces cards right before you forget. Every review is perfectly timed.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 13
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "123Q2",
+                  "name": "Feature Card 3",
+                  "width": "fill_container",
+                  "fill": "$bg-card",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "WIAjn",
+                      "name": "icon3",
+                      "width": 24,
+                      "height": 24,
+                      "iconFontName": "trending-up",
+                      "iconFontFamily": "lucide",
+                      "fill": "$accent-teal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Mhf1I",
+                      "name": "title3",
+                      "fill": "$text-primary",
+                      "content": "progress_tracking",
+                      "fontFamily": "Oswald",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "YlIlM",
+                      "name": "desc3",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Visual dashboards show mastery levels, streaks, and weak spots so you know exactly where to focus.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 13
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "g9xCf",
+              "name": "Features Row 2",
+              "width": "fill_container",
+              "gap": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "6AGDD",
+                  "name": "Feature Card 4",
+                  "width": "fill_container",
+                  "fill": "$bg-card",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "IgXuK",
+                      "name": "icon4",
+                      "width": 24,
+                      "height": 24,
+                      "iconFontName": "layers",
+                      "iconFontFamily": "lucide",
+                      "fill": "$accent-teal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "4DYt2",
+                      "name": "title4",
+                      "fill": "$text-primary",
+                      "content": "custom_decks",
+                      "fontFamily": "Oswald",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "uRtm1",
+                      "name": "desc4",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Create decks for any subject — languages, code syntax, med terms, history dates. Your knowledge, your way.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 13
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "F9g12",
+                  "name": "Feature Card 5",
+                  "width": "fill_container",
+                  "fill": "$bg-card",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "NDMpq",
+                      "name": "icon5",
+                      "width": 24,
+                      "height": 24,
+                      "iconFontName": "zap",
+                      "iconFontFamily": "lucide",
+                      "fill": "$accent-orange"
+                    },
+                    {
+                      "type": "text",
+                      "id": "je0NQ",
+                      "name": "title5",
+                      "fill": "$text-primary",
+                      "content": "streak_system",
+                      "fontFamily": "Oswald",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "02BlJ",
+                      "name": "desc5",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Daily streaks and scoring keep you motivated. Consistency beats cramming every time.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 13
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "i9tsy",
+                  "name": "Feature Card 6",
+                  "width": "fill_container",
+                  "fill": "$bg-card",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "FAhyv",
+                      "name": "icon6",
+                      "width": 24,
+                      "height": 24,
+                      "iconFontName": "smartphone",
+                      "iconFontFamily": "lucide",
+                      "fill": "$accent-teal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Wcgf3",
+                      "name": "title6",
+                      "fill": "$text-primary",
+                      "content": "practice_anywhere",
+                      "fontFamily": "Oswald",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "gP9gl",
+                      "name": "desc6",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Works on any device with a keyboard. Practice on your commute, at your desk, or in bed.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 13
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "BiD9Z",
+          "name": "Social Proof",
+          "width": "fill_container",
+          "fill": "$bg-card",
+          "layout": "vertical",
+          "gap": 48,
+          "padding": [
+            80,
+            120
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "Plwos",
+              "name": "Proof Header",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "g6sBp",
+                  "name": "proofBadge",
+                  "fill": "$bg-elevated",
+                  "cornerRadius": "$radius",
+                  "padding": [
+                    6,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ow4vp",
+                      "name": "proofBadgeText",
+                      "fill": "$accent-orange",
+                      "content": "// social_proof",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 11,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "fFFqu",
+                  "name": "proofTitle",
+                  "fill": "$text-primary",
+                  "content": "learners_love_inko",
+                  "fontFamily": "Oswald",
+                  "fontSize": 36,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "HLzt9",
+              "name": "Stats Row",
+              "width": "fill_container",
+              "gap": 24,
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ESh5f",
+                  "name": "stat1",
+                  "width": "fill_container",
+                  "fill": "$bg-elevated",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 24,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ZbE8f",
+                      "name": "stat1val",
+                      "fill": "$accent-orange",
+                      "content": "10,847",
+                      "fontFamily": "Oswald",
+                      "fontSize": 36,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "4SmWK",
+                      "name": "stat1label",
+                      "fill": "$text-secondary",
+                      "content": "active_learners",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "UVY6r",
+                  "name": "stat2",
+                  "width": "fill_container",
+                  "fill": "$bg-elevated",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 24,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "uZtkr",
+                      "name": "stat2val",
+                      "fill": "$accent-teal",
+                      "content": "2.4M",
+                      "fontFamily": "Oswald",
+                      "fontSize": 36,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "nHZf9",
+                      "name": "stat2label",
+                      "fill": "$text-secondary",
+                      "content": "cards_practiced",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jZFz8",
+                  "name": "stat3",
+                  "width": "fill_container",
+                  "fill": "$bg-elevated",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 24,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "wdkxp",
+                      "name": "stat3val",
+                      "fill": "$accent-orange",
+                      "content": "94%",
+                      "fontFamily": "Oswald",
+                      "fontSize": 36,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "GQvyA",
+                      "name": "stat3label",
+                      "fill": "$text-secondary",
+                      "content": "retention_rate",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "MvxiD",
+                  "name": "stat4",
+                  "width": "fill_container",
+                  "fill": "$bg-elevated",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 24,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "9C90q",
+                      "name": "stat4val",
+                      "fill": "$accent-teal",
+                      "content": "4.9/5",
+                      "fontFamily": "Oswald",
+                      "fontSize": 36,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "6h88X",
+                      "name": "stat4label",
+                      "fill": "$text-secondary",
+                      "content": "avg_rating",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "8NfO4",
+              "name": "Testimonials Row",
+              "width": "fill_container",
+              "gap": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "xnpFQ",
+                  "name": "t1",
+                  "width": "fill_container",
+                  "fill": "$bg-elevated",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "jftqY",
+                      "name": "t1quote",
+                      "fill": "$text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "&quot;I switched from Anki and never looked back. Typing answers forces me to actually recall, not just recognize. My Japanese vocab retention went through the roof.&quot;",
+                      "lineHeight": 1.5,
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 13,
+                      "fontStyle": "italic"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "nnvkf",
+                      "name": "t1attr",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 3,
+                          "id": "aGWEk",
+                          "name": "t1dot",
+                          "fill": "$accent-teal",
+                          "width": 6,
+                          "height": 6
+                        },
+                        {
+                          "type": "text",
+                          "id": "gwbpu",
+                          "name": "t1name",
+                          "fill": "$text-secondary",
+                          "content": "— sarah_k // language learner",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "WvaMN",
+                  "name": "t2",
+                  "width": "fill_container",
+                  "fill": "$bg-elevated",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "8gpJs",
+                      "name": "t2quote",
+                      "fill": "$text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "&quot;As a med student, I need to remember thousands of terms precisely. Inko's typing approach means I can actually spell drug names correctly on exams now.&quot;",
+                      "lineHeight": 1.5,
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 13,
+                      "fontStyle": "italic"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "H4of8",
+                      "name": "t2attr",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 3,
+                          "id": "CggHv",
+                          "name": "t2dot",
+                          "fill": "$accent-orange",
+                          "width": 6,
+                          "height": 6
+                        },
+                        {
+                          "type": "text",
+                          "id": "kPeEV",
+                          "name": "t2name",
+                          "fill": "$text-secondary",
+                          "content": "— mike_r // med student",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "4R5ni",
+                  "name": "t3",
+                  "width": "fill_container",
+                  "fill": "$bg-elevated",
+                  "cornerRadius": "$radius",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 24,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "PHV6J",
+                      "name": "t3quote",
+                      "fill": "$text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "&quot;The streak system got me hooked. 47 days straight and counting. It turns memorization from a chore into a daily habit I actually look forward to.&quot;",
+                      "lineHeight": 1.5,
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 13,
+                      "fontStyle": "italic"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "oppvV",
+                      "name": "t3attr",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 3,
+                          "id": "S2LIh",
+                          "name": "t3dot",
+                          "fill": "$accent-teal",
+                          "width": 6,
+                          "height": 6
+                        },
+                        {
+                          "type": "text",
+                          "id": "tpzy7",
+                          "name": "t3name",
+                          "fill": "$text-secondary",
+                          "content": "— alex_t // developer",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "cYBoO",
+          "name": "Final CTA",
+          "width": "fill_container",
+          "fill": "$bg-page",
+          "layout": "vertical",
+          "gap": 32,
+          "padding": [
+            100,
+            120
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "0iIw6",
+              "name": "ctaInner",
+              "width": 800,
+              "fill": {
+                "type": "gradient",
+                "gradientType": "linear",
+                "enabled": true,
+                "rotation": 180,
+                "size": {
+                  "height": 1
+                },
+                "colors": [
+                  {
+                    "color": "#1A1A1A",
+                    "position": 0
+                  },
+                  {
+                    "color": "#2D2D2D",
+                    "position": 1
+                  }
+                ]
+              },
+              "cornerRadius": "$radius",
+              "layout": "vertical",
+              "gap": 24,
+              "padding": 60,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "tb62X",
+                  "name": "ctaHeadline",
+                  "fill": "$text-primary",
+                  "content": "stop_forgetting",
+                  "textAlign": "center",
+                  "fontFamily": "Oswald",
+                  "fontSize": 48,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "lzrjR",
+                  "name": "ctaSubline",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": 550,
+                  "content": "Join thousands of learners who type their way to lasting knowledge. Free to start, no credit card required.",
+                  "lineHeight": 1.5,
+                  "textAlign": "center",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 14
+                },
+                {
+                  "type": "frame",
+                  "id": "3tJEt",
+                  "name": "ctaBtns",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "17q45",
+                      "name": "ctaPrimary",
+                      "fill": "$accent-orange",
+                      "cornerRadius": "$radius",
+                      "gap": 8,
+                      "padding": [
+                        14,
+                        32
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "VXx8b",
+                          "name": "ctaPrimaryText",
+                          "fill": "$text-on-accent",
+                          "content": "start_practicing",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "zlSau",
+                          "name": "ctaPrimaryIcon",
+                          "width": 16,
+                          "height": 16,
+                          "iconFontName": "arrow-right",
+                          "iconFontFamily": "lucide",
+                          "fill": "$text-on-accent"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "Pnqvn",
+                      "name": "ctaSecondary",
+                      "fill": "$text-secondary",
+                      "content": "// it&apos;s free, forever",
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 12
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "chDPH",
+          "name": "Footer",
+          "width": "fill_container",
+          "fill": "#111111",
+          "layout": "vertical",
+          "gap": 40,
+          "padding": [
+            48,
+            120
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "lIMDK",
+              "name": "Footer Top",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "RPiOy",
+                  "name": "footBrand",
+                  "width": 300,
+                  "layout": "vertical",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "tXB5T",
+                      "name": "footLogo",
+                      "fill": "$accent-orange",
+                      "content": "inko_",
+                      "fontFamily": "Oswald",
+                      "fontSize": 24,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "di4Je",
+                      "name": "footTagline",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": 280,
+                      "content": "Type it until you own it. The flashcard app that builds real recall through active typing practice.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "JetBrains Mono",
+                      "fontSize": 11
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "AD5cD",
+                  "name": "footLinks",
+                  "gap": 64,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "4PuYZ",
+                      "name": "col1",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "wZCSc",
+                          "name": "col1Title",
+                          "fill": "$text-primary",
+                          "content": "product",
+                          "fontFamily": "Oswald",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "oNgIA",
+                          "name": "col1l1",
+                          "fill": "$text-secondary",
+                          "content": "features",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12
+                        },
+                        {
+                          "type": "text",
+                          "id": "0viZl",
+                          "name": "col1l2",
+                          "fill": "$text-secondary",
+                          "content": "pricing",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12
+                        },
+                        {
+                          "type": "text",
+                          "id": "BtNB8",
+                          "name": "col1l3",
+                          "fill": "$text-secondary",
+                          "content": "changelog",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ddpEh",
+                      "name": "col2",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "WloYV",
+                          "name": "col2Title",
+                          "fill": "$text-primary",
+                          "content": "company",
+                          "fontFamily": "Oswald",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Hy8bk",
+                          "name": "col2l1",
+                          "fill": "$text-secondary",
+                          "content": "about",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12
+                        },
+                        {
+                          "type": "text",
+                          "id": "Kx8Xh",
+                          "name": "col2l2",
+                          "fill": "$text-secondary",
+                          "content": "blog",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12
+                        },
+                        {
+                          "type": "text",
+                          "id": "kZyap",
+                          "name": "col2l3",
+                          "fill": "$text-secondary",
+                          "content": "contact",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "sA7db",
+                      "name": "col3",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ic91Z",
+                          "name": "col3Title",
+                          "fill": "$text-primary",
+                          "content": "legal",
+                          "fontFamily": "Oswald",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "qZksF",
+                          "name": "col3l1",
+                          "fill": "$text-secondary",
+                          "content": "privacy",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12
+                        },
+                        {
+                          "type": "text",
+                          "id": "jL1Gr",
+                          "name": "col3l2",
+                          "fill": "$text-secondary",
+                          "content": "terms",
+                          "fontFamily": "JetBrains Mono",
+                          "fontSize": 12
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "YWv5s",
+              "name": "divider",
+              "fill": "#2D2D2D",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "Ab7Q5",
+              "name": "Footer Bottom",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "FcwFQ",
+                  "name": "copyright",
+                  "fill": "#555555",
+                  "content": "© 2026 inko. all rights reserved.",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 11
+                },
+                {
+                  "type": "text",
+                  "id": "eOP2H",
+                  "name": "footNote",
+                  "fill": "#555555",
+                  "content": "// built with care for learners",
+                  "fontFamily": "JetBrains Mono",
+                  "fontSize": 11
                 }
               ]
             }
