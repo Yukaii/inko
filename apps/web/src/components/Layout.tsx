@@ -1,4 +1,4 @@
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -206,6 +206,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   const shortcuts = getShortcutsList();
+  const isPracticeRoute = matchPath("/practice/:deckId", location.pathname) !== null;
+  const showMobileNav = !isPracticeRoute;
 
   return (
     <div className="grid h-screen overflow-hidden md:grid-cols-[220px_minmax(0,1fr)] md:grid-rows-1 grid-cols-1 grid-rows-[1fr_auto]">
@@ -347,7 +349,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Mobile Bottom Nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-[9999] flex h-16 items-center justify-around border-t border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] bg-bg-page px-2 shadow-[0_-2px_10px_color-mix(in_oklab,var(--text-primary)_18%,transparent)] md:hidden" aria-label="Mobile navigation">
+      <nav className={`fixed inset-x-0 bottom-0 z-[9999] h-16 items-center justify-around border-t border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] bg-bg-page px-2 shadow-[0_-2px_10px_color-mix(in_oklab,var(--text-primary)_18%,transparent)] md:hidden ${showMobileNav ? "flex" : "hidden"}`} aria-label="Mobile navigation">
         {NAV_LINKS.map((link) => {
           const isActive = location.pathname === link.to;
           return (
@@ -374,7 +376,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </NavLink>
       </nav>
 
-      <main id="main-content" className="h-screen overflow-y-auto px-5 pt-5 pb-[84px] md:px-10 md:py-8" tabIndex={-1}>
+      <main id="main-content" className={`h-screen overflow-y-auto px-5 pt-5 ${showMobileNav ? "pb-[84px]" : "pb-5"} md:px-10 md:py-8`} tabIndex={-1}>
         {children}
       </main>
 

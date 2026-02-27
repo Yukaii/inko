@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
@@ -25,6 +25,7 @@ export function WordBankPage() {
   const { t } = useTranslation();
   const { token } = useAuth();
   const navigate = useNavigate();
+  const { deckId: routeDeckId } = useParams<{ deckId?: string }>();
   const queryClient = useQueryClient();
   const formId = useId();
   const deckGridRef = useRef<HTMLDivElement>(null);
@@ -75,6 +76,7 @@ export function WordBankPage() {
   const [wordsCursor, setWordsCursor] = useState<string | null>(null);
   const [wordsCursorHistory, setWordsCursorHistory] = useState<Array<string | null>>([]);
   const [selectedWordIds, setSelectedWordIds] = useState<Set<string>>(new Set());
+  const [showMobileAddModal, setShowMobileAddModal] = useState(false);
 
   const decksQuery = useQuery({
     queryKey: ["decks"],
@@ -95,6 +97,20 @@ export function WordBankPage() {
   const words = wordsQuery.data?.words ?? [];
   const activeDeck = useMemo(() => decks.find((d) => d.id === selectedDeckId), [decks, selectedDeckId]);
   const isJapaneseDeck = activeDeck?.language === "ja";
+
+  useEffect(() => {
+    if (!routeDeckId) {
+      setSelectedDeckId("");
+      return;
+    }
+    if (decks.length === 0) return;
+    const exists = decks.some((deck) => deck.id === routeDeckId);
+    if (!exists) {
+      navigate("/word-bank", { replace: true });
+      return;
+    }
+    setSelectedDeckId(routeDeckId);
+  }, [routeDeckId, decks, navigate]);
 
   useEffect(() => {
     const cleanups: Array<() => void> = [];
@@ -284,6 +300,7 @@ export function WordBankPage() {
     setWordForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   const selectDeck = (id: string) => () => {
+    navigate(`/word-bank/${id}`);
     setSelectedDeckId(id);
     setWordsCursor(null);
     setWordsCursorHistory([]);
@@ -324,6 +341,7 @@ export function WordBankPage() {
                   onKeyDown={(event) => {
                     if (event.key !== "Enter" && event.key !== " ") return;
                     event.preventDefault();
+                    navigate(`/word-bank/${deck.id}`);
                     setSelectedDeckId(deck.id);
                     setWordsCursor(null);
                     setWordsCursorHistory([]);
@@ -531,10 +549,20 @@ export function WordBankPage() {
 
         <div className="flex flex-col h-full p-5 md:p-10 gap-8 overflow-y-auto pb-32">
           <header className="flex flex-col gap-1">
+            {selectedDeckId ? (
+              <button
+                type="button"
+                onClick={() => navigate("/word-bank")}
+                className="mb-3 flex w-fit items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-bg-card px-2.5 py-1.5 text-xs font-medium text-text-secondary md:hidden"
+              >
+                <span aria-hidden="true">←</span>
+                <span>{t("word_bank.decks.title")} / {activeDeck?.name ?? ""}</span>
+              </button>
+            ) : null}
             <h1 className="m-0 text-3xl font-semibold [font-family:var(--font-display)]">
-              {activeDeck ? activeDeck.name : t("word_bank.title")}
+              {selectedDeckId ? t("word_bank.title") : activeDeck ? activeDeck.name : t("word_bank.title")}
             </h1>
-            <p className="m-0 text-sm text-text-secondary">
+            <p className={`m-0 text-sm text-text-secondary ${selectedDeckId ? "hidden md:block" : ""}`}>
               {activeDeck ? t("word_bank.decks.manage_deck", { name: activeDeck.name }) : t("word_bank.subtitle")}
             </p>
           </header>
@@ -714,11 +742,79 @@ export function WordBankPage() {
         <button
           type="button"
           className="md:hidden fixed right-6 bottom-24 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent-orange text-text-on-accent shadow-lg shadow-accent-orange/30 border-0 cursor-pointer"
-          onClick={() => setIsPanelCollapsed(false)}
+          onClick={() => setShowMobileAddModal(true)}
           aria-label="Add Word"
         >
           <span className="text-3xl font-light">+</span>
         </button>
+      )}
+
+      {showMobileAddModal && selectedDeckId && (
+        <div className="fixed inset-0 z-[1000] flex items-end justify-center p-0 md:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setShowMobileAddModal(false)}
+          />
+          <dialog className="relative z-[1010] flex w-full max-h-[85vh] flex-col gap-4 overflow-y-auto rounded-t-2xl border border-[var(--border-subtle)] bg-bg-card p-5" open>
+            <div className="flex items-center justify-between">
+              <h2 className="m-0 text-lg font-semibold">{t("word_bank.add.title_short")}</h2>
+              <button type="button" className="border-0 bg-transparent p-1 text-text-secondary" onClick={() => setShowMobileAddModal(false)}>×</button>
+            </div>
+            <div className="flex flex-col gap-3">
+              <input
+                className="text-sm py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none transition-colors"
+                placeholder={t("word_bank.add.target_placeholder", { example: isJapaneseDeck ? "勉強" : "palabra" })}
+                value={wordForm.target}
+                onChange={updateField("target")}
+              />
+              <input
+                className="text-sm py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none transition-colors"
+                placeholder={t("word_bank.add.meaning_placeholder")}
+                value={wordForm.meaning}
+                onChange={updateField("meaning")}
+              />
+              <input
+                className="text-sm py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none transition-colors"
+                placeholder={t("word_bank.add.reading")}
+                value={wordForm.reading}
+                onChange={updateField("reading")}
+              />
+              <input
+                className="text-sm py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none transition-colors"
+                placeholder={t("word_bank.add.romanization")}
+                value={wordForm.romanization}
+                onChange={updateField("romanization")}
+              />
+              <textarea
+                className="min-h-[84px] text-sm py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none transition-colors resize-none"
+                placeholder={t("word_bank.add.example")}
+                value={wordForm.example}
+                onChange={updateField("example")}
+              />
+              <input
+                className="text-sm py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none transition-colors"
+                placeholder={t("word_bank.add.audio_url")}
+                value={wordForm.audioUrl}
+                onChange={updateField("audioUrl")}
+              />
+              <input
+                className="text-sm py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none transition-colors"
+                placeholder={t("word_bank.add.tags")}
+                value={wordForm.tags}
+                onChange={updateField("tags")}
+              />
+              <button
+                type="button"
+                className="mt-1 w-full py-2.5 text-sm bg-accent-orange text-text-on-accent border-0 rounded-lg font-bold cursor-pointer"
+                onClick={() => createWord.mutate(undefined, { onSuccess: () => setShowMobileAddModal(false) })}
+                disabled={!wordForm.target || !wordForm.meaning || createWord.isPending}
+              >
+                {t("word_bank.add.submit")}
+              </button>
+            </div>
+          </dialog>
+        </div>
       )}
 
       {showNewDeckModal && (
