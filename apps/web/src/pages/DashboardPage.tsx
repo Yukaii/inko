@@ -7,6 +7,35 @@ import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
 import { BookOpen, Target, Flame, Clock, Play } from "lucide-react";
 
+function StatsSkeleton() {
+  return (
+    <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Statistics">
+      {Array.from({ length: 4 }).map((_, idx) => (
+        <div key={idx} className="rounded-base bg-bg-card p-5">
+          <div className="mb-3 h-3 w-24 animate-pulse rounded bg-bg-elevated" />
+          <div className="h-8 w-16 animate-pulse rounded bg-bg-elevated" />
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function RecentSessionsSkeleton() {
+  return (
+    <div className="rounded-base bg-bg-card py-2">
+      {Array.from({ length: 3 }).map((_, idx) => (
+        <div
+          key={idx}
+          className="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-3 last:border-b-0"
+        >
+          <div className="h-4 w-28 animate-pulse rounded bg-bg-elevated" />
+          <div className="h-4 w-36 animate-pulse rounded bg-bg-elevated" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function DashboardPage() {
   const { t, i18n } = useTranslation();
   const { token } = useAuth();
@@ -14,19 +43,30 @@ export function DashboardPage() {
   const practiceGridRef = useRef<HTMLUListElement>(null);
   const [focusedDeckIndex, setFocusedDeckIndex] = useState(-1);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["dashboard"],
-    queryFn: () => api.dashboard(token ?? ""),
+  const statsQuery = useQuery({
+    queryKey: ["dashboard", "stats"],
+    queryFn: () => api.dashboardStats(token ?? ""),
+    enabled: Boolean(token),
+    staleTime: 30_000,
+  });
+  const sessionsQuery = useQuery({
+    queryKey: ["dashboard", "recent-sessions"],
+    queryFn: () => api.dashboardRecentSessions(token ?? ""),
+    enabled: Boolean(token),
+    staleTime: 30_000,
   });
   const meQuery = useQuery({
     queryKey: ["me"],
     queryFn: () => api.me(token ?? ""),
     enabled: Boolean(token),
+    staleTime: 60_000,
   });
 
   const decksQuery = useQuery({
     queryKey: ["decks"],
     queryFn: () => api.listDecks(token ?? ""),
+    enabled: Boolean(token),
+    staleTime: 30_000,
   });
 
   const decks = decksQuery.data ?? [];
@@ -116,14 +156,6 @@ export function DashboardPage() {
     }
   }, [focusedDeckIndex]);
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col gap-8">
-        <div className="p-[60px] text-center text-base text-text-secondary">{t("common.loading")}</div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-8">
       {/* Welcome Header */}
@@ -135,32 +167,36 @@ export function DashboardPage() {
       </header>
 
       {/* Stats Row */}
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Statistics">
-        <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
-          <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
-            <BookOpen size={14} /> {t("dashboard.stats.words_learned")}
+      {statsQuery.isLoading ? (
+        <StatsSkeleton />
+      ) : (
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Statistics">
+          <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
+            <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
+              <BookOpen size={14} /> {t("dashboard.stats.words_learned")}
+            </div>
+            <div className="text-[32px] font-semibold [font-family:var(--font-display)]">{statsQuery.data?.totalWordsLearned ?? 0}</div>
           </div>
-          <div className="text-[32px] font-semibold [font-family:var(--font-display)]">{data?.totalWordsLearned ?? 0}</div>
-        </div>
-        <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
-          <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
-            <Target size={14} className="text-accent-orange" /> {t("dashboard.stats.due_today")}
+          <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
+            <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
+              <Target size={14} className="text-accent-orange" /> {t("dashboard.stats.due_today")}
+            </div>
+            <div className="text-[32px] font-semibold text-accent-orange [font-family:var(--font-display)]">{statsQuery.data?.wordsDueToday ?? 0}</div>
           </div>
-          <div className="text-[32px] font-semibold text-accent-orange [font-family:var(--font-display)]">{data?.wordsDueToday ?? 0}</div>
-        </div>
-        <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
-          <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
-            <Flame size={14} className="text-accent-teal" /> {t("dashboard.stats.day_streak")}
+          <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
+            <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
+              <Flame size={14} className="text-accent-teal" /> {t("dashboard.stats.day_streak")}
+            </div>
+            <div className="text-[32px] font-semibold text-accent-teal [font-family:var(--font-display)]">{statsQuery.data?.learningStreak ?? 0}</div>
           </div>
-          <div className="text-[32px] font-semibold text-accent-teal [font-family:var(--font-display)]">{data?.learningStreak ?? 0}</div>
-        </div>
-        <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
-          <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
-            <Clock size={14} /> {t("dashboard.stats.session_time")}
+          <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
+            <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
+              <Clock size={14} /> {t("dashboard.stats.session_time")}
+            </div>
+            <div className="text-[32px] font-semibold [font-family:var(--font-display)]">{Math.floor((statsQuery.data?.sessionTimeSeconds ?? 0) / 60)}m</div>
           </div>
-          <div className="text-[32px] font-semibold [font-family:var(--font-display)]">{Math.floor((data?.sessionTimeSeconds ?? 0) / 60)}m</div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Quick Practice Section */}
       {activeDecks.length > 0 && (
@@ -222,13 +258,16 @@ export function DashboardPage() {
       {/* Recent Sessions */}
       <section className="flex flex-col gap-4">
         <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">{t("dashboard.recent_sessions")}</h2>
-        <div className="rounded-base bg-bg-card py-2">
-          {(data?.recentSessions ?? []).map((session: { 
-            sessionId: string; 
-            cardsCompleted: number; 
-            startedAt: number; 
-            finishedAt?: number;
-          }) => {
+        {sessionsQuery.isLoading ? (
+          <RecentSessionsSkeleton />
+        ) : (
+          <div className="rounded-base bg-bg-card py-2">
+            {(sessionsQuery.data?.recentSessions ?? []).map((session: {
+              sessionId: string;
+              cardsCompleted: number;
+              startedAt: number;
+              finishedAt?: number;
+            }) => {
             const duration = Math.round(((session.finishedAt ?? Date.now()) - session.startedAt) / 1000);
             const formattedDate = new Date(session.finishedAt ?? session.startedAt).toLocaleString(i18n.language, {
               month: 'short',
@@ -246,10 +285,11 @@ export function DashboardPage() {
               </div>
             );
           })}
-          {data?.recentSessions?.length === 0 ? (
-            <p className="m-0 px-5 py-5 text-center text-[13px] text-text-secondary">{t("dashboard.no_sessions")}</p>
-          ) : null}
-        </div>
+            {sessionsQuery.data?.recentSessions?.length === 0 ? (
+              <p className="m-0 px-5 py-5 text-center text-[13px] text-text-secondary">{t("dashboard.no_sessions")}</p>
+            ) : null}
+          </div>
+        )}
       </section>
     </div>
   );

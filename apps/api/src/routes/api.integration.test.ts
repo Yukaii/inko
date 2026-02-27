@@ -136,6 +136,15 @@ function makeRepositoryMock(): Repository {
       sessionTimeSeconds: 20,
       recentSessions: [],
     })),
+    dashboardStats: vi.fn(async () => ({
+      totalWordsLearned: 1,
+      wordsDueToday: 1,
+      learningStreak: 1,
+      sessionTimeSeconds: 20,
+    })),
+    dashboardRecentSessions: vi.fn(async () => ({
+      recentSessions: [],
+    })),
   } as unknown as Repository;
 }
 
@@ -317,6 +326,18 @@ describe("API integration", () => {
       headers: auth,
     });
     expect(dashboardRes.statusCode).toBe(200);
+    const dashboardStatsRes = await app.inject({
+      method: "GET",
+      url: "/api/dashboard/stats",
+      headers: auth,
+    });
+    expect(dashboardStatsRes.statusCode).toBe(200);
+    const dashboardRecentRes = await app.inject({
+      method: "GET",
+      url: "/api/dashboard/recent-sessions",
+      headers: auth,
+    });
+    expect(dashboardRecentRes.statusCode).toBe(200);
 
     await app.close();
   });
@@ -329,6 +350,8 @@ describe("API integration", () => {
       app.inject({ method: "GET", url: "/api/decks" }),
       app.inject({ method: "POST", url: "/api/practice/session/start", payload: { deckId: "deck_1" } }),
       app.inject({ method: "GET", url: "/api/dashboard/summary" }),
+      app.inject({ method: "GET", url: "/api/dashboard/stats" }),
+      app.inject({ method: "GET", url: "/api/dashboard/recent-sessions" }),
     ];
 
     const responses = await Promise.all(protectedRequests);

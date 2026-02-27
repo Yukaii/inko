@@ -1,13 +1,15 @@
+import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { useKeyboardShortcuts } from "./hooks/useKeyboard";
 import { Layout } from "./components/Layout";
-import { LoginPage } from "./pages/LoginPage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { WordBankPage } from "./pages/WordBankPage";
-import { PracticePage } from "./pages/PracticePage";
-import { SettingsPage } from "./pages/SettingsPage";
-import { LandingPage } from "./pages/LandingPage";
+
+const LoginPage = lazy(() => import("./pages/LoginPage").then((m) => ({ default: m.LoginPage })));
+const DashboardPage = lazy(() => import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })));
+const WordBankPage = lazy(() => import("./pages/WordBankPage").then((m) => ({ default: m.WordBankPage })));
+const PracticePage = lazy(() => import("./pages/PracticePage").then((m) => ({ default: m.PracticePage })));
+const SettingsPage = lazy(() => import("./pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+const LandingPage = lazy(() => import("./pages/LandingPage").then((m) => ({ default: m.LandingPage })));
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
@@ -20,6 +22,10 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return <Layout>{children}</Layout>;
 }
 
+function RouteFallback() {
+  return <div className="p-[60px] text-center text-base text-text-secondary">Loading...</div>;
+}
+
 export function App() {
   return (
     <AuthProvider>
@@ -29,51 +35,53 @@ export function App() {
       >
         Skip to main content
       </a>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedLayout>
-              <DashboardPage />
-            </ProtectedLayout>
-          }
-        />
-        <Route
-          path="/word-bank"
-          element={
-            <ProtectedLayout>
-              <WordBankPage />
-            </ProtectedLayout>
-          }
-        />
-        <Route
-          path="/word-bank/:deckId"
-          element={
-            <ProtectedLayout>
-              <WordBankPage />
-            </ProtectedLayout>
-          }
-        />
-        <Route
-          path="/practice/:deckId"
-          element={
-            <ProtectedLayout>
-              <PracticePage />
-            </ProtectedLayout>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedLayout>
-              <SettingsPage />
-            </ProtectedLayout>
-          }
-        />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedLayout>
+                <DashboardPage />
+              </ProtectedLayout>
+            }
+          />
+          <Route
+            path="/word-bank"
+            element={
+              <ProtectedLayout>
+                <WordBankPage />
+              </ProtectedLayout>
+            }
+          />
+          <Route
+            path="/word-bank/:deckId"
+            element={
+              <ProtectedLayout>
+                <WordBankPage />
+              </ProtectedLayout>
+            }
+          />
+          <Route
+            path="/practice/:deckId"
+            element={
+              <ProtectedLayout>
+                <PracticePage />
+              </ProtectedLayout>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedLayout>
+                <SettingsPage />
+              </ProtectedLayout>
+            }
+          />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Suspense>
     </AuthProvider>
   );
 }

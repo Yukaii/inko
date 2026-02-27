@@ -703,6 +703,14 @@ export const repository = {
   async dashboardSummary(userId: string) {
     return await convex.query("dashboard:summary", { userId });
   },
+
+  async dashboardStats(userId: string) {
+    return await convex.query("dashboard:summaryStats", { userId });
+  },
+
+  async dashboardRecentSessions(userId: string) {
+    return await convex.query("dashboard:recentSessions", { userId });
+  },
 };
 
 export type Repository = typeof repository;
