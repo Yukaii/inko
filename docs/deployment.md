@@ -15,6 +15,10 @@ It deploys 3 services into one Zeabur project:
 - `Convex Backend` (official prebuilt image)
 - `Convex Dashboard` (official prebuilt image)
 
+Dockerfile selection for API:
+- `Dockerfile.API` (service-name matched Dockerfile)
+- `ZBPACK_DOCKERFILE_NAME=API`
+
 `zeabur.yml` is intended to work with:
 - Zeabur CLI (`template deploy`)
 - Zeabur review-app automation that consumes template YAML
