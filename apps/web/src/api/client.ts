@@ -30,6 +30,15 @@ type DashboardSummary = {
   }>;
 };
 
+type DashboardStats = Omit<DashboardSummary, "recentSessions"> & {
+  totalWordsLearnedCapped?: boolean;
+  wordsDueTodayCapped?: boolean;
+};
+
+type DashboardRecentSessions = {
+  recentSessions: DashboardSummary["recentSessions"];
+};
+
 type AuthVerifyResponse = { accessToken: string; user: UserDTO };
 type StartPracticeResponse = {
   sessionId: string;
@@ -99,6 +108,9 @@ export const api = {
   updateMe: (token: string, input: UpdateProfileInput) =>
     request<UserDTO>("/api/me", { method: "PATCH", body: JSON.stringify(input) }, token),
   dashboard: (token: string) => request<DashboardSummary>("/api/dashboard/summary", {}, token),
+  dashboardStats: (token: string) => request<DashboardStats>("/api/dashboard/stats", {}, token),
+  dashboardRecentSessions: (token: string) =>
+    request<DashboardRecentSessions>("/api/dashboard/recent-sessions", {}, token),
 
   listDecks: (token: string) => request<DeckDTO[]>("/api/decks", {}, token),
 
