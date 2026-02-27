@@ -226,6 +226,20 @@ export const listDeckWordsPage = query({
   },
 });
 
+export const countDeckWords = query({
+  args: {
+    deckId: v.id("decks"),
+  },
+  handler: async (ctx, args) => {
+    const links = await ctx.db
+      .query("deck_words")
+      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+      .collect();
+
+    return links.length;
+  },
+});
+
 export const isWordInDeck = query({
   args: {
     deckId: v.id("decks"),

@@ -211,6 +211,8 @@
       "deleting": "削除中...",
       "clear_selection": "選択をクリア",
       "showing_count": "このページに {{count}} 語を表示中",
+      "total_count": "合計 {{count}} 語",
+      "page_summary": "{{page}}頁 ・ {{shown}}/{{total}}語",
       "all_tags": "すべてのタグ",
       "target": "対象",
       "reading": "読み方",
