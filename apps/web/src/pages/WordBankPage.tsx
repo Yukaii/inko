@@ -456,63 +456,51 @@ export function WordBankPage() {
           )}
         </div>
         
-      </aside>
-
-      {/* Resize Handle - Outside aside so it's always accessible */}
-      {!isPanelCollapsed && (
-        <div
-          className="hidden md:block fixed z-20 cursor-col-resize group"
-          style={{ 
-            left: sidebarWidth,
-            top: 0,
-            height: '100vh',
-            width: '4px',
-          }}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            isResizingRef.current = true;
-            const startX = e.clientX;
-            const startWidth = sidebarWidth;
-            
-            const handleMouseMove = (moveEvent: MouseEvent) => {
-              if (!isResizingRef.current) return;
-              moveEvent.preventDefault();
-              const delta = moveEvent.clientX - startX;
-              const newWidth = Math.max(240, Math.min(600, startWidth + delta));
-              setSidebarWidth(newWidth);
-            };
-            
-            const handleMouseUp = () => {
-              isResizingRef.current = false;
-              document.removeEventListener('mousemove', handleMouseMove);
-              document.removeEventListener('mouseup', handleMouseUp);
-            };
-            
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-          }}
+        {/* Resize Handle */}
+        {!isPanelCollapsed && (
+          <div
+            className="absolute right-0 top-0 h-full w-4 cursor-col-resize z-30 group"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              isResizingRef.current = true;
+              const startX = e.clientX;
+              const startWidth = sidebarWidth;
+              
+              const handleMouseMove = (moveEvent: MouseEvent) => {
+                if (!isResizingRef.current) return;
+                moveEvent.preventDefault();
+                const delta = moveEvent.clientX - startX;
+                const newWidth = Math.max(240, Math.min(600, startWidth + delta));
+                setSidebarWidth(newWidth);
+              };
+              
+              const handleMouseUp = () => {
+                isResizingRef.current = false;
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+              };
+              
+              document.addEventListener('mousemove', handleMouseMove);
+              document.addEventListener('mouseup', handleMouseUp);
+            }}
+          >
+            <div className="absolute right-0 top-0 h-full w-[3px] bg-[var(--border-subtle)] group-hover:bg-accent-orange transition-colors" />
+          </div>
+        )}
+        
+        {/* Toggle Button */}
+        <button 
+          type="button"
+          onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
+          className="absolute right-0 top-1/2 z-40 flex h-6 w-6 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-bg-card text-text-secondary shadow-md hover:text-text-primary cursor-pointer transition-transform duration-300"
+          aria-label={isPanelCollapsed ? "Expand panel" : "Collapse panel"}
         >
-          <div className="h-full w-[2px] mx-auto bg-transparent group-hover:bg-accent-orange transition-colors" />
-        </div>
-      )}
-      
-      {/* Toggle Button - Fixed position outside aside */}
-      <button 
-        type="button"
-        onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
-        className="hidden md:flex fixed z-30 h-6 w-6 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-bg-card text-text-secondary shadow-sm hover:text-text-primary cursor-pointer transition-all duration-300"
-        style={{ 
-          left: isPanelCollapsed ? '0px' : sidebarWidth - 12,
-          top: '50%',
-          transform: 'translateY(-50%)',
-        }}
-        aria-label={isPanelCollapsed ? "Expand panel" : "Collapse panel"}
-      >
-        <ChevronLeft 
-          size={14} 
-          className={`transition-transform duration-300 ${isPanelCollapsed ? 'rotate-180' : ''}`}
-        />
-      </button>
+          <ChevronLeft 
+            size={14} 
+            className={`transition-transform duration-300 ${isPanelCollapsed ? 'rotate-180' : ''}`}
+          />
+        </button>
+      </aside>
 
       {/* Main Words Content Area */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-bg-page relative">
