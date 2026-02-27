@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canSubmitCard, getPracticeCompletionTitle, getTypingFeedback } from "./PracticePage.js";
+import { canSubmitCard, getPracticeCompletionTitle, getTypingFeedback, isEscDoublePress } from "./PracticePage.js";
 
 describe("canSubmitCard", () => {
   it("requires correct romaji typing", () => {
@@ -109,5 +109,19 @@ describe("getPracticeCompletionTitle", () => {
         sessionTargetCards: 50,
       }),
     ).toBe("Session Complete");
+  });
+});
+
+describe("isEscDoublePress", () => {
+  it("returns true when second escape is inside window", () => {
+    expect(isEscDoublePress(1000, 1800)).toBe(true);
+  });
+
+  it("returns false when second escape is outside window", () => {
+    expect(isEscDoublePress(1000, 2200)).toBe(false);
+  });
+
+  it("returns false when there is no first escape", () => {
+    expect(isEscDoublePress(null, 1500)).toBe(false);
   });
 });

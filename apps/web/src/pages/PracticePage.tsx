@@ -101,6 +101,11 @@ export function getPracticeCompletionTitle(input: {
   return "Session Complete";
 }
 
+export function isEscDoublePress(lastEscPressedAt: number | null, now: number, windowMs = 1000) {
+  if (lastEscPressedAt === null) return false;
+  return now - lastEscPressedAt <= windowMs;
+}
+
 export function PracticePage() {
   const { deckId } = useParams<{ deckId: string }>();
   const { token } = useAuth();
@@ -120,6 +125,9 @@ export function PracticePage() {
   const [sessionTargetCards, setSessionTargetCards] = useState(PRACTICE_SESSION_CARD_CAP_DEFAULT);
   const [cardsCompleted, setCardsCompleted] = useState(0);
   const [sessionCapped, setSessionCapped] = useState(false);
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
+  const [exitEscHint, setExitEscHint] = useState(false);
+  const [lastEscPressedAt, setLastEscPressedAt] = useState<number | null>(null);
 
   const startedAtRef = useRef<number>(Date.now());
   const autoSubmitKeyRef = useRef<string>("");
@@ -255,6 +263,38 @@ export function PracticePage() {
     finishMutation.mutate({ token, sessionId });
   }, [finishMutation, sessionDone, sessionId, token]);
 
+  useEffect(() => {
+    if (lastEscPressedAt === null) return;
+    const timer = window.setTimeout(() => {
+      setLastEscPressedAt(null);
+      setExitEscHint(false);
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [lastEscPressedAt]);
+
+  const requestExitIntent = useCallback(
+    (source: "esc" | "button") => {
+      if (source === "button") {
+        setExitEscHint(false);
+        setExitConfirmOpen(true);
+        return;
+      }
+
+      const now = Date.now();
+      if (isEscDoublePress(lastEscPressedAt, now)) {
+        setLastEscPressedAt(null);
+        setExitEscHint(false);
+        setExitConfirmOpen(true);
+        return;
+      }
+
+      setLastEscPressedAt(now);
+      setExitEscHint(true);
+    },
+    [lastEscPressedAt],
+  );
+
   const submitEnabled = useMemo(() => {
     if (!card) return false;
     return canSubmitCard({
@@ -313,14 +353,20 @@ export function PracticePage() {
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (event.key === "Escape") {
-        requestFinish();
+        event.preventDefault();
+        if (exitConfirmOpen) {
+          setExitConfirmOpen(false);
+          setExitEscHint(false);
+          return;
+        }
+        requestExitIntent("esc");
         return;
       }
       // Any printable key focuses the hidden input
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       focusInput();
     },
-    [requestFinish, focusInput],
+    [exitConfirmOpen, requestExitIntent, focusInput],
   );
 
   // Build character-by-character display for monkeytype effect
@@ -444,12 +490,45 @@ export function PracticePage() {
             </span>
           ) : null}
         </div>
-        <button type="button" className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-1.5 text-[13px] font-normal text-text-secondary hover:border-[var(--border-strong)] hover:text-text-primary" onClick={() => requestFinish()}>
+        <button type="button" className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-1.5 text-[13px] font-normal text-text-secondary hover:border-[var(--border-strong)] hover:text-text-primary" onClick={() => requestExitIntent("button")}>
           end session
           <kbd className="rounded border border-[var(--border-strong)] bg-bg-card px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">esc</kbd>
         </button>
       </div>
       {finishError ? <div className="fixed left-1/2 top-14 z-[220] -translate-x-1/2 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-toast-bg)] px-3 py-2 text-xs text-[var(--danger-text)]">{finishError}</div> : null}
+      {exitEscHint ? (
+        <div className="fixed left-1/2 top-14 z-[220] -translate-x-1/2 rounded-lg border border-[var(--border-strong)] bg-bg-elevated px-3 py-2 text-xs text-text-primary">
+          Press Esc again within 1 second to exit
+        </div>
+      ) : null}
+      {exitConfirmOpen ? (
+        <div className="fixed left-1/2 top-16 z-[230] w-[min(92vw,420px)] -translate-x-1/2 rounded-xl border border-[var(--border-strong)] bg-bg-card p-4 shadow-xl">
+          <p className="m-0 text-sm text-text-primary">End this practice session?</p>
+          <p className="mt-1 mb-0 text-xs text-text-secondary">Progress for this session will be saved.</p>
+          <div className="mt-3 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              className="rounded-md border border-[var(--border-muted)] px-3 py-1.5 text-xs text-text-secondary hover:border-[var(--border-strong)] hover:text-text-primary"
+              onClick={() => {
+                setExitConfirmOpen(false);
+                setExitEscHint(false);
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="rounded-md border border-[var(--danger-border)] bg-[var(--danger-toast-bg)] px-3 py-1.5 text-xs text-[var(--danger-text)]"
+              onClick={() => {
+                setExitConfirmOpen(false);
+                requestFinish();
+              }}
+            >
+              Confirm Exit
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {/* Center focus area */}
       <div className={`flex flex-col items-center gap-4 transition-all ${cardTransition ? "-translate-y-3 opacity-0" : ""}`}>
@@ -515,7 +594,12 @@ export function PracticePage() {
           onKeyDown={(event) => {
             if (event.key === "Escape") {
               event.preventDefault();
-              requestFinish();
+              if (exitConfirmOpen) {
+                setExitConfirmOpen(false);
+                setExitEscHint(false);
+              } else {
+                requestExitIntent("esc");
+              }
             }
           }}
           aria-label={`Type answer for ${card.target}`}
