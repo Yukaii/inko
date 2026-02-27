@@ -24,6 +24,8 @@ jobs:
         env:
           ZEABUR_PROJECT_ID: ${{ secrets.ZEABUR_PROJECT_ID }}
           ZEABUR_BACKEND_DOMAIN: ${{ secrets.ZEABUR_BACKEND_DOMAIN }}
+          ZEABUR_API_DOMAIN: ${{ secrets.ZEABUR_API_DOMAIN }}
+          ZEABUR_FRONTEND_DOMAIN: ${{ secrets.ZEABUR_FRONTEND_DOMAIN }}
           ZEABUR_CONVEX_INSTANCE_SECRET: ${{ secrets.ZEABUR_CONVEX_INSTANCE_SECRET }}
         run: |
           npx -y zeabur@latest template deploy \
@@ -32,4 +34,6 @@ jobs:
             --project-id "$ZEABUR_PROJECT_ID" \
             --skip-validation \
             --var BACKEND_DOMAIN="$ZEABUR_BACKEND_DOMAIN" \
+            --var API_DOMAIN="$ZEABUR_API_DOMAIN" \
+            --var FRONTEND_DOMAIN="$ZEABUR_FRONTEND_DOMAIN" \
             --var CONVEX_INSTANCE_SECRET="$ZEABUR_CONVEX_INSTANCE_SECRET"

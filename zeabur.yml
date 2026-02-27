@@ -9,6 +9,14 @@ spec:
       type: DOMAIN
       name: Convex Backend Domain
       description: Subdomain for Convex backend (resulting in <value>.zeabur.app)
+    - key: API_DOMAIN
+      type: DOMAIN
+      name: API Domain
+      description: Subdomain for API service (resulting in <value>.zeabur.app)
+    - key: FRONTEND_DOMAIN
+      type: DOMAIN
+      name: Frontend Domain
+      description: Subdomain for frontend service (resulting in <value>.zeabur.app)
     - key: CONVEX_INSTANCE_SECRET
       type: PASSWORD
       name: Convex Instance Secret
@@ -40,12 +48,13 @@ spec:
           JWT_SECRET:
             default: "replace-with-strong-secret-at-least-16-chars"
           FRONTEND_URL:
-            default: "https://example.com"
+            default: "https://${FRONTEND_DOMAIN}.zeabur.app"
         healthCheck:
           type: HTTP
           port: web
           http:
             path: /health
+      domainKey: API_DOMAIN
 
     - name: Convex Backend
       template: PREBUILT_V2
@@ -83,3 +92,24 @@ spec:
         env:
           NEXT_PUBLIC_DEPLOYMENT_URL:
             default: "https://${BACKEND_DOMAIN}.zeabur.app"
+
+    - name: Frontend
+      template: GIT
+      dependencies:
+        - API
+      spec:
+        source:
+          source: GITHUB
+          repo: 1167879584
+          branch: main
+          rootDirectory: apps/web
+        ports:
+          - id: web
+            port: 8080
+            type: HTTP
+        env:
+          ZBPACK_IGNORE_DOCKERFILE:
+            default: "true"
+          VITE_API_URL:
+            default: "https://${API_DOMAIN}.zeabur.app"
+      domainKey: FRONTEND_DOMAIN
