@@ -5,20 +5,38 @@ function dateString(ts: number): string {
   return new Date(ts).toISOString().slice(0, 10);
 }
 
+const DASHBOARD_SCAN_LIMIT = 1800;
+
 export const summary = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     const today = dateString(Date.now());
 
-    const [words, stats, sessions, completedToday] = await Promise.all([
-      ctx.db
-        .query("words")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
-        .collect(),
-      ctx.db
-        .query("word_channel_stats")
-        .filter((q) => q.eq(q.field("userId"), args.userId))
-        .collect(),
+    const now = Date.now();
+
+    const words = await ctx.db
+      .query("words")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .take(DASHBOARD_SCAN_LIMIT + 1);
+
+    const stats = await ctx.db
+      .query("word_channel_stats")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .take(DASHBOARD_SCAN_LIMIT + 1);
+
+    const wordSummary = {
+      count: Math.min(words.length, DASHBOARD_SCAN_LIMIT),
+      capped: words.length > DASHBOARD_SCAN_LIMIT,
+    };
+
+    const dueSummary = {
+      due: stats
+        .slice(0, DASHBOARD_SCAN_LIMIT)
+        .filter((s) => Math.min(s.shapeDueAt, s.typingDueAt, s.listeningDueAt) <= now).length,
+      capped: stats.length > DASHBOARD_SCAN_LIMIT,
+    };
+
+    const [sessions, completedToday] = await Promise.all([
       ctx.db
         .query("practice_sessions")
         .withIndex("by_user", (q) => q.eq("userId", args.userId))
@@ -30,12 +48,11 @@ export const summary = query({
         .first(),
     ]);
 
-    const now = Date.now();
-    const dueToday = stats.filter((s) => Math.min(s.shapeDueAt, s.typingDueAt, s.listeningDueAt) <= now).length;
-
     return {
-      totalWordsLearned: words.length,
-      wordsDueToday: dueToday,
+      totalWordsLearned: wordSummary.count,
+      wordsDueToday: dueSummary.due,
+      totalWordsLearnedCapped: wordSummary.capped,
+      wordsDueTodayCapped: dueSummary.capped,
       learningStreak: completedToday?.streakCount ?? 0,
       sessionTimeSeconds: completedToday?.secondsSpent ?? 0,
       recentSessions: sessions
