@@ -80,6 +80,9 @@ export function PracticePage() {
   const [bestCardStreak, setBestCardStreak] = useState(0);
   const [lastSubmitAccepted, setLastSubmitAccepted] = useState<boolean | null>(null);
   const startedAtRef = useRef<number>(Date.now());
+  const autoSubmitKeyRef = useRef<string>("");
+  const pageRef = useRef<HTMLDivElement | null>(null);
+  const typingInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!deckId || !token) return;
@@ -89,6 +92,11 @@ export function PracticePage() {
       startedAtRef.current = Date.now();
     });
   }, [deckId, token]);
+
+  useEffect(() => {
+    pageRef.current?.focus();
+    typingInputRef.current?.focus();
+  }, []);
 
   const submitMutation = useMutation({
     mutationFn: () => {
@@ -177,12 +185,39 @@ export function PracticePage() {
     return Math.round((typed * 60000) / elapsedMs);
   }, [typingInput]);
 
+  const focusKey = card?.wordId ?? "";
+
+  useEffect(() => {
+    if (!focusKey) return;
+    typingInputRef.current?.focus();
+  }, [focusKey]);
+
+  useEffect(() => {
+    if (!card || submitMutation.isPending || !submitEnabled) return;
+    const normalizedTyped = normalizeJapaneseInput(typingInput).toLowerCase();
+    if (!normalizedTyped) return;
+
+    const autoSubmitKey = `${sessionId}:${card.wordId}:${normalizedTyped}`;
+    if (autoSubmitKeyRef.current === autoSubmitKey) return;
+
+    autoSubmitKeyRef.current = autoSubmitKey;
+    submitMutation.mutate();
+  }, [card, sessionId, submitEnabled, submitMutation, typingInput]);
+
   if (!card) {
     return <p>Loading card...</p>;
   }
 
   return (
-    <div style={{ display: "grid", gap: 20 }}>
+    <div
+      ref={pageRef}
+      tabIndex={-1}
+      style={{ display: "grid", gap: 20 }}
+      onKeyDown={(event) => {
+        if (event.metaKey || event.ctrlKey || event.altKey) return;
+        typingInputRef.current?.focus();
+      }}
+    >
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <p style={{ marginBottom: 6, color: "var(--text-secondary)" }}>triple_input_mode</p>
@@ -210,6 +245,8 @@ export function PracticePage() {
       <section className="card" style={{ display: "grid", gap: 10 }}>
         <strong>IME Typing</strong>
         <input
+          key={card.wordId}
+          ref={typingInputRef}
           value={typingInput}
           onChange={(event) => setTypingInput(event.target.value)}
           placeholder="Type romaji (lowercase)"
@@ -234,10 +271,8 @@ export function PracticePage() {
       <section className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", gap: 20 }}>
           <span>typing: {typingInput ? (typingFeedback.complete ? "ready" : "keep typing") : "pending"}</span>
+          <span>{submitMutation.isPending ? "auto-submitting" : "auto-submit enabled"}</span>
         </div>
-        <button type="button" onClick={() => submitMutation.mutate()} disabled={!submitEnabled || submitMutation.isPending}>
-          submit_card
-        </button>
       </section>
 
       <section className="card streak-card">
