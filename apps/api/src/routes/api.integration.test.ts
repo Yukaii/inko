@@ -44,12 +44,12 @@ function makeRepositoryMock(): Repository {
       archived: false,
       createdAt: Date.now(),
     })),
-    updateDeck: vi.fn(async () => ({
+    updateDeck: vi.fn(async (_userId: string, _deckId: string, input) => ({
       id: "deck_1",
       userId: "user_1",
-      name: "Core N5",
-      language: "ja",
-      archived: false,
+      name: input.name ?? "Core N5",
+      language: input.language ?? "ja",
+      archived: input.archived ?? false,
       createdAt: Date.now(),
     })),
     listDeckWords: vi.fn(async () => []),
@@ -246,6 +246,16 @@ describe("API integration", () => {
       headers: auth,
     });
     expect(listDeckRes.statusCode).toBe(200);
+
+    const updateDeckRes = await app.inject({
+      method: "PATCH",
+      url: "/api/decks/deck_1",
+      headers: auth,
+      payload: { name: "Core FR", language: "fr" },
+    });
+    expect(updateDeckRes.statusCode).toBe(200);
+    expect(updateDeckRes.json().name).toBe("Core FR");
+    expect(updateDeckRes.json().language).toBe("fr");
 
     const createWordRes = await app.inject({
       method: "POST",

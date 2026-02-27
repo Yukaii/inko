@@ -35,7 +35,7 @@ export function WordBankPage() {
   const [newDeckName, setNewDeckName] = useState("");
   const [newDeckLanguage, setNewDeckLanguage] = useState<LanguageCode>("ja");
   const [showEditDeckModal, setShowEditDeckModal] = useState(false);
-  const [editingDeck, setEditingDeck] = useState<{ id: string; name: string; archived: boolean } | null>(null);
+  const [editingDeck, setEditingDeck] = useState<{ id: string; name: string; language: LanguageCode; archived: boolean } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deckToDelete, setDeckToDelete] = useState<{ id: string; name: string } | null>(null);
   const [addTab, setAddTab] = useState<AddTab>("single");
@@ -172,6 +172,25 @@ export function WordBankPage() {
       if (selectedDeckId === deckToDelete?.id) setSelectedDeckId("");
       setShowDeleteConfirm(false);
       setDeckToDelete(null);
+      await queryClient.invalidateQueries({ queryKey: ["decks"] });
+    },
+  });
+
+  const updateDeck = useMutation({
+    mutationFn: () => {
+      if (!editingDeck) throw new Error("No deck being edited");
+      return api.updateDeck(token ?? "", editingDeck.id, {
+        name: editingDeck.name,
+        language: editingDeck.language,
+        archived: editingDeck.archived,
+      });
+    },
+    onSuccess: async (deck) => {
+      setShowEditDeckModal(false);
+      setEditingDeck(null);
+      if (selectedDeckId === deck.id) {
+        await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+      }
       await queryClient.invalidateQueries({ queryKey: ["decks"] });
     },
   });
@@ -364,11 +383,22 @@ export function WordBankPage() {
                         className="p-1 text-text-secondary hover:text-text-primary bg-transparent border-0 cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setEditingDeck({ id: deck.id, name: deck.name, archived: deck.archived });
+                          setEditingDeck({ id: deck.id, name: deck.name, language: deck.language, archived: deck.archived });
                           setShowEditDeckModal(true);
                         }}
                       >
                         <Pencil size={12} />
+                     </button>
+                     <button
+                        type="button"
+                        className="p-1 text-text-secondary hover:text-[var(--danger-text)] bg-transparent border-0 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeckToDelete({ id: deck.id, name: deck.name });
+                          setShowDeleteConfirm(true);
+                        }}
+                      >
+                        <Trash2 size={12} />
                      </button>
                   </div>
                 </div>
@@ -866,11 +896,80 @@ export function WordBankPage() {
           <dialog className="relative z-[1010] flex w-full max-w-[420px] flex-col gap-6 rounded-2xl border border-[var(--border-subtle)] bg-bg-card p-8 shadow-2xl" open>
             <h2 className="m-0 text-2xl font-semibold [font-family:var(--font-display)]">{t("word_bank.edit_deck.title")}</h2>
             <div className="flex flex-col gap-4">
-              <input className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none" value={editingDeck.name} onChange={(e) => setEditingDeck({...editingDeck, name: e.target.value})} />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-text-secondary" htmlFor={`${formId}-edit-deck-name`}>{t("word_bank.new_deck.name")}</label>
+                <input
+                  id={`${formId}-edit-deck-name`}
+                  className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none"
+                  value={editingDeck.name}
+                  onChange={(e) => setEditingDeck({ ...editingDeck, name: e.target.value })}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-text-secondary" htmlFor={`${formId}-edit-deck-language`}>{t("word_bank.new_deck.language")}</label>
+                <select
+                  id={`${formId}-edit-deck-language`}
+                  className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none"
+                  value={editingDeck.language}
+                  onChange={(e) => setEditingDeck({ ...editingDeck, language: e.target.value as LanguageCode })}
+                >
+                  {SUPPORTED_LANGUAGES.map((code) => (
+                    <option key={code} value={code}>
+                      {LANGUAGE_LABELS[code]} ({code.toUpperCase()})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <button type="button" className="bg-bg-elevated text-text-primary px-5 py-2 rounded-lg border-0 cursor-pointer" onClick={() => setShowEditDeckModal(false)}>{t("common.cancel")}</button>
-              <button type="button" className="bg-accent-orange text-text-on-accent px-5 py-2 rounded-lg border-0 font-bold cursor-pointer" onClick={() => navigate(0)}>{t("common.save")}</button>
+              <button
+                type="button"
+                className="bg-accent-orange text-text-on-accent px-5 py-2 rounded-lg border-0 font-bold cursor-pointer"
+                onClick={() => updateDeck.mutate()}
+                disabled={!editingDeck.name.trim() || updateDeck.isPending}
+              >
+                {t("common.save")}
+              </button>
+            </div>
+          </dialog>
+        </div>
+      )}
+
+      {showDeleteConfirm && deckToDelete && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm border-0"
+            onClick={() => {
+              setShowDeleteConfirm(false);
+              setDeckToDelete(null);
+            }}
+          />
+          <dialog className="relative z-[1010] flex w-full max-w-[420px] flex-col gap-6 rounded-2xl border border-[var(--border-subtle)] bg-bg-card p-8 shadow-2xl" open>
+            <h2 className="m-0 text-2xl font-semibold [font-family:var(--font-display)]">{t("word_bank.delete_deck.title")}</h2>
+            <p className="m-0 text-sm leading-relaxed text-text-secondary">
+              {t("word_bank.delete_deck.confirm", { name: deckToDelete.name })}
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                className="bg-bg-elevated text-text-primary px-5 py-2 rounded-lg border-0 cursor-pointer"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeckToDelete(null);
+                }}
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                className="bg-[var(--danger-bg)] text-[var(--danger-text)] px-5 py-2 rounded-lg border-0 font-bold cursor-pointer"
+                onClick={() => deleteDeck.mutate()}
+                disabled={deleteDeck.isPending}
+              >
+                {t("word_bank.decks.delete_deck")}
+              </button>
             </div>
           </dialog>
         </div>

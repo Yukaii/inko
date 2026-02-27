@@ -141,6 +141,7 @@ export const CreateDeckSchema = z.object({
 
 export const UpdateDeckSchema = z.object({
   name: z.string().min(1).optional(),
+  language: LanguageSchema.optional(),
   archived: z.boolean().optional(),
 });
 
