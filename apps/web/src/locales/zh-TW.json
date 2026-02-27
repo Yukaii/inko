@@ -18,6 +18,7 @@
     "saving": "儲存中...",
     "deleting": "刪除中...",
     "create": "建立",
+    "new": "新增",
     "save_changes": "儲存變更"
   },
   "errors": {
@@ -160,10 +161,13 @@
       "manage": "管理",
       "new_deck": "新增牌組",
       "edit_deck": "編輯牌組",
-      "delete_deck": "刪除牌組"
+      "delete_deck": "刪除牌組",
+      "manage_deck": "管理 {{name}}",
+      "select_deck_desc": "從側邊欄選擇一個牌組來管理詞彙。"
     },
     "add": {
       "title": "新增至 {{deck}}",
+      "title_short": "新增單字",
       "tab_single": "單一單字",
       "tab_import": "批次匯入",
       "target_word": "目標單字",
@@ -207,6 +211,9 @@
       "clear_selection": "清除選取",
       "showing_count": "本頁顯示 {{count}} 個單字",
       "all_tags": "所有標籤",
+      "target": "目標",
+      "reading": "讀音",
+      "meaning": "意思",
       "no_match": "沒有符合搜尋條件的單字。",
       "try_different": "請嘗試不同的搜尋字詞或清除篩選。",
       "no_words": "還沒有單字。",

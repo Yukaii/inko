@@ -18,6 +18,7 @@
     "saving": "保存中...",
     "deleting": "削除中...",
     "create": "作成",
+    "new": "新規",
     "save_changes": "変更を保存"
   },
   "errors": {
@@ -160,10 +161,13 @@
       "manage": "管理",
       "new_deck": "新しいデッキ",
       "edit_deck": "デッキを編集",
-      "delete_deck": "デッキを削除"
+      "delete_deck": "デッキを削除",
+      "manage_deck": "{{name}} を管理",
+      "select_deck_desc": "サイドバーからデッキを選択して、語彙を管理します。"
     },
     "add": {
       "title": "{{deck}} に追加",
+      "title_short": "単語を追加",
       "tab_single": "単語を1つ追加",
       "tab_import": "一括インポート",
       "target_word": "対象の単語",
@@ -207,6 +211,9 @@
       "clear_selection": "選択をクリア",
       "showing_count": "このページに {{count}} 語を表示中",
       "all_tags": "すべてのタグ",
+      "target": "対象",
+      "reading": "読み方",
+      "meaning": "意味",
       "no_match": "検索条件に一致する単語はありません。",
       "try_different": "別の検索語を試すか、フィルターをクリアしてください。",
       "no_words": "単語はまだありません。",

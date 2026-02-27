@@ -9,8 +9,6 @@ import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
 
 type AddTab = "single" | "import";
-const NEW_DECK_LANGUAGE_STORAGE_KEY = "inko:new-deck-language";
-const IMPORT_PREVIEW_PAGE_SIZE = 20;
 const IMPORT_BATCH_SIZE = 10000;
 const WORDS_PAGE_SIZE = 100;
 
@@ -21,15 +19,6 @@ function chunkArray<T>(items: T[], size: number): T[][] {
     chunks.push(items.slice(index, index + size));
   }
   return chunks;
-}
-
-function getInitialDeckLanguage(): LanguageCode {
-  if (typeof window === "undefined") return "ja";
-  const stored = window.localStorage.getItem(NEW_DECK_LANGUAGE_STORAGE_KEY);
-  if (stored && SUPPORTED_LANGUAGES.includes(stored as LanguageCode)) {
-    return stored as LanguageCode;
-  }
-  return "ja";
 }
 
 export function WordBankPage() {
@@ -43,7 +32,7 @@ export function WordBankPage() {
   const [selectedDeckId, setSelectedDeckId] = useState<string>("");
   const [showNewDeckModal, setShowNewDeckModal] = useState(false);
   const [newDeckName, setNewDeckName] = useState("");
-  const [newDeckLanguage, setNewDeckLanguage] = useState<LanguageCode>(() => getInitialDeckLanguage());
+  const [newDeckLanguage, setNewDeckLanguage] = useState<LanguageCode>("ja");
   const [showEditDeckModal, setShowEditDeckModal] = useState(false);
   const [editingDeck, setEditingDeck] = useState<{ id: string; name: string; archived: boolean } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -51,9 +40,10 @@ export function WordBankPage() {
   const [addTab, setAddTab] = useState<AddTab>("single");
   const [importText, setImportText] = useState("");
   const [importStatus, setImportStatus] = useState<string | null>(null);
-  const [importMode, setImportMode] = useState<"text" | "csv">("text");
+  const [rawImportData, setRawImportData] = useState<{ headers: string[]; rows: string[][] } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [focusedDeckIndex, setFocusedDeckIndex] = useState(-1);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
 
   const [wordForm, setWordForm] = useState({
     target: "",
@@ -65,7 +55,6 @@ export function WordBankPage() {
     tags: "",
   });
 
-  // Word editing state
   const [showEditWordModal, setShowEditWordModal] = useState(false);
   const [editingWord, setEditingWord] = useState<{
     id: string;
@@ -78,16 +67,11 @@ export function WordBankPage() {
     tags: string[];
   } | null>(null);
 
-  // Search and filter state
   const [wordSearch, setWordSearch] = useState("");
-  const [expandedWordId, setExpandedWordId] = useState<string | null>(null);
   const [wordsCursor, setWordsCursor] = useState<string | null>(null);
   const [wordsCursorHistory, setWordsCursorHistory] = useState<Array<string | null>>([]);
-
-  // Bulk selection state
   const [selectedWordIds, setSelectedWordIds] = useState<Set<string>>(new Set());
 
-  // ---- queries ----
   const decksQuery = useQuery({
     queryKey: ["decks"],
     queryFn: () => api.listDecks(token ?? ""),
@@ -106,139 +90,45 @@ export function WordBankPage() {
   const decks = decksQuery.data ?? [];
   const words = wordsQuery.data?.words ?? [];
   const activeDeck = useMemo(() => decks.find((d) => d.id === selectedDeckId), [decks, selectedDeckId]);
-  const activeDeckLanguage = (activeDeck?.language ?? "ja") as LanguageCode;
-  const isJapaneseDeck = activeDeckLanguage === "ja";
-  const targetLang = activeDeck?.language || undefined;
+  const isJapaneseDeck = activeDeck?.language === "ja";
 
-  // ---- keyboard navigation for decks ----
   useEffect(() => {
     const cleanups: Array<() => void> = [];
+    cleanups.push(registerShortcut({
+      key: "d",
+      handler: () => {
+        if (decks.length > 0) {
+          setFocusedDeckIndex(0);
+          const firstDeck = deckGridRef.current?.querySelector("[data-deck-index='0']") as HTMLElement;
+          firstDeck?.focus();
+        }
+      },
+      description: "Focus first deck",
+    }));
+    return () => cleanups.forEach(c => c());
+  }, [decks.length]);
 
-    // Focus deck grid
-    cleanups.push(
-      registerShortcut({
-        key: "d",
-        handler: () => {
-          if (decks.length > 0) {
-            setFocusedDeckIndex(0);
-            const firstDeck = deckGridRef.current?.querySelector("[data-deck-index='0']") as HTMLElement;
-            firstDeck?.focus();
-          }
-        },
-        description: "Focus first deck",
-      })
-    );
-
-    // Tab shortcuts for add words section
-    cleanups.push(
-      registerShortcut({
-        key: "1",
-        shift: true,
-        handler: () => {
-          if (selectedDeckId) {
-            setAddTab("single");
-          }
-        },
-        description: "Switch to Single Word tab",
-      })
-    );
-
-    cleanups.push(
-      registerShortcut({
-        key: "2",
-        shift: true,
-        handler: () => {
-          if (selectedDeckId) {
-            setAddTab("import");
-          }
-        },
-        description: "Switch to Bulk Import tab",
-      })
-    );
-
-    return () => {
-      for (const cleanup of cleanups) {
-        cleanup();
-      }
-    };
-  }, [decks.length, selectedDeckId]);
-
-  // Handle arrow key navigation within deck grid
   const handleDeckKeyDown = (event: React.KeyboardEvent) => {
-    const maxIndex = decks.length;
-
+    const maxIndex = decks.length - 1;
     switch (event.key) {
       case "ArrowRight":
         event.preventDefault();
-        setFocusedDeckIndex((prev) => {
-          const next = prev + 1;
-          if (next > maxIndex) return 0;
-          return next;
-        });
+        setFocusedDeckIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
         break;
       case "ArrowLeft":
         event.preventDefault();
-        setFocusedDeckIndex((prev) => {
-          const next = prev - 1;
-          if (next < 0) return maxIndex;
-          return next;
-        });
-        break;
-      case "ArrowDown":
-        event.preventDefault();
-        setFocusedDeckIndex((prev) => {
-          if (!deckGridRef.current) return prev;
-          const cols = getComputedStyle(deckGridRef.current).gridTemplateColumns.split(" ").length;
-          const next = prev + cols;
-          if (next > maxIndex) return prev;
-          return next;
-        });
-        break;
-      case "ArrowUp":
-        event.preventDefault();
-        setFocusedDeckIndex((prev) => {
-          if (!deckGridRef.current) return prev;
-          const cols = getComputedStyle(deckGridRef.current).gridTemplateColumns.split(" ").length;
-          const next = prev - cols;
-          if (next < 0) return prev;
-          return next;
-        });
+        setFocusedDeckIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
         break;
       case "Enter":
-      case "e":
-        if (focusedDeckIndex === maxIndex) {
-          // New deck button
-          event.preventDefault();
-          setShowNewDeckModal(true);
-        } else if (focusedDeckIndex >= 0 && focusedDeckIndex < decks.length) {
-          event.preventDefault();
-          const deck = decks[focusedDeckIndex];
-          if (deck) {
-            setSelectedDeckId(deck.id);
-          }
-        }
-        break;
-      case "p":
         if (focusedDeckIndex >= 0 && focusedDeckIndex < decks.length) {
           event.preventDefault();
           const deck = decks[focusedDeckIndex];
-          if (deck) {
-            navigate(`/practice/${deck.id}`);
-          }
+          if (deck) setSelectedDeckId(deck.id);
         }
-        break;
-      case "Home":
-        event.preventDefault();
-        setFocusedDeckIndex(0);
-        break;
-      case "End":
-        event.preventDefault();
-        setFocusedDeckIndex(maxIndex);
         break;
     }
   };
 
-  // Focus the currently selected deck
   useEffect(() => {
     if (focusedDeckIndex >= 0) {
       const card = deckGridRef.current?.querySelector(`[data-deck-index='${focusedDeckIndex}']`) as HTMLElement;
@@ -246,7 +136,6 @@ export function WordBankPage() {
     }
   }, [focusedDeckIndex]);
 
-  // ---- mutations ----
   const createDeck = useMutation({
     mutationFn: () => api.createDeck(token ?? "", { name: newDeckName, language: newDeckLanguage }),
     onSuccess: async (deck) => {
@@ -257,27 +146,10 @@ export function WordBankPage() {
     },
   });
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(NEW_DECK_LANGUAGE_STORAGE_KEY, newDeckLanguage);
-  }, [newDeckLanguage]);
-
-  const updateDeck = useMutation({
-    mutationFn: (input: { name?: string; archived?: boolean }) =>
-      api.updateDeck(token ?? "", editingDeck!.id, input),
-    onSuccess: async () => {
-      setShowEditDeckModal(false);
-      setEditingDeck(null);
-      await queryClient.invalidateQueries({ queryKey: ["decks"] });
-    },
-  });
-
   const deleteDeck = useMutation({
     mutationFn: () => api.deleteDeck(token ?? "", deckToDelete!.id),
     onSuccess: async () => {
-      if (selectedDeckId === deckToDelete?.id) {
-        setSelectedDeckId("");
-      }
+      if (selectedDeckId === deckToDelete?.id) setSelectedDeckId("");
       setShowDeleteConfirm(false);
       setDeckToDelete(null);
       await queryClient.invalidateQueries({ queryKey: ["decks"] });
@@ -293,10 +165,7 @@ export function WordBankPage() {
         meaning: wordForm.meaning,
         example: wordForm.example || undefined,
         audioUrl: wordForm.audioUrl || undefined,
-        tags: wordForm.tags
-          .split(",")
-          .map((x) => x.trim())
-          .filter(Boolean),
+        tags: wordForm.tags.split(",").map((x) => x.trim()).filter(Boolean),
       }),
     onSuccess: async () => {
       setWordForm({ target: "", reading: "", romanization: "", meaning: "", example: "", audioUrl: "", tags: "" });
@@ -333,12 +202,8 @@ export function WordBankPage() {
 
   const bulkDeleteWords = useMutation({
     mutationFn: async () => {
-      if (!selectedDeckId || selectedWordIds.size === 0) {
-        return { deleted: 0, failedWordIds: [] as string[] };
-      }
-      return await api.deleteWordsBatch(token ?? "", selectedDeckId, {
-        wordIds: Array.from(selectedWordIds),
-      });
+      if (!selectedDeckId || selectedWordIds.size === 0) return { deleted: 0, failedWordIds: [] };
+      return await api.deleteWordsBatch(token ?? "", selectedDeckId, { wordIds: Array.from(selectedWordIds) });
     },
     onSuccess: async () => {
       setSelectedWordIds(new Set());
@@ -346,235 +211,71 @@ export function WordBankPage() {
     },
   });
 
-  // ---- filtered words ----
-  const filteredWords = useMemo(() => {
+  const pagedWords = useMemo(() => {
     if (!wordSearch.trim()) return words;
     const searchLower = wordSearch.toLowerCase();
     return words.filter((word: any) =>
       word.target?.toLowerCase().includes(searchLower) ||
       word.reading?.toLowerCase().includes(searchLower) ||
-      word.meaning?.toLowerCase().includes(searchLower) ||
-      word.tags?.some((tag: string) => tag.toLowerCase().includes(searchLower))
+      word.meaning?.toLowerCase().includes(searchLower)
     );
   }, [words, wordSearch]);
 
-  const pagedWords = filteredWords;
   const hasPrevWordsPage = wordsCursorHistory.length > 0;
   const hasNextWordsPage = !!wordsQuery.data?.nextCursor;
   const wordsPageLabel = wordsCursorHistory.length + 1;
-
-  // ---- bulk import ----
-  const [importColumnMapping, setImportColumnMapping] = useState<Record<number, string>>({});
-  const [rawImportData, setRawImportData] = useState<{ headers: string[]; rows: string[][] } | null>(null);
-  const [importPreviewPage, setImportPreviewPage] = useState(1);
-
-  const mapImportRow = useCallback(
-    (row: string[]) => {
-      const mapped: Record<string, string | undefined> = {
-        target: undefined,
-        reading: undefined,
-        meaning: undefined,
-        romanization: undefined,
-        example: undefined,
-        tags: undefined,
-      };
-
-      for (const [colIndex, field] of Object.entries(importColumnMapping)) {
-        if (!field) continue;
-        const value = row[Number.parseInt(colIndex)]?.trim();
-        if (field === "tags") {
-          mapped.tags = value;
-        } else {
-          mapped[field] = value || undefined;
-        }
-      }
-
-      return mapped;
-    },
-    [importColumnMapping],
-  );
-
-  const mappedImportRows = useMemo(() => {
-    if (!rawImportData) return [];
-    return rawImportData.rows.map((row) => mapImportRow(row));
-  }, [mapImportRow, rawImportData]);
-
-  const totalPreviewPages = Math.max(1, Math.ceil(mappedImportRows.length / IMPORT_PREVIEW_PAGE_SIZE));
-  const previewPage = Math.min(importPreviewPage, totalPreviewPages);
-  const previewStart = (previewPage - 1) * IMPORT_PREVIEW_PAGE_SIZE;
-  const previewRows = mappedImportRows.slice(previewStart, previewStart + IMPORT_PREVIEW_PAGE_SIZE);
 
   const parseCSVLine = (line: string): string[] => {
     const result: string[] = [];
     let current = "";
     let inQuotes = false;
-    
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
-      
       if (char === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          current += '"';
-          i++;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === ',' && !inQuotes) {
-        result.push(current.trim());
-        current = "";
-      } else {
-        current += char;
-      }
+        if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) { result.push(current.trim()); current = ""; }
+      else current += char;
     }
     result.push(current.trim());
     return result;
   };
 
-  const detectDelimiter = (text: string): string => {
-    const firstLine = text.split('\n')[0] || '';
-    const tabCount = (firstLine.match(/\t/g) || []).length;
-    const commaCount = (firstLine.match(/,/g) || []).length;
-    return tabCount > commaCount ? '\t' : ',';
-  };
-
   const parseImportData = (text: string) => {
-    const delimiter = detectDelimiter(text);
     const lines = text.split('\n').filter(l => l.trim());
-    
     if (lines.length === 0) return null;
-
-    // Parse all lines
-    const allRows = lines.map(line => 
-      delimiter === '\t' ? line.split('\t').map(s => s.trim()) : parseCSVLine(line)
-    );
-
-    // Detect if first row is a header (contains text like 'target', 'meaning', etc.)
-    const firstRow = allRows[0];
-    const headerKeywords = ['target', 'word', 'reading', 'meaning', 'definition', 'example', 'sentence', 'romanization', 'romaji', 'tags'];
-    const hasHeader = firstRow.some(cell => 
-      headerKeywords.some(keyword => cell.toLowerCase().includes(keyword))
-    );
-
-    const headers = hasHeader ? firstRow : firstRow.map((_, i) => `Column ${i + 1}`);
-    const dataRows = hasHeader ? allRows.slice(1) : allRows;
-
-    return { headers, rows: dataRows };
-  };
-
-  const autoMapColumns = (headers: string[]): Record<number, string> => {
-    const mapping: Record<number, string> = {};
-    const lowerHeaders = headers.map(h => h.toLowerCase());
-    
-    for (let index = 0; index < lowerHeaders.length; index++) {
-      const header = lowerHeaders[index];
-      if (header.includes('target') || header.includes('word') || header.includes('kanji') || header.includes('japanese')) {
-        mapping[index] = 'target';
-      } else if (header.includes('reading') || header.includes('furigana') || header.includes('kana')) {
-        mapping[index] = 'reading';
-      } else if (header.includes('meaning') || header.includes('definition') || header.includes('english') || header.includes('translation')) {
-        mapping[index] = 'meaning';
-      } else if (header.includes('romanization') || header.includes('romaji')) {
-        mapping[index] = 'romanization';
-      } else if (header.includes('example') || header.includes('sentence')) {
-        mapping[index] = 'example';
-      } else if (header.includes('tag') || header.includes('category')) {
-        mapping[index] = 'tags';
-      } else {
-        mapping[index] = '';
-      }
-    }
-
-    return mapping;
+    const allRows = lines.map(line => parseCSVLine(line));
+    return { headers: allRows[0] || [], rows: allRows.slice(1) };
   };
 
   const processImportData = async () => {
     if (!selectedDeckId || !rawImportData) return;
-    
     setImportStatus(t("word_bank.import.importing"));
     let imported = 0;
-    let failed = 0;
-
-    const wordsToImport = [] as Array<{
-      target: string;
-      reading?: string;
-      meaning: string;
-      romanization?: string;
-      example?: string;
-      tags: string[];
-    }>;
-    const importedWords = [] as Array<Record<string, unknown>>;
-
-    for (const row of rawImportData.rows) {
-      const data = mapImportRow(row);
-      if (!data.target || !data.meaning) {
-        failed++;
-        continue;
-      }
-
-      wordsToImport.push({
-        target: data.target,
-        reading: data.reading,
-        meaning: data.meaning,
-        romanization: data.romanization,
-        example: data.example,
-        tags: data.tags
-          ? data.tags
-              .split(",")
-              .map((t) => t.trim())
-              .filter(Boolean)
-          : [],
-      });
-    }
+    const wordsToImport = rawImportData.rows.map(row => ({
+      target: row[0] || "",
+      reading: row[1] || undefined,
+      meaning: row[2] || "",
+      romanization: row[3] || undefined,
+      example: row[4] || undefined,
+      tags: row[5] ? row[5].split(",").map(t => t.trim()).filter(Boolean) : [],
+    })).filter(w => w.target && w.meaning);
 
     if (wordsToImport.length > 0) {
       const batches = chunkArray(wordsToImport, IMPORT_BATCH_SIZE);
       for (const batch of batches) {
         try {
-          const result = await api.createWordsBatch(token ?? "", selectedDeckId, {
-            words: batch,
-          });
+          const result = await api.createWordsBatch(token ?? "", selectedDeckId, { words: batch });
           imported += result.created;
-          importedWords.push(...result.words);
-        } catch {
-          failed += batch.length;
-        }
+        } catch { /* error handled by status */ }
       }
     }
-
-    setImportStatus(t("word_bank.import.done", { imported, failed: failed ? `, ${failed} failed` : "" }));
+    setImportStatus(t("word_bank.import.done", { imported, failed: "" }));
     setRawImportData(null);
-    setImportColumnMapping({});
-    if (importedWords.length > 0) {
-      setWordsCursor(null);
-      setWordsCursorHistory([]);
-    }
     await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
-    await queryClient.refetchQueries({ queryKey: ["words-page", selectedDeckId], type: "active" });
     setTimeout(() => setImportStatus(null), 4000);
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
-      if (content) {
-        const parsed = parseImportData(content);
-        if (parsed && parsed.rows.length > 0) {
-          setRawImportData(parsed);
-          const mapping = autoMapColumns(parsed.headers);
-          setImportColumnMapping(mapping);
-          setImportPreviewPage(1);
-        }
-      }
-    };
-    reader.readAsText(file);
-    event.target.value = "";
-  };
-
-  // ---- field updater ----
   const updateField = (field: keyof typeof wordForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setWordForm((prev) => ({ ...prev, [field]: e.target.value }));
 
@@ -586,982 +287,470 @@ export function WordBankPage() {
     setWordSearch("");
   };
 
-  // Modal focus trap
   const modalRef = useRef<HTMLDialogElement>(null);
 
-  useEffect(() => {
-    if (!showNewDeckModal) return;
-
-    const modal = modalRef.current;
-    if (!modal) return;
-
-    const focusableElements = modal.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-
-    const handleTab = (e: KeyboardEvent) => {
-      if (e.key !== "Tab") return;
-      if (e.shiftKey) {
-        if (document.activeElement === firstElement) {
-          e.preventDefault();
-          lastElement?.focus();
-        }
-      } else {
-        if (document.activeElement === lastElement) {
-          e.preventDefault();
-          firstElement?.focus();
-        }
-      }
-    };
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        e.stopPropagation();
-        setShowNewDeckModal(false);
-      }
-    };
-
-    modal.addEventListener("keydown", handleTab);
-    window.addEventListener("keydown", handleEscape, { capture: true });
-    firstElement?.focus();
-
-    return () => {
-      modal.removeEventListener("keydown", handleTab);
-      window.removeEventListener("keydown", handleEscape, { capture: true });
-    };
-  }, [showNewDeckModal]);
-
   return (
-    <div className="flex flex-col gap-8">
-      {/* Page Header */}
-      <header className="mb-2">
-        <h1 className="m-0 text-4xl font-semibold [font-family:var(--font-display)]">{t("word_bank.title")}</h1>
-        <p className="mt-1 text-sm text-text-secondary">{t("word_bank.subtitle")}</p>
-      </header>
-
-      {/* Deck Grid */}
-      <section className="flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">{t("word_bank.decks.title")}</h2>
-          <span className="inline-flex items-center gap-1 rounded border border-[var(--border-muted)] bg-bg-elevated px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">
-            <kbd className="font-mono">d</kbd> {t("word_bank.decks.to_focus")}
-          </span>
-        </div>
-
-        <div
-          ref={deckGridRef}
-          className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4"
-          onKeyDown={handleDeckKeyDown}
-        >
-          {decks.map((deck, index) => (
-            <div
-              key={deck.id}
-              data-deck-index={index}
-              className={`group relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-base border p-4 text-left transition-all ${selectedDeckId === deck.id ? "border-accent-orange shadow-[0_0_0_1px_var(--accent-orange)]" : "border-[var(--border-muted)] bg-bg-card hover:-translate-y-0.5 hover:border-accent-orange"}`}
-              onClick={selectDeck(deck.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  selectDeck(deck.id)();
-                }
-              }}
-              tabIndex={focusedDeckIndex === index ? 0 : -1}
-            >
-              <div className="flex flex-col gap-1">
-                <span className="text-[11px] uppercase tracking-[0.1em] text-text-secondary">
-                  {deck.language.toUpperCase()} · {LANGUAGE_LABELS[deck.language as LanguageCode]}
-                </span>
-                <span className="text-lg font-semibold text-text-primary [font-family:var(--font-display)]">{deck.name}</span>
-              </div>
-              <div className="mt-auto flex gap-2">
-                <Link to={`/practice/${deck.id}`} onClick={(e) => e.stopPropagation()} className="flex min-w-0 flex-1 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-lg bg-accent-orange px-2.5 py-2 text-xs font-semibold text-text-on-accent no-underline">
-                  <span>{t("word_bank.decks.practice")}</span>
-                  <kbd className="shrink-0 rounded border border-[var(--border-strong)] bg-bg-page px-1 py-[1px] font-mono text-[9px] text-text-primary">p</kbd>
-                </Link>
-                <button
-                  type="button"
-                  className="flex min-w-0 flex-1 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-lg bg-bg-elevated px-2.5 py-2 text-xs font-semibold text-text-primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedDeckId(deck.id);
-                  }}
-                >
-                  <span>{t("word_bank.decks.manage")}</span>
-                  <kbd className="shrink-0 rounded border border-[var(--border-muted)] bg-bg-card px-1 py-[1px] font-mono text-[9px] text-text-secondary">Enter</kbd>
-                </button>
-              </div>
-              <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                <button
-                  type="button"
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-0 bg-bg-elevated p-0 text-text-secondary hover:text-text-primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingDeck({ id: deck.id, name: deck.name, archived: deck.archived });
-                    setShowEditDeckModal(true);
-                  }}
-                  aria-label={t("word_bank.decks.edit_deck")}
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  type="button"
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-0 bg-bg-elevated p-0 text-text-secondary hover:text-red-400"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeckToDelete({ id: deck.id, name: deck.name });
-                    setShowDeleteConfirm(true);
-                  }}
-                  aria-label={t("word_bank.decks.delete_deck")}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-          ))}
-
-          {/* New deck tile */}
-          <button
-            type="button"
-            data-deck-index={decks.length}
-            className="flex min-h-[120px] flex-col items-center justify-center gap-2 rounded-base border-2 border-dashed border-[var(--border-strong)] bg-transparent p-4 text-text-secondary transition-all hover:border-accent-orange hover:text-text-primary focus:border-accent-orange focus:text-text-primary"
-            onClick={() => setShowNewDeckModal(true)}
-            tabIndex={focusedDeckIndex === decks.length ? 0 : -1}
-          >
-            <span className="text-[28px] leading-none font-light">+</span>
-            <span className="text-[13px]">{t("word_bank.decks.new_deck")}</span>
-          </button>
-        </div>
-      </section>
-
-      {/* Add words section (only when deck selected) */}
-      {selectedDeckId && (
-        <section className="flex flex-col gap-5 rounded-base bg-bg-card p-6">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">{t("word_bank.add.title", { deck: activeDeck?.name ?? "Deck" })}</h2>
-          </div>
-
-          {/* Tabs */}
-          <div className="mb-2 flex gap-1 rounded-xl bg-bg-card p-1" role="tablist" aria-label="Add words tabs">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={addTab === "single"}
-              className={`relative flex-1 rounded-lg border-0 px-4 py-2.5 text-sm font-medium transition-all ${addTab === "single" ? "bg-bg-elevated text-text-primary" : "bg-transparent text-text-secondary hover:text-text-primary"}`}
-              onClick={() => setAddTab("single")}
-            >
-              {t("word_bank.add.tab_single")}
-              <kbd className="ml-2 rounded border border-[var(--border-muted)] bg-bg-elevated px-[5px] py-[1px] font-mono text-[10px] text-text-secondary opacity-70">Shift+1</kbd>
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={addTab === "import"}
-              className={`relative flex-1 rounded-lg border-0 px-4 py-2.5 text-sm font-medium transition-all ${addTab === "import" ? "bg-bg-elevated text-text-primary" : "bg-transparent text-text-secondary hover:text-text-primary"}`}
-              onClick={() => setAddTab("import")}
-            >
-              {t("word_bank.add.tab_import")}
-              <kbd className="ml-2 rounded border border-[var(--border-muted)] bg-bg-elevated px-[5px] py-[1px] font-mono text-[10px] text-text-secondary opacity-70">Shift+2</kbd>
-            </button>
-          </div>
-
-          {addTab === "single" ? (
-            <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-target`}>{t("word_bank.add.target_word")}</label>
-                  <input
-                    id={`${formId}-target`}
-                    placeholder={t("word_bank.add.target_placeholder", { example: isJapaneseDeck ? "勉強" : "palabra" })}
-                    value={wordForm.target}
-                    onChange={updateField("target")}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-meaning`}>{t("word_bank.add.meaning")}</label>
-                  <input id={`${formId}-meaning`} placeholder={t("word_bank.add.meaning_placeholder")} value={wordForm.meaning} onChange={updateField("meaning")} />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-reading`}>{t("word_bank.add.reading")}</label>
-                  <input
-                    id={`${formId}-reading`}
-                    placeholder={isJapaneseDeck ? t("word_bank.add.reading_placeholder_jp") : t("word_bank.add.reading_placeholder")}
-                    value={wordForm.reading}
-                    onChange={updateField("reading")}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-romanization`}>{t("word_bank.add.romanization")}</label>
-                  <input id={`${formId}-romanization`} placeholder={t("word_bank.add.romanization_placeholder")} value={wordForm.romanization} onChange={updateField("romanization")} />
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor={`${formId}-example`}>{t("word_bank.add.example")}</label>
-                <input
-                  id={`${formId}-example`}
-                  placeholder={isJapaneseDeck ? t("word_bank.add.example_placeholder_jp") : t("word_bank.add.example_placeholder")}
-                  value={wordForm.example}
-                  onChange={updateField("example")}
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-audio`}>{t("word_bank.add.audio_url")}</label>
-                  <input id={`${formId}-audio`} placeholder="https://..." value={wordForm.audioUrl} onChange={updateField("audioUrl")} />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-tags`}>{t("word_bank.add.tags")}</label>
-                  <input id={`${formId}-tags`} placeholder="e.g. n5, verb" value={wordForm.tags} onChange={updateField("tags")} />
-                </div>
-              </div>
-              <button
-                type="button"
-                className="w-fit px-6 py-3 text-sm"
-                onClick={() => createWord.mutate()}
-                disabled={!wordForm.target || !wordForm.meaning || createWord.isPending}
+    <div className="flex h-screen overflow-hidden -m-5 md:-m-10 bg-bg-page relative">
+      {/* Deck Sidebar Panel */}
+      <aside 
+        className={`hidden md:flex flex-col border-r border-[var(--border-subtle)] bg-bg-card transition-all duration-300 relative h-full ${isPanelCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-[320px] opacity-100'}`}
+      >
+        <div className="flex flex-col h-full overflow-y-auto p-6 gap-8">
+          <section className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h2 className="m-0 text-xs font-bold uppercase tracking-[0.12em] text-text-secondary">{t("word_bank.decks.title")}</h2>
+              <button 
+                type="button" 
+                onClick={() => setShowNewDeckModal(true)}
+                className="text-accent-orange text-[11px] font-bold uppercase hover:underline bg-transparent p-0 border-0 cursor-pointer"
               >
-                {createWord.isPending ? t("word_bank.add.submitting") : t("word_bank.add.submit")}
+                + {t("common.new")}
               </button>
             </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {!rawImportData ? (
-                <>
-                  <div className="flex flex-col gap-3">
-                    <p className="m-0 text-[13px] text-text-secondary">
-                      {t("word_bank.import.instruction")}
-                    </p>
-                    
-                    {/* File Upload */}
-                    <div className="flex items-center gap-3">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".csv,.tsv,.txt"
-                        className="hidden"
-                        onChange={handleFileUpload}
-                      />
-                      <button
+            
+            <nav className="flex flex-col gap-1" ref={deckGridRef} onKeyDown={handleDeckKeyDown}>
+              {decks.map((deck, index) => (
+                <button
+                  key={deck.id}
+                  data-deck-index={index}
+                  type="button"
+                  className={`group flex items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-all border-0 cursor-pointer ${selectedDeckId === deck.id ? 'bg-bg-elevated text-text-primary border-l-2 border-accent-orange' : 'bg-transparent text-text-secondary hover:bg-bg-elevated hover:text-text-primary'}`}
+                  onClick={selectDeck(deck.id)}
+                  tabIndex={focusedDeckIndex === index ? 0 : -1}
+                >
+                  <div className="flex flex-col min-w-0">
+                    <span className={`truncate font-bold text-sm ${selectedDeckId === deck.id ? 'text-text-primary' : 'text-text-secondary group-hover:text-text-primary'}`}>{deck.name}</span>
+                    <span className="text-[10px] uppercase opacity-60 font-mono tracking-tighter">{deck.language}</span>
+                  </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                     <button
                         type="button"
-                        className="px-4 py-2 text-sm"
-                        onClick={() => fileInputRef.current?.click()}
+                        className="p-1 text-text-secondary hover:text-text-primary bg-transparent border-0 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingDeck({ id: deck.id, name: deck.name, archived: deck.archived });
+                          setShowEditDeckModal(true);
+                        }}
                       >
-                        {t("word_bank.import.choose_file")}
+                        <Pencil size={12} />
                       </button>
-                      <span className="text-[13px] text-text-secondary">{t("word_bank.import.or_paste")}</span>
-                    </div>
+                  </div>
+                </button>
+              ))}
+            </nav>
+          </section>
 
-                    {/* Text Input */}
-                    <textarea
-                      className="min-h-40 w-full resize-y rounded-[10px] border border-[var(--border-muted)] bg-bg-page p-[14px] font-mono text-sm leading-relaxed text-inherit"
-                      placeholder={`target,reading,meaning,romanization,example,tags
+          {selectedDeckId && (
+            <section className="flex flex-col gap-5 border-t border-[var(--border-subtle)] pt-6 pb-10">
+              <h2 className="m-0 text-xs font-bold uppercase tracking-[0.12em] text-text-secondary">{t("word_bank.add.title_short")}</h2>
+              
+              <div className="flex gap-1 rounded-lg bg-bg-elevated p-1" role="tablist">
+                <button
+                  type="button"
+                  className={`flex-1 rounded-md py-1.5 text-xs font-medium border-0 transition-all cursor-pointer ${addTab === "single" ? "bg-bg-card text-text-primary shadow-sm" : "bg-transparent text-text-secondary hover:text-text-primary"}`}
+                  onClick={() => setAddTab("single")}
+                >
+                  {t("word_bank.add.tab_single")}
+                </button>
+                <button
+                  type="button"
+                  className={`flex-1 rounded-md py-1.5 text-xs font-medium border-0 transition-all cursor-pointer ${addTab === "import" ? "bg-bg-card text-text-primary shadow-sm" : "bg-transparent text-text-secondary hover:text-text-primary"}`}
+                  onClick={() => setAddTab("import")}
+                >
+                  {t("word_bank.add.tab_import")}
+                </button>
+              </div>
+
+              {addTab === "single" ? (
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-text-secondary uppercase" htmlFor={`${formId}-target`}>{t("word_bank.add.target_word")}</label>
+                    <input
+                      id={`${formId}-target`}
+                      className="text-sm py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none transition-colors"
+                      placeholder={t("word_bank.add.target_placeholder", { example: isJapaneseDeck ? "勉強" : "palabra" })}
+                      value={wordForm.target}
+                      onChange={updateField("target")}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-text-secondary uppercase" htmlFor={`${formId}-meaning`}>{t("word_bank.add.meaning")}</label>
+                    <input id={`${formId}-meaning`} className="text-sm py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none transition-colors" placeholder={t("word_bank.add.meaning_placeholder")} value={wordForm.meaning} onChange={updateField("meaning")} />
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-bold text-text-secondary uppercase" htmlFor={`${formId}-reading`}>{t("word_bank.add.reading")}</label>
+                      <input id={`${formId}-reading`} className="text-sm py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none transition-colors" placeholder="べんきょう" value={wordForm.reading} onChange={updateField("reading")} />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-bold text-text-secondary uppercase" htmlFor={`${formId}-romanization`}>{t("word_bank.add.romanization")}</label>
+                      <input id={`${formId}-romanization`} className="text-sm py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none transition-colors" placeholder="benkyou" value={wordForm.romanization} onChange={updateField("romanization")} />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-bold text-text-secondary uppercase" htmlFor={`${formId}-example`}>{t("word_bank.add.example")}</label>
+                      <textarea id={`${formId}-example`} className="text-sm py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none transition-colors min-h-[80px] resize-none" placeholder="..." value={wordForm.example} onChange={updateField("example")} />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="mt-2 w-full py-2.5 text-sm bg-accent-orange text-text-on-accent border-0 rounded-lg font-bold cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-accent-orange/20"
+                    onClick={() => createWord.mutate()}
+                    disabled={!wordForm.target || !wordForm.meaning || createWord.isPending}
+                  >
+                    {t("word_bank.add.submit")}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {!rawImportData ? (
+                    <>
+                      <textarea
+                        className="min-h-40 w-full resize-y rounded-lg border border-[var(--border-subtle)] bg-bg-page p-3 font-mono text-xs leading-relaxed outline-none focus:border-accent-orange"
+                        placeholder={`target,reading,meaning,romanization,example,tags
 食べる,たべる,to eat,taberu,私は寿司を食べます。,verb,n5
 飲む,のむ,to drink,nomu,お茶を飲みます。,verb,n5
 読む,よむ,to read,yomu,本を読みます。,verb,n5`}
-                      value={importText}
-                      onChange={(e) => setImportText(e.target.value)}
-                    />
-                    
-                    <button 
-                      type="button" 
-                      className="w-fit px-6 py-3 text-sm" 
-                      onClick={() => {
-                        if (importText.trim()) {
-                          const parsed = parseImportData(importText);
-                          if (parsed && parsed.rows.length > 0) {
-                            setRawImportData(parsed);
-                            const mapping = autoMapColumns(parsed.headers);
-                            setImportColumnMapping(mapping);
-                            setImportPreviewPage(1);
+                        value={importText}
+                        onChange={(e) => setImportText(e.target.value)}
+                      />
+                      <div className="flex gap-2">
+                        <button type="button" className="flex-1 px-3 py-2 text-xs bg-bg-elevated rounded-lg border-0 cursor-pointer text-text-primary" onClick={() => fileInputRef.current?.click()}>{t("word_bank.import.choose_file")}</button>
+                        <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              const content = ev.target?.result as string;
+                              if (content) setRawImportData(parseImportData(content));
+                            };
+                            reader.readAsText(file);
                           }
-                        }
-                      }} 
-                      disabled={!importText.trim()}
-                    >
-                      {t("word_bank.import.preview")}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Field Mapping */}
-                  <div className="flex flex-col gap-3 rounded-lg border border-[var(--border-muted)] bg-bg-elevated p-4">
-                    <h3 className="m-0 text-sm font-semibold">{t("word_bank.import.field_mapping")}</h3>
-                    <p className="m-0 text-[12px] text-text-secondary">{t("word_bank.import.map_instruction")}</p>
-                    
-                     <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                      {rawImportData.headers.map((header, index) => (
-                        <div key={`header-${header}`} className="flex flex-col gap-1">
-                          <label htmlFor={`col-map-${index}`} className="text-[11px] text-text-secondary truncate" title={header}>
-                            {header}
-                          </label>
-                          <select
-                            id={`col-map-${index}`}
-                            className="text-sm py-1 px-2"
-                            value={importColumnMapping[index] || ''}
-                            onChange={(e) => {
-                              setImportColumnMapping(prev => ({
-                                ...prev,
-                                [index]: e.target.value
-                              }));
-                              setImportPreviewPage(1);
-                            }}
-                          >
-                            <option value="">{t("word_bank.import.skip")}</option>
-                            <option value="target">{t("word_bank.import.target_req")}</option>
-                            <option value="reading">Reading</option>
-                            <option value="meaning">{t("word_bank.import.meaning_req")}</option>
-                            <option value="romanization">Romanization</option>
-                            <option value="example">Example</option>
-                            <option value="tags">Tags</option>
-                          </select>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Preview */}
-                  {previewRows.length > 0 && (
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <h3 className="m-0 text-sm font-semibold">
-                          {t("word_bank.import.preview_title")} ({previewStart + 1}-{Math.min(previewStart + previewRows.length, mappedImportRows.length)} of {mappedImportRows.length})
-                        </h3>
-                        <div className="flex items-center gap-2 text-xs text-text-secondary">
-                          <button
-                            type="button"
-                            className="bg-bg-elevated px-2 py-1 text-xs"
-                            onClick={() => setImportPreviewPage((prev) => Math.max(1, prev - 1))}
-                            disabled={previewPage <= 1}
-                          >
-                            {t("common.prev", "Prev")}
-                          </button>
-                          <span>{t("common.page_of", { x: previewPage, y: totalPreviewPages })}</span>
-                          <button
-                            type="button"
-                            className="bg-bg-elevated px-2 py-1 text-xs"
-                            onClick={() => setImportPreviewPage((prev) => Math.min(totalPreviewPages, prev + 1))}
-                            disabled={previewPage >= totalPreviewPages}
-                          >
-                            {t("common.next", "Next")}
-                          </button>
-                        </div>
+                        }} />
+                        <button 
+                          type="button" 
+                          className="flex-1 px-3 py-2 text-xs bg-accent-orange text-text-on-accent rounded-lg border-0 font-bold cursor-pointer" 
+                          onClick={() => {
+                            if (importText.trim()) setRawImportData(parseImportData(importText));
+                          }}
+                          disabled={!importText.trim()}
+                        >
+                          {t("word_bank.import.preview")}
+                        </button>
                       </div>
-                      <div className="max-h-60 overflow-auto rounded-lg border border-[var(--border-muted)]">
-                        <table className="w-full text-sm">
-                          <thead className="sticky top-0 bg-bg-elevated">
-                            <tr>
-                              <th className="px-3 py-2 text-left text-[11px] text-text-secondary">Target</th>
-                              <th className="px-3 py-2 text-left text-[11px] text-text-secondary">Reading</th>
-                              <th className="px-3 py-2 text-left text-[11px] text-text-secondary">Meaning</th>
-                              <th className="px-3 py-2 text-left text-[11px] text-text-secondary">Example</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {previewRows.map((row, i) => (
-                              <tr key={`${previewStart + i}-${row.target ?? ""}-${row.meaning ?? ""}`} className="border-t border-[var(--border-muted)]">
-                                <td className={`px-3 py-2 ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`}>{row.target || "-"}</td>
-                                <td className={`px-3 py-2 text-text-secondary ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`}>{row.reading || "-"}</td>
-                                <td className="px-3 py-2 text-text-secondary">{row.meaning || '-'}</td>
-                                <td className={`px-3 py-2 text-text-secondary truncate max-w-[200px] ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`} title={row.example ?? ""}>
-                                  {row.example || "-"}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      <button type="button" className="w-full py-2 bg-accent-orange text-text-on-accent border-0 rounded-lg font-bold cursor-pointer" onClick={processImportData}>{t("word_bank.import.submit", { count: rawImportData.rows.length })}</button>
+                      <button type="button" className="w-full py-2 bg-bg-elevated text-text-primary border-0 rounded-lg cursor-pointer" onClick={() => setRawImportData(null)}>{t("common.cancel")}</button>
                     </div>
                   )}
+                  {importStatus && <p className="text-[11px] text-accent-teal font-medium m-0">{importStatus}</p>}
+                </div>
+              )}
+            </section>
+          )}
+        </div>
+        
+        <button 
+          type="button"
+          onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
+          className="absolute -right-3 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-bg-card text-text-secondary shadow-sm hover:text-text-primary cursor-pointer"
+          aria-label={isPanelCollapsed ? "Expand panel" : "Collapse panel"}
+        >
+          {isPanelCollapsed ? "❯" : "❮"}
+        </button>
+      </aside>
 
-                  {/* Import Actions */}
-                  <div className="flex gap-3">
+      {/* Main Words Content Area */}
+      <main className="flex-1 flex flex-col h-full overflow-hidden bg-bg-page relative">
+        {isPanelCollapsed && (
+          <button 
+            type="button"
+            onClick={() => setIsPanelCollapsed(false)}
+            className="hidden md:flex absolute left-4 top-20 z-10 h-8 w-8 items-center justify-center rounded-lg bg-bg-card border border-[var(--border-subtle)] text-text-secondary shadow-md hover:text-text-primary cursor-pointer animate-in fade-in zoom-in-95 duration-200"
+          >
+            ❯
+          </button>
+        )}
+
+        <div className="flex flex-col h-full p-5 md:p-10 gap-8 overflow-y-auto pb-32">
+          <header className="flex flex-col gap-1">
+            <h1 className="m-0 text-3xl font-semibold [font-family:var(--font-display)]">
+              {activeDeck ? activeDeck.name : t("word_bank.title")}
+            </h1>
+            <p className="m-0 text-sm text-text-secondary">
+              {activeDeck ? t("word_bank.decks.manage_deck", { name: activeDeck.name }) : t("word_bank.subtitle")}
+            </p>
+          </header>
+
+          {!selectedDeckId ? (
+            <div className="flex flex-1 flex-col items-center justify-center text-center p-12 bg-bg-card rounded-2xl border border-dashed border-[var(--border-strong)]">
+              <div className="text-4xl mb-4 opacity-20">📚</div>
+              <h3 className="text-lg font-medium text-text-primary mb-2">{t("word_bank.words.select_deck")}</h3>
+              <p className="text-sm text-text-secondary max-w-sm">{t("word_bank.words.select_deck_desc")}</p>
+              <div className="md:hidden mt-6 grid grid-cols-1 gap-3 w-full max-w-xs">
+                 {decks.map((deck) => (
+                    <button key={deck.id} onClick={selectDeck(deck.id)} className="w-full py-3 bg-bg-elevated rounded-xl border-0 text-text-primary font-medium cursor-pointer">
+                      {deck.name}
+                    </button>
+                 ))}
+                 <button onClick={() => setShowNewDeckModal(true)} className="w-full py-3 border border-dashed border-accent-orange text-accent-orange rounded-xl bg-transparent font-medium cursor-pointer">
+                   + {t("word_bank.decks.new_deck")}
+                 </button>
+              </div>
+            </div>
+          ) : (
+            <section className="flex flex-col gap-6">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="relative flex-1 max-w-md">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-sm">🔍</span>
+                    <input
+                      type="text"
+                      placeholder={t("word_bank.words.search_placeholder")}
+                      value={wordSearch}
+                      onChange={(e) => setWordSearch(e.target.value)}
+                      className="w-full pl-9"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      className="bg-bg-elevated text-text-primary"
+                      className="bg-bg-elevated px-3 py-1.5 text-xs rounded-lg border-0 cursor-pointer text-text-primary hover:bg-bg-hover transition-colors"
                       onClick={() => {
-                        setRawImportData(null);
-                        setImportColumnMapping({});
-                        setImportPreviewPage(1);
-                        setImportText('');
+                        const prev = wordsCursorHistory[wordsCursorHistory.length - 1] ?? null;
+                        setWordsCursorHistory((h) => h.slice(0, -1));
+                        setWordsCursor(prev);
                       }}
+                      disabled={!hasPrevWordsPage}
+                    >
+                      {t("common.prev")}
+                    </button>
+                    <span className="text-xs text-text-secondary">{t("common.page")} {wordsPageLabel}</span>
+                    <button
+                      type="button"
+                      className="bg-bg-elevated px-3 py-1.5 text-xs rounded-lg border-0 cursor-pointer text-text-primary hover:bg-bg-hover transition-colors"
+                      onClick={() => {
+                        const next = wordsQuery.data?.nextCursor;
+                        if (!next) return;
+                        setWordsCursorHistory((h) => [...h, wordsCursor]);
+                        setWordsCursor(next);
+                      }}
+                      disabled={!hasNextWordsPage}
+                    >
+                      {t("common.next")}
+                    </button>
+                  </div>
+                </div>
+
+                {selectedWordIds.size > 0 && (
+                  <div className="flex items-center gap-4 rounded-xl bg-bg-elevated p-3 border border-accent-teal/20 animate-in fade-in slide-in-from-top-2">
+                    <span className="text-sm font-medium text-text-primary pl-1">{t("word_bank.words.selected", { count: selectedWordIds.size })}</span>
+                    <div className="h-4 w-px bg-[var(--border-subtle)]" />
+                    <button
+                      type="button"
+                      className="text-xs font-bold text-[var(--danger-text)] bg-transparent border-0 hover:underline p-0 cursor-pointer"
+                      onClick={() => {
+                        if (confirm(t("word_bank.words.delete_selected"))) bulkDeleteWords.mutate();
+                      }}
+                    >
+                      {t("word_bank.words.delete_selected")}
+                    </button>
+                    <button
+                      type="button"
+                      className="text-xs text-text-secondary bg-transparent border-0 hover:text-text-primary p-0 cursor-pointer"
+                      onClick={() => setSelectedWordIds(new Set())}
                     >
                       {t("common.cancel")}
                     </button>
-                    <button
-                      type="button"
-                      onClick={processImportData}
-                      disabled={!Object.values(importColumnMapping).includes('target') || !Object.values(importColumnMapping).includes('meaning')}
-                    >
-                      {t("word_bank.import.submit", { count: rawImportData.rows.length })}
-                    </button>
                   </div>
-                </>
-              )}
-              
-              {importStatus && (
-                <p className="m-0 text-[13px] text-accent-teal">{importStatus}</p>
-              )}
-            </div>
-          )}
-        </section>
-      )}
+                )}
 
-      {/* Words list */}
-      {selectedDeckId && (
-        <section className="flex flex-col gap-4">
-          {/* Header with search */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">
-              {t("word_bank.words.title")} ({filteredWords.length}{wordSearch ? ` of ${words.length}` : ''})
-            </h2>
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                placeholder={t("word_bank.words.search_placeholder")}
-                value={wordSearch}
-                onChange={(e) => setWordSearch(e.target.value)}
-                className="w-full md:w-64"
-              />
-              {wordSearch && (
-                <button
-                  type="button"
-                  className="border-0 bg-transparent p-0 text-text-secondary hover:text-text-primary"
-                  onClick={() => setWordSearch('')}
-                >
-                  {t("common.clear", "Clear")}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Bulk actions */}
-          {selectedWordIds.size > 0 && (
-            <div className="flex items-center gap-3 rounded-lg bg-bg-elevated p-3">
-              <span className="text-sm text-text-secondary">{t("word_bank.words.selected", { count: selectedWordIds.size })}</span>
-              <button
-                type="button"
-                className="border-0 bg-red-500/20 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/30"
-                onClick={() => {
-                  if (confirm(t("word_bank.words.delete_selected"))) {
-                    bulkDeleteWords.mutate();
-                  }
-                }}
-                disabled={bulkDeleteWords.isPending}
-              >
-                {bulkDeleteWords.isPending ? t("word_bank.words.deleting") : t("word_bank.words.delete_selected")}
-              </button>
-              <button
-                type="button"
-                className="border-0 bg-transparent px-3 py-1.5 text-sm text-text-secondary"
-                onClick={() => setSelectedWordIds(new Set())}
-              >
-                {t("word_bank.words.clear_selection")}
-              </button>
-            </div>
-          )}
-
-          {filteredWords.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between text-xs text-text-secondary">
-                <span>
-                  {t("word_bank.words.showing_count", { count: pagedWords.length })}
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="bg-bg-elevated px-2 py-1 text-xs"
-                    onClick={() => {
-                      const previousCursor = wordsCursorHistory[wordsCursorHistory.length - 1] ?? null;
-                      setWordsCursorHistory((prev) => prev.slice(0, -1));
-                      setWordsCursor(previousCursor);
-                      setSelectedWordIds(new Set());
-                    }}
-                    disabled={!hasPrevWordsPage}
-                  >
-                    {t("common.prev", "Prev")}
-                  </button>
-                  <span>
-                    {t("common.page", "Page")} {wordsPageLabel}
-                  </span>
-                  <button
-                    type="button"
-                    className="bg-bg-elevated px-2 py-1 text-xs"
-                    onClick={() => {
-                      const nextCursor = wordsQuery.data?.nextCursor;
-                      if (!nextCursor) return;
-                      setWordsCursorHistory((prev) => [...prev, wordsCursor]);
-                      setWordsCursor(nextCursor);
-                      setSelectedWordIds(new Set());
-                    }}
-                    disabled={!hasNextWordsPage}
-                  >
-                    {t("common.next", "Next")}
-                  </button>
-                </div>
-              </div>
-              <div className="rounded-base border border-[var(--border-muted)] overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-bg-elevated">
-                  <tr>
-                    <th className="w-10 px-3 py-3 text-left">
-                      <input
-                        type="checkbox"
-                        checked={pagedWords.length > 0 && pagedWords.every((w: any) => selectedWordIds.has(w.id))}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            const nextIds = new Set(selectedWordIds);
-                            for (const row of pagedWords) {
-                              nextIds.add(row.id);
-                            }
-                            setSelectedWordIds(nextIds);
-                          } else {
-                            const nextIds = new Set(selectedWordIds);
-                            for (const row of pagedWords) {
-                              nextIds.delete(row.id);
-                            }
-                            setSelectedWordIds(nextIds);
-                          }
-                        }}
-                        className="cursor-pointer"
-                      />
-                    </th>
-                    <th className="px-3 py-3 text-left font-medium text-text-secondary">Target</th>
-                    <th className="px-3 py-3 text-left font-medium text-text-secondary">Reading</th>
-                    <th className="px-3 py-3 text-left font-medium text-text-secondary">Meaning</th>
-                    <th className="px-3 py-3 text-left font-medium text-text-secondary">Tags</th>
-                    <th className="w-20 px-3 py-3 text-right"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border-muted)]">
-                  {pagedWords.map((word: any) => (
-                    <>
-                      <tr
-                        key={word.id}
-                        className={`hover:bg-bg-elevated/50 ${expandedWordId === word.id ? 'bg-bg-elevated/30' : ''}`}
-                      >
-                        <td className="px-3 py-3">
-                          <input
+                <div className="rounded-2xl border border-[var(--border-subtle)] bg-bg-card overflow-hidden shadow-sm">
+                  <table className="w-full text-sm border-collapse">
+                    <thead className="bg-bg-elevated text-text-secondary border-b border-[var(--border-subtle)]">
+                      <tr>
+                        <th className="w-12 px-4 py-3 text-left">
+                           <input
                             type="checkbox"
-                            checked={selectedWordIds.has(word.id)}
-                            onChange={(e) => {
-                              const newSet = new Set(selectedWordIds);
-                              if (e.target.checked) {
-                                newSet.add(word.id);
-                              } else {
-                                newSet.delete(word.id);
-                              }
-                              setSelectedWordIds(newSet);
-                            }}
                             className="cursor-pointer"
+                            checked={pagedWords.length > 0 && pagedWords.every((w: any) => selectedWordIds.has(w.id))}
+                            onChange={(e) => {
+                              const nextIds = new Set(selectedWordIds);
+                              if (e.target.checked) pagedWords.forEach(w => nextIds.add(w.id));
+                              else pagedWords.forEach(w => nextIds.delete(w.id));
+                              setSelectedWordIds(nextIds);
+                            }}
                           />
-                        </td>
-                        <td className={`px-3 py-3 ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`} lang={targetLang}>{word.target}</td>
-                        <td className={`px-3 py-3 text-text-secondary ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`} lang={targetLang}>{word.reading ?? "-"}</td>
-                        <td className="px-3 py-3 text-text-secondary">{word.meaning}</td>
-                        <td className="px-3 py-3">
-                          <div className="flex flex-wrap gap-1">
-                            {(word.tags ?? []).slice(0, 3).map((t: string) => (
-                              <span key={t} className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px] text-text-secondary">{t}</span>
-                            ))}
-                            {(word.tags ?? []).length > 3 && (
-                              <span className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px] text-text-secondary">+{(word.tags ?? []).length - 3}</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-3 py-3 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              className="flex h-7 w-7 items-center justify-center rounded border-0 bg-transparent p-0 text-text-secondary hover:text-text-primary"
-                              onClick={() => setExpandedWordId(expandedWordId === word.id ? null : word.id)}
-                              aria-label={expandedWordId === word.id ? 'Collapse' : 'Expand'}
-                            >
-                              {expandedWordId === word.id ? '−' : '+'}
-                            </button>
-                            <button
-                              type="button"
-                              className="flex h-7 w-7 items-center justify-center rounded border-0 bg-transparent p-0 text-text-secondary hover:text-text-primary"
-                              onClick={() => {
-                                setEditingWord({
-                                  id: word.id,
-                                  target: word.target,
-                                  reading: word.reading ?? '',
-                                  romanization: word.romanization ?? '',
-                                  meaning: word.meaning,
-                                  example: word.example ?? '',
-                                  audioUrl: word.audioUrl ?? '',
-                                  tags: word.tags ?? [],
-                                });
-                                setShowEditWordModal(true);
-                              }}
-                              aria-label="Edit word"
-                            >
-                              <Pencil size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              className="flex h-7 w-7 items-center justify-center rounded border-0 bg-transparent p-0 text-text-secondary hover:text-red-400"
-                              onClick={() => deleteWord.mutate(word.id)}
-                              disabled={deleteWord.isPending}
-                              aria-label="Delete word"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </td>
+                        </th>
+                        <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px]">{t("word_bank.words.target")}</th>
+                        <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px] md:table-cell hidden">{t("word_bank.words.reading")}</th>
+                        <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-[10px]">{t("word_bank.words.meaning")}</th>
+                        <th className="w-20 px-4 py-3"></th>
                       </tr>
-                      {expandedWordId === word.id && (
-                        <tr className="bg-bg-elevated/20">
-                          <td colSpan={6} className="px-3 py-4">
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                              {word.romanization && (
-                                <div>
-                                  <span className="text-[11px] uppercase tracking-wider text-text-secondary">Romanization</span>
-                                  <p className="mt-1 text-sm">{word.romanization}</p>
-                                </div>
-                              )}
-                              {word.example && (
-                                <div>
-                                  <span className="text-[11px] uppercase tracking-wider text-text-secondary">Example</span>
-                                  <p className={`mt-1 text-sm ${isJapaneseDeck ? "[font-family:var(--font-jp)]" : ""}`} lang={targetLang}>{word.example}</p>
-                                </div>
-                              )}
-                              {word.audioUrl && (
-                                <div>
-                                  <span className="text-[11px] uppercase tracking-wider text-text-secondary">Audio</span>
-                                  <audio controls className="mt-1 h-8 w-full" src={word.audioUrl}>
-                                    Your browser does not support the audio element.
-                                  </audio>
-                                </div>
-                              )}
-                              {(word.tags ?? []).length > 0 && (
-                                <div>
-                                  <span className="text-[11px] uppercase tracking-wider text-text-secondary">{t("word_bank.words.all_tags")}</span>
-                                  <div className="mt-1 flex flex-wrap gap-1">
-                                    {(word.tags ?? []).map((t: string) => (
-                                      <span key={t} className="rounded bg-bg-elevated px-2 py-1 text-[11px] text-text-secondary">{t}</span>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border-subtle)]">
+                      {pagedWords.map((word: any) => (
+                        <tr key={word.id} className="hover:bg-bg-elevated/20 group">
+                          <td className="px-4 py-4">
+                             <input
+                              type="checkbox"
+                              className="cursor-pointer"
+                              checked={selectedWordIds.has(word.id)}
+                              onChange={(e) => {
+                                const newSet = new Set(selectedWordIds);
+                                if (e.target.checked) newSet.add(word.id);
+                                else newSet.delete(word.id);
+                                setSelectedWordIds(newSet);
+                              }}
+                            />
+                          </td>
+                          <td className={`px-4 py-4 font-bold text-text-primary ${activeDeck?.language === "ja" ? "[font-family:var(--font-jp)] text-lg" : ""}`}>{word.target}</td>
+                          <td className={`px-4 py-4 text-text-secondary md:table-cell hidden ${activeDeck?.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}>{word.reading ?? "-"}</td>
+                          <td className="px-4 py-4 text-text-secondary">{word.meaning}</td>
+                          <td className="px-4 py-4 text-right">
+                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                                <button
+                                  type="button"
+                                  className="p-1.5 text-text-secondary hover:text-text-primary rounded-md hover:bg-bg-elevated border-0 bg-transparent cursor-pointer"
+                                  onClick={() => {
+                                    setEditingWord({
+                                      id: word.id,
+                                      target: word.target,
+                                      reading: word.reading ?? '',
+                                      romanization: word.romanization ?? '',
+                                      meaning: word.meaning,
+                                      example: word.example ?? '',
+                                      audioUrl: word.audioUrl ?? '',
+                                      tags: word.tags ?? [],
+                                    });
+                                    setShowEditWordModal(true);
+                                  }}
+                                >
+                                  <Pencil size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="p-1.5 text-text-secondary hover:text-[var(--danger-text)] rounded-md hover:bg-[var(--danger-bg)] border-0 bg-transparent cursor-pointer"
+                                  onClick={() => deleteWord.mutate(word.id)}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                             </div>
                           </td>
                         </tr>
-                      )}
-                    </>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            </div>
-          ) : (
-            <div className="rounded-base bg-bg-card p-10 text-center text-text-secondary">
-              {wordSearch ? (
-                <>
-                  <p>{t("word_bank.words.no_match")}</p>
-                  <p className="mt-2 text-[13px]">{t("word_bank.words.try_different")}</p>
-                </>
-              ) : (
-                <>
-                  <p>{t("word_bank.words.no_words")}</p>
-                  <p className="mt-2 text-[13px]">{t("word_bank.words.add_using_form")}</p>
-                </>
-              )}
-            </div>
+                      ))}
+                    </tbody>
+                  </table>
+                  {pagedWords.length === 0 && (
+                    <div className="py-20 text-center text-text-secondary">
+                      <p>{t("word_bank.words.no_words")}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
           )}
-        </section>
+        </div>
+      </main>
+
+      {selectedDeckId && (
+        <button
+          type="button"
+          className="md:hidden fixed right-6 bottom-24 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent-orange text-text-on-accent shadow-lg shadow-accent-orange/30 border-0 cursor-pointer"
+          onClick={() => setIsPanelCollapsed(false)}
+          aria-label="Add Word"
+        >
+          <span className="text-3xl font-light">+</span>
+        </button>
       )}
 
-      {/* No deck selected hint */}
-      {!selectedDeckId && decks.length > 0 && (
-        <div className="rounded-base bg-bg-card p-10 text-center text-text-secondary">
-          <p>{t("word_bank.words.select_deck")}</p>
+      {showNewDeckModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+          <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-sm border-0" onClick={() => setShowNewDeckModal(false)} />
+          <dialog ref={modalRef} className="relative z-[1010] flex w-full max-w-[420px] flex-col gap-6 rounded-2xl border border-[var(--border-subtle)] bg-bg-card p-8 shadow-2xl" open>
+            <h2 className="m-0 text-2xl font-semibold [font-family:var(--font-display)]">{t("word_bank.new_deck.title")}</h2>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-text-secondary" htmlFor={`${formId}-deckname`}>{t("word_bank.new_deck.name")}</label>
+                <input id={`${formId}-deckname`} className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none" placeholder={t("word_bank.new_deck.name_placeholder")} value={newDeckName} onChange={(e) => setNewDeckName(e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-text-secondary" htmlFor={`${formId}-deck-language`}>{t("word_bank.new_deck.language")}</label>
+                <select id={`${formId}-deck-language`} className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none" value={newDeckLanguage} onChange={(e) => setNewDeckLanguage(e.target.value as LanguageCode)}>
+                  {SUPPORTED_LANGUAGES.map((code) => <option key={code} value={code}>{LANGUAGE_LABELS[code]} ({code.toUpperCase()})</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button type="button" className="bg-bg-elevated text-text-primary px-5 py-2 rounded-lg border-0 cursor-pointer" onClick={() => setShowNewDeckModal(false)}>{t("common.cancel")}</button>
+              <button type="button" className="bg-accent-orange text-text-on-accent px-5 py-2 rounded-lg border-0 font-bold cursor-pointer" onClick={() => createDeck.mutate()} disabled={!newDeckName.trim() || createDeck.isPending}>{t("common.create")}</button>
+            </div>
+          </dialog>
         </div>
       )}
 
-      {/* New Deck Modal */}
-      {showNewDeckModal && (
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-[100] border-0 bg-[var(--overlay-bg)] p-0"
-            onClick={() => setShowNewDeckModal(false)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setShowNewDeckModal(false);
-              } else if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setShowNewDeckModal(false);
-              }
-            }}
-            aria-label="Close new deck modal"
-          />
-          <dialog
-            ref={modalRef}
-            className="fixed inset-0 z-[101] m-auto flex h-fit max-h-[90vh] w-[420px] max-w-[90vw] flex-col gap-5 rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
-            open
-            aria-label="Create new deck"
-          >
-            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">{t("word_bank.new_deck.title")}</h2>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor={`${formId}-deckname`}>{t("word_bank.new_deck.name")}</label>
-              <input
-                id={`${formId}-deckname`}
-                placeholder={t("word_bank.new_deck.name_placeholder")}
-                value={newDeckName}
-                onChange={(e) => setNewDeckName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newDeckName.trim()) createDeck.mutate();
-                }}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor={`${formId}-deck-language`}>{t("word_bank.new_deck.language")}</label>
-              <select
-                id={`${formId}-deck-language`}
-                value={newDeckLanguage}
-                onChange={(e) => setNewDeckLanguage(e.target.value as LanguageCode)}
-              >
-                {SUPPORTED_LANGUAGES.map((code) => (
-                  <option key={code} value={code}>
-                    {LANGUAGE_LABELS[code]} ({code.toUpperCase()})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="mt-2 flex justify-end gap-2.5">
-              <button
-                type="button"
-                className="bg-bg-elevated text-text-primary"
-                onClick={() => setShowNewDeckModal(false)}
-              >
-                {t("common.cancel")}
-              </button>
-              <button type="button" onClick={() => createDeck.mutate()} disabled={!newDeckName.trim() || createDeck.isPending}>
-                {createDeck.isPending ? t("common.creating") : t("common.create")}
-              </button>
-            </div>
-          </dialog>
-        </>
-      )}
-
-      {/* Edit Deck Modal */}
       {showEditDeckModal && editingDeck && (
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-[100] border-0 bg-[var(--overlay-bg)] p-0"
-            onClick={() => setShowEditDeckModal(false)}
-            aria-label="Close edit deck modal"
-          />
-          <dialog
-            className="fixed inset-0 z-[101] m-auto flex h-fit max-h-[90vh] w-[420px] max-w-[90vw] flex-col gap-5 rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
-            open
-            aria-label="Edit deck"
-          >
-            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">{t("word_bank.edit_deck.title")}</h2>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor={`${formId}-edit-deckname`}>{t("word_bank.new_deck.name")}</label>
-              <input
-                id={`${formId}-edit-deckname`}
-                value={editingDeck.name}
-                onChange={(e) => setEditingDeck({ ...editingDeck, name: e.target.value })}
-              />
-            </div>
-            <div className="flex min-w-0 items-start gap-3">
-              <input
-                type="checkbox"
-                id={`${formId}-archive`}
-                checked={editingDeck.archived}
-                onChange={(e) => setEditingDeck({ ...editingDeck, archived: e.target.checked })}
-                className="!mt-0.5 !h-4 !w-4 shrink-0 cursor-pointer"
-              />
-              <label htmlFor={`${formId}-archive`} className="min-w-0 flex-1 cursor-pointer text-sm text-text-primary">
-                {t("word_bank.edit_deck.archive")}
-              </label>
-            </div>
-            <div className="mt-2 flex justify-end gap-2.5">
-              <button
-                type="button"
-                className="bg-bg-elevated text-text-primary"
-                onClick={() => {
-                  setShowEditDeckModal(false);
-                  setEditingDeck(null);
-                }}
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={() => updateDeck.mutate({ name: editingDeck.name, archived: editingDeck.archived })}
-                disabled={!editingDeck.name.trim() || updateDeck.isPending}
-              >
-                {updateDeck.isPending ? t("common.saving") : t("common.save")}
-              </button>
-            </div>
-          </dialog>
-        </>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && deckToDelete && (
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-[100] border-0 bg-[var(--overlay-bg)] p-0"
-            onClick={() => setShowDeleteConfirm(false)}
-            aria-label="Close delete confirmation"
-          />
-          <dialog
-            className="fixed inset-0 z-[101] m-auto flex h-fit max-h-[90vh] w-[420px] max-w-[90vw] flex-col gap-5 rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
-            open
-            aria-label="Delete deck confirmation"
-          >
-            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">{t("word_bank.delete_deck.title")}</h2>
-            <p className="text-text-secondary">
-              {t("word_bank.delete_deck.confirm", { name: deckToDelete.name })}
-            </p>
-            <div className="mt-2 flex justify-end gap-2.5">
-              <button
-                type="button"
-                className="bg-bg-elevated text-text-primary"
-                onClick={() => {
-                  setShowDeleteConfirm(false);
-                  setDeckToDelete(null);
-                }}
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                className="bg-red-500 text-white hover:bg-red-600"
-                onClick={() => deleteDeck.mutate()}
-                disabled={deleteDeck.isPending}
-              >
-                {deleteDeck.isPending ? t("common.deleting") : t("common.delete")}
-              </button>
-            </div>
-          </dialog>
-        </>
-      )}
-
-      {/* Edit Word Modal */}
-      {showEditWordModal && editingWord && (
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-[100] border-0 bg-[var(--overlay-bg)] p-0"
-            onClick={() => {
-              setShowEditWordModal(false);
-              setEditingWord(null);
-            }}
-            aria-label="Close edit word modal"
-          />
-          <dialog
-            className="fixed inset-0 z-[101] m-auto flex h-fit max-h-[90vh] w-[500px] max-w-[90vw] flex-col gap-5 overflow-auto rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
-            open
-            aria-label="Edit word"
-          >
-            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">{t("word_bank.edit_word.title")}</h2>
-            
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+          <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-sm border-0" onClick={() => setShowEditDeckModal(false)} />
+          <dialog className="relative z-[1010] flex w-full max-w-[420px] flex-col gap-6 rounded-2xl border border-[var(--border-subtle)] bg-bg-card p-8 shadow-2xl" open>
+            <h2 className="m-0 text-2xl font-semibold [font-family:var(--font-display)]">{t("word_bank.edit_deck.title")}</h2>
             <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-edit-target`}>{t("word_bank.add.target_word")} *</label>
-                  <input
-                    id={`${formId}-edit-target`}
-                    value={editingWord.target}
-                    onChange={(e) => setEditingWord({ ...editingWord, target: e.target.value })}
-                    className={isJapaneseDeck ? "[font-family:var(--font-jp)]" : undefined}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-edit-meaning`}>{t("word_bank.add.meaning")} *</label>
-                  <input
-                    id={`${formId}-edit-meaning`}
-                    value={editingWord.meaning}
-                    onChange={(e) => setEditingWord({ ...editingWord, meaning: e.target.value })}
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-edit-reading`}>{t("word_bank.add.reading")}</label>
-                  <input
-                    id={`${formId}-edit-reading`}
-                    value={editingWord.reading}
-                    onChange={(e) => setEditingWord({ ...editingWord, reading: e.target.value })}
-                    className={isJapaneseDeck ? "[font-family:var(--font-jp)]" : undefined}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-edit-romanization`}>{t("word_bank.add.romanization")}</label>
-                  <input
-                    id={`${formId}-edit-romanization`}
-                    value={editingWord.romanization}
-                    onChange={(e) => setEditingWord({ ...editingWord, romanization: e.target.value })}
-                  />
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor={`${formId}-edit-example`}>{t("word_bank.add.example")}</label>
-                <input
-                  id={`${formId}-edit-example`}
-                  value={editingWord.example}
-                  onChange={(e) => setEditingWord({ ...editingWord, example: e.target.value })}
-                  className={isJapaneseDeck ? "[font-family:var(--font-jp)]" : undefined}
-                />
-              </div>
-              
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor={`${formId}-edit-audio`}>{t("word_bank.add.audio_url")}</label>
-                <input
-                  id={`${formId}-edit-audio`}
-                  value={editingWord.audioUrl}
-                  onChange={(e) => setEditingWord({ ...editingWord, audioUrl: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
-              
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor={`${formId}-edit-tags`}>{t("word_bank.add.tags")}</label>
-                <input
-                  id={`${formId}-edit-tags`}
-                  value={editingWord.tags.join(', ')}
-                  onChange={(e) => setEditingWord({ ...editingWord, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })}
-                  placeholder="e.g. n5, verb"
-                />
-              </div>
+              <input className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none" value={editingDeck.name} onChange={(e) => setEditingDeck({...editingDeck, name: e.target.value})} />
             </div>
-            
-            <div className="mt-2 flex justify-end gap-2.5">
-              <button
-                type="button"
-                className="bg-bg-elevated text-text-primary"
-                onClick={() => {
-                  setShowEditWordModal(false);
-                  setEditingWord(null);
-                }}
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={() => updateWord.mutate()}
-                disabled={!editingWord.target.trim() || !editingWord.meaning.trim() || updateWord.isPending}
-              >
-                {updateWord.isPending ? t("common.saving") : t("common.save_changes")}
-              </button>
+            <div className="flex justify-end gap-3 pt-2">
+              <button type="button" className="bg-bg-elevated text-text-primary px-5 py-2 rounded-lg border-0 cursor-pointer" onClick={() => setShowEditDeckModal(false)}>{t("common.cancel")}</button>
+              <button type="button" className="bg-accent-orange text-text-on-accent px-5 py-2 rounded-lg border-0 font-bold cursor-pointer" onClick={() => navigate(0)}>{t("common.save")}</button>
             </div>
           </dialog>
-        </>
+        </div>
+      )}
+
+      {showEditWordModal && editingWord && (
+         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+          <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-sm border-0" onClick={() => setShowEditWordModal(false)} />
+          <dialog className="relative z-[1010] flex w-full max-w-[500px] flex-col gap-6 rounded-2xl border border-[var(--border-subtle)] bg-bg-card p-8 shadow-2xl overflow-y-auto max-h-[90vh]" open>
+            <h2 className="m-0 text-2xl font-semibold [font-family:var(--font-display)]">{t("word_bank.edit_word.title")}</h2>
+            <div className="grid gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] text-text-secondary font-bold uppercase" htmlFor={`${formId}-edit-target`}>{t("word_bank.add.target_word")} *</label>
+                  <input className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none" id={`${formId}-edit-target`} value={editingWord.target} onChange={(e) => setEditingWord({ ...editingWord, target: e.target.value })} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] text-text-secondary font-bold uppercase" htmlFor={`${formId}-edit-meaning`}>{t("word_bank.add.meaning")} *</label>
+                  <input className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none" id={`${formId}-edit-meaning`} value={editingWord.meaning} onChange={(e) => setEditingWord({ ...editingWord, meaning: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] text-text-secondary font-bold uppercase" htmlFor={`${formId}-edit-reading`}>{t("word_bank.add.reading")}</label>
+                  <input className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none" id={`${formId}-edit-reading`} value={editingWord.reading} onChange={(e) => setEditingWord({ ...editingWord, reading: e.target.value })} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] text-text-secondary font-bold uppercase" htmlFor={`${formId}-edit-romanization`}>{t("word_bank.add.romanization")}</label>
+                  <input className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none" id={`${formId}-edit-romanization`} value={editingWord.romanization} onChange={(e) => setEditingWord({ ...editingWord, romanization: e.target.value })} />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] text-text-secondary font-bold uppercase" htmlFor={`${formId}-edit-example`}>{t("word_bank.add.example")}</label>
+                <textarea id={`${formId}-edit-example`} className="min-h-[80px] p-3 rounded-lg bg-bg-page border border-[var(--border-subtle)] outline-none focus:border-accent-orange transition-colors resize-none" value={editingWord.example} onChange={(e) => setEditingWord({ ...editingWord, example: e.target.value })} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] text-text-secondary font-bold uppercase" htmlFor={`${formId}-edit-audio`}>{t("word_bank.add.audio_url")}</label>
+                <input className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none" id={`${formId}-edit-audio`} value={editingWord.audioUrl} onChange={(e) => setEditingWord({ ...editingWord, audioUrl: e.target.value })} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] text-text-secondary font-bold uppercase" htmlFor={`${formId}-edit-tags`}>{t("word_bank.add.tags")}</label>
+                <input className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none" id={`${formId}-edit-tags`} value={editingWord.tags.join(", ")} onChange={(e) => setEditingWord({ ...editingWord, tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean) })} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <button type="button" className="bg-bg-elevated text-text-primary px-5 py-2 rounded-lg border-0 cursor-pointer" onClick={() => setShowEditWordModal(false)}>{t("common.cancel")}</button>
+              <button type="button" className="bg-accent-orange text-text-on-accent px-5 py-2 rounded-lg border-0 font-bold cursor-pointer" onClick={() => updateWord.mutate()} disabled={!editingWord.target.trim() || !editingWord.meaning.trim() || updateWord.isPending}>{t("common.save_changes")}</button>
+            </div>
+          </dialog>
+        </div>
       )}
     </div>
   );
