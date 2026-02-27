@@ -13,7 +13,7 @@ Prepare raw vocabulary data for bulk import into Inko decks. The Inko bulk impor
 - `target` (required) - The word in target language (e.g., "勉強")
 - `reading` - Hiragana/katakana reading (e.g., "べんきょう")
 - `meaning` (required) - English translation (e.g., "study")
-- `romanization` - Romaji representation (e.g., "benkyou")
+- `romanization` (required) - Romaji representation (e.g., "benkyou") - used for practice mode
 - `example` - Example sentence (e.g., "毎日日本語を勉強しています")
 - `tags` - Comma-separated tags (e.g., "n5, verb")
 
@@ -86,6 +86,7 @@ The formatter automatically recognizes these header patterns:
 Word,Reading,Definition,Romaji,Example
 食べる,たべる,to eat,taberu,私は寿司を食べます
 飲む,のむ,to drink,nomu,お茶を飲みます
+読む,よむ,to read,yomu,本を読みます
 ```
 
 **Output CSV (Inko-ready):**
@@ -93,14 +94,15 @@ Word,Reading,Definition,Romaji,Example
 target,reading,meaning,romanization,example,tags
 食べる,たべる,to eat,taberu,私は寿司を食べます,
 飲む,のむ,to drink,nomu,お茶を飲みます,
+読む,よむ,to read,yomu,本を読みます,
 ```
 
 ## Validation Rules
 
 - **target**: Required, non-empty string
 - **meaning**: Required, non-empty string
+- **romanization**: Required, non-empty string (used for practice mode typing)
 - **reading**: Optional, preserved as-is
-- **romanization**: Optional, preserved as-is
 - **example**: Optional, preserved as-is
 - **tags**: Optional, comma-separated or single value
 

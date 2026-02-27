@@ -25,7 +25,7 @@ Inko supports importing vocabulary words in bulk via CSV or TSV files. This docu
 | `target` | **Yes** | String | The word in the target language (Japanese kanji/kana) | `勉強` |
 | `reading` | No | String | Hiragana/katakana reading | `べんきょう` |
 | `meaning` | **Yes** | String | English translation/definition | `study; learning` |
-| `romanization` | No | String | Romaji (Latin alphabet) representation | `benkyou` |
+| `romanization` | **Yes** | String | Romaji (Latin alphabet) representation | `benkyou` |
 | `example` | No | String | Example sentence using the word | `毎日日本語を勉強しています。` |
 | `tags` | No | String or Array | Comma-separated tags/categories | `n5, verb, daily` |
 
@@ -83,6 +83,7 @@ Inko automatically recognizes these header variations:
 ### Required Fields
 - `target`: Must be non-empty string
 - `meaning`: Must be non-empty string
+- `romanization`: Must be non-empty string (used for practice mode typing)
 
 ### Optional Fields
 - All other fields are optional
@@ -99,10 +100,10 @@ Tags can be provided as:
 
 ### Minimal CSV (Headers Detected)
 ```csv
-Word,Meaning
-食べる,to eat
-飲む,to drink
-読む,to read
+Word,Meaning,Romaji
+食べる,to eat,taberu
+飲む,to drink,nomu
+読む,to read,yomu
 ```
 
 ### Full CSV with All Fields
@@ -114,17 +115,18 @@ target,reading,meaning,romanization,example,tags
 ```
 
 ### TSV Format
-```tsv	target	reading	meaning	example
-食べる	たべる	to eat	私は寿司を食べます。
-飲む	のむ	to drink	お茶を飲みます。
+```tsv	target	reading	meaning	romanization	example
+食べる	たべる	to eat	taberu	私は寿司を食べます。
+飲む	のむ	to drink	nomu	お茶を飲みます。
 ```
 
 ### No-Header CSV (Columns Named Automatically)
 ```csv
 食べる,たべる,to eat,taberu,私は寿司を食べます。
 飲む,のむ,to drink,nomu,お茶を飲みます。
+読む,よむ,to read,yomu,本を読みます。
 ```
-When no headers are detected, columns are named: `Column 1`, `Column 2`, etc.
+When no headers are detected, columns are named: `Column 1`, `Column 2`, etc. You will need to map columns manually in the UI.
 
 ## Data Import Workflow
 
@@ -137,10 +139,10 @@ When no headers are detected, columns are named: `Column 1`, `Column 2`, etc.
 ## Error Handling
 
 ### Row-Level Errors
-Rows missing required fields (`target` or `meaning`) are rejected with an error message.
+Rows missing required fields (`target`, `meaning`, or `romanization`) are rejected with an error message.
 
 ### Common Issues
-- **Empty target/meaning**: Row is skipped
+- **Empty target/meaning/romanization**: Row is skipped (these are all required)
 - **Wrong delimiter**: File may not parse correctly (use comma for CSV, tab for TSV)
 - **Encoding issues**: Save files as UTF-8
 - **Extra columns**: Unmapped columns are ignored
