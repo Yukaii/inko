@@ -48,10 +48,12 @@ export function SettingsPage() {
               <div className="flex flex-col gap-0">
                 <div className="flex items-center justify-between border-b border-[var(--border-subtle)] py-4">
                   <div className="flex flex-col gap-1">
-                    <span className="text-sm font-medium">Language</span>
-                    <span className="text-[13px] text-text-secondary">Set per deck when creating a new deck</span>
+                    <span className="text-sm font-medium">Typing Mode</span>
+                    <span className="text-[13px] text-text-secondary">Global preference for practice matching across all decks</span>
                   </div>
-                  <span className="font-mono text-sm text-text-secondary">JA, KO, ZH, ES, FR, DE...</span>
+                  <Link to="/profile" className="font-mono text-xs text-accent-orange hover:underline">
+                    Configure
+                  </Link>
                 </div>
 
                 <div className="flex items-center justify-between border-b border-[var(--border-subtle)] py-4">
