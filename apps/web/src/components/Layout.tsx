@@ -45,26 +45,39 @@ function UserIcon({ className }: { className?: string }) {
   );
 }
 
+function LogoutIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  );
+}
+
 const NAV_LINKS = [
   { to: "/dashboard", label: "dashboard", mobileLabel: "Home", Icon: HomeIcon, key: "d" },
   { to: "/word-bank", label: "word_bank", mobileLabel: "Decks", Icon: DecksIcon, key: "w" },
-  { to: "/profile", label: "profile", mobileLabel: "Profile", Icon: UserIcon, key: "p" },
-  { to: "/settings", label: "settings", mobileLabel: "Settings", Icon: SettingsIcon, key: "s" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { token } = useAuth();
+  const { token, setToken } = useAuth();
   const [showHelp, setShowHelp] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  
   const meQuery = useQuery({
     queryKey: ["me"],
     queryFn: () => api.me(token ?? ""),
     enabled: Boolean(token),
-    staleTime: Infinity,
+    staleTime: Number.POSITIVE_INFINITY,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+
+  const user = meQuery.data as { displayName: string; email: string; themeMode: ThemeMode; themes: ThemeConfig } | undefined;
 
   useEffect(() => {
     const me = meQuery.data as { themeMode: ThemeMode; themes: ThemeConfig } | undefined;
@@ -73,6 +86,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
     applyThemePreferences(preferences);
     saveThemePreferences(preferences);
   }, [meQuery.data]);
+
+  // Close profile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
+    if (showProfileMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showProfileMenu]);
 
   // Register global navigation shortcuts
   useEffect(() => {
@@ -83,19 +111,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
       registerShortcut({
         key: "g",
         handler: () => {
-          // Wait for next key
           const handler = (e: KeyboardEvent) => {
             const key = e.key.toLowerCase();
             const link = NAV_LINKS.find((l) => l.key === key);
             if (link) {
               e.preventDefault();
               navigate(link.to);
+            } else if (key === "s") {
+              e.preventDefault();
+              navigate("/settings");
             }
             window.removeEventListener("keydown", handler, { capture: true });
           };
           window.addEventListener("keydown", handler, { capture: true, once: true });
         },
-        description: "Go to page (g then d/w/p/s)",
+        description: "Go to page (g then d/w/s)",
       }),
     );
 
@@ -109,6 +139,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
         })
       );
     }
+
+    // Settings shortcut
+    cleanups.push(
+      registerShortcut({
+        key: "s",
+        handler: () => navigate("/settings"),
+        description: "Go to Settings",
+      })
+    );
 
     // Help shortcut
     cleanups.push(
@@ -124,7 +163,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
     cleanups.push(
       registerShortcut({
         key: "Escape",
-        handler: () => setShowHelp(false),
+        handler: () => {
+          setShowHelp(false);
+          setShowProfileMenu(false);
+        },
         description: "Close dialogs",
       })
     );
@@ -135,6 +177,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       }
     };
   }, [navigate]);
+
+  const handleSignOut = () => {
+    setToken(null);
+    navigate("/login", { replace: true });
+  };
 
   const shortcuts = getShortcutsList();
 
@@ -166,7 +213,67 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto border-t border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] pt-4">
+        
+        <div className="mt-auto flex flex-col gap-2 border-t border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] pt-4">
+          {/* Settings Link */}
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `flex items-center justify-between whitespace-nowrap rounded-xl px-3.5 py-2.5 text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary focus:bg-bg-elevated focus:text-text-primary ${isActive ? "bg-bg-elevated text-text-primary" : ""}`
+            }
+            aria-current={location.pathname === "/settings" ? "page" : undefined}
+          >
+            <span className="flex items-center gap-2">
+              <SettingsIcon className="h-4 w-4" />
+              settings
+            </span>
+            <kbd className="shrink-0 rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] bg-bg-card px-1.5 py-0.5 font-mono text-[11px] text-text-secondary opacity-60">
+              s
+            </kbd>
+          </NavLink>
+          
+          {/* Profile Dropdown Button */}
+          <div className="relative" ref={profileMenuRef}>
+            <button
+              type="button"
+              className="flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary focus:bg-bg-elevated focus:text-text-primary"
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              aria-expanded={showProfileMenu}
+              aria-haspopup="menu"
+            >
+              <span className="flex items-center gap-2 truncate">
+                <UserIcon className="h-4 w-4 shrink-0" />
+                <span className="truncate">{user?.displayName || "Profile"}</span>
+              </span>
+              <span className="text-xs text-text-secondary">⌄</span>
+            </button>
+            
+            {showProfileMenu && (
+              <div className="absolute bottom-full left-0 right-0 mb-1 rounded-xl border border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] bg-bg-card p-1 shadow-lg">
+                <div className="border-b border-[var(--border-subtle)] px-3 py-2">
+                  <p className="m-0 truncate text-sm font-medium text-text-primary">{user?.displayName}</p>
+                  <p className="m-0 truncate text-xs text-text-secondary">{user?.email}</p>
+                </div>
+                <NavLink
+                  to="/settings"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
+                  onClick={() => setShowProfileMenu(false)}
+                >
+                  <SettingsIcon className="h-4 w-4" />
+                  Settings
+                </NavLink>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[var(--danger-text)] transition-colors hover:bg-[var(--danger-bg)]"
+                  onClick={handleSignOut}
+                >
+                  <LogoutIcon className="h-4 w-4" />
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+          
           <button
             type="button"
             className="flex w-full items-center gap-2 rounded-[10px] border border-dashed border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-transparent px-3.5 py-2.5 text-[13px] font-normal text-text-secondary transition-all hover:border-accent-orange hover:bg-bg-elevated hover:text-text-primary focus:border-accent-orange focus:bg-bg-elevated focus:text-text-primary"
@@ -195,7 +302,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </NavLink>
           );
         })}
-
+        
+        {/* Mobile Settings Link */}
+        <NavLink
+          to="/settings"
+          className={`flex max-w-20 flex-1 flex-col items-center justify-center gap-1 bg-transparent px-4 py-2 transition-colors ${location.pathname === "/settings" ? "text-accent-orange" : "text-text-secondary hover:text-text-primary focus:text-text-primary"}`}
+          aria-current={location.pathname === "/settings" ? "page" : undefined}
+        >
+          <SettingsIcon className="h-[22px] w-[22px]" />
+          <span className="text-[11px] font-medium">Settings</span>
+        </NavLink>
       </nav>
 
       <main id="main-content" className="h-screen overflow-y-auto px-5 pt-5 pb-[84px] md:px-10 md:py-8" tabIndex={-1}>
@@ -298,9 +414,8 @@ function KeyboardHelpModal({
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">1</kbd>
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">2</kbd>
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">3</kbd>
-                  <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">4</kbd>
                 </dt>
-                <dd className="m-0 text-text-secondary">Go to Dashboard / Word Bank / Profile / Settings</dd>
+                <dd className="m-0 text-text-secondary">Go to Dashboard / Word Bank / Settings</dd>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-[100px] items-center gap-1">
@@ -322,14 +437,12 @@ function KeyboardHelpModal({
                 <dt className="flex min-w-[100px] items-center gap-1">
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">g</kbd>
                   <span className="text-xs text-text-secondary">then</span>
-                  <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">p</kbd>
+                  <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">s</kbd>
                 </dt>
-                <dd className="m-0 text-text-secondary">Go to Profile</dd>
+                <dd className="m-0 text-text-secondary">Go to Settings</dd>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-[100px] items-center gap-1">
-                  <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">g</kbd>
-                  <span className="text-xs text-text-secondary">then</span>
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">s</kbd>
                 </dt>
                 <dd className="m-0 text-text-secondary">Go to Settings</dd>
@@ -348,7 +461,7 @@ function KeyboardHelpModal({
                 <dd className="m-0 text-text-secondary">Toggle this help</dd>
               </div>
               <div className="flex items-center gap-4 text-sm">
-                <dt className="flex min-w-[100px] items-center gap-1">
+                <dt className="flex min-w-100px] items-center gap-1">
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">Esc</kbd>
                 </dt>
                 <dd className="m-0 text-text-secondary">Close dialogs / Cancel</dd>
