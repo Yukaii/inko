@@ -4,7 +4,7 @@ import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 
 export function LoginPage() {
-  const [email, setEmail] = useState("yukai@example.com");
+  const [email, setEmail] = useState(import.meta.env.DEV ? "user@example.com" : "");
   const [tokenInput, setTokenInput] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,7 +68,7 @@ export function LoginPage() {
       <div className="w-full max-w-[520px] rounded-base bg-bg-card p-6 shadow-sm">
         <div className="mb-6 text-center">
           <h1 className="mb-2 text-[42px] leading-tight [font-family:var(--font-display)]">Practice starts here</h1>
-          <p className="text-text-secondary">email magic link auth for local MVP</p>
+
         </div>
         <div className="grid gap-4">
           <div className="flex flex-col gap-2">
