@@ -2,6 +2,7 @@ import type {
   CreateDeckInput,
   CreateWordsBatchInput,
   CreateWordInput,
+  DeleteWordsBatchInput,
   SubmitPracticeCardInput,
   UpdateProfileInput,
   UpdateDeckInput,
@@ -77,6 +78,13 @@ export const api = {
 
   deleteWord: (token: string, wordId: string) =>
     request<{ ok: boolean }>(`/api/words/${wordId}`, { method: "DELETE" }, token),
+
+  deleteWordsBatch: (token: string, deckId: string, input: DeleteWordsBatchInput) =>
+    request<{ deleted: number; failedWordIds: string[] }>(
+      `/api/decks/${deckId}/words/batch-delete`,
+      { method: "POST", body: JSON.stringify(input) },
+      token,
+    ),
 
   startPractice: (token: string, deckId: string) =>
     request<{ sessionId: string; card: any; typingMode?: "language_specific" | "universal" }>(

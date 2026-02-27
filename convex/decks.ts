@@ -258,6 +258,46 @@ export const deleteWord = mutation({
   },
 });
 
+export const deleteWordsBatch = mutation({
+  args: {
+    deckId: v.id("decks"),
+    wordIds: v.array(v.id("words")),
+  },
+  handler: async (ctx, args) => {
+    let deleted = 0;
+    const failedWordIds: string[] = [];
+
+    for (const wordId of args.wordIds) {
+      const inDeck = await ctx.db
+        .query("deck_words")
+        .withIndex("by_deck_word", (q) => q.eq("deckId", args.deckId).eq("wordId", wordId))
+        .first();
+
+      if (!inDeck) {
+        failedWordIds.push(`${wordId}`);
+        continue;
+      }
+
+      const links = await ctx.db
+        .query("deck_words")
+        .filter((q) => q.eq(q.field("wordId"), wordId))
+        .collect();
+      await Promise.all(links.map((link) => ctx.db.delete(link._id)));
+
+      const stats = await ctx.db
+        .query("word_channel_stats")
+        .filter((q) => q.eq(q.field("wordId"), wordId))
+        .collect();
+      await Promise.all(stats.map((s) => ctx.db.delete(s._id)));
+
+      await ctx.db.delete(wordId);
+      deleted += 1;
+    }
+
+    return { deleted, failedWordIds };
+  },
+});
+
 export const deleteDeck = mutation({
   args: {
     deckId: v.id("decks"),

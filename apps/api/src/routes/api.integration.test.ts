@@ -92,6 +92,10 @@ function makeRepositoryMock(): Repository {
       tags: ["n5"],
     })),
     deleteWord: vi.fn(async () => ({ ok: true })),
+    deleteWordsBatch: vi.fn(async (_userId: string, _deckId: string, input: { wordIds: string[] }) => ({
+      deleted: input.wordIds.length,
+      failedWordIds: [],
+    })),
     startPracticeSession: vi.fn(async () => ({
       sessionId: "session_1",
       typingMode: "language_specific" as const,
@@ -247,6 +251,17 @@ describe("API integration", () => {
     });
     expect(createBatchRes.statusCode).toBe(200);
     expect(createBatchRes.json().created).toBe(2);
+
+    const deleteBatchRes = await app.inject({
+      method: "POST",
+      url: "/api/decks/deck_1/words/batch-delete",
+      headers: auth,
+      payload: {
+        wordIds: ["word_1", "word_2"],
+      },
+    });
+    expect(deleteBatchRes.statusCode).toBe(200);
+    expect(deleteBatchRes.json().deleted).toBe(2);
 
     const listWordsRes = await app.inject({
       method: "GET",

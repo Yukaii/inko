@@ -3,6 +3,7 @@ import {
   CreateDeckSchema,
   CreateWordsBatchSchema,
   CreateWordSchema,
+  DeleteWordsBatchSchema,
   UpdateDeckSchema,
   UpdateWordSchema,
 } from "@inko/shared";
@@ -82,6 +83,16 @@ export async function deckRoutes(app: FastifyInstance, repo: Repository = reposi
     try {
       const { wordId } = request.params as { wordId: string };
       return await repo.deleteWord(request.auth!.userId, wordId);
+    } catch (error) {
+      rethrowAsHttp(app, error);
+    }
+  });
+
+  app.post("/api/decks/:deckId/words/batch-delete", { preHandler: requireAuth }, async (request) => {
+    try {
+      const body = DeleteWordsBatchSchema.parse(request.body);
+      const { deckId } = request.params as { deckId: string };
+      return await repo.deleteWordsBatch(request.auth!.userId, deckId, body);
     } catch (error) {
       rethrowAsHttp(app, error);
     }

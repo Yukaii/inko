@@ -140,6 +140,12 @@ export const CreateWordSchema = z.object({
     audioUrl: z.string().url().optional(),
     tags: z.array(z.string()).default([]),
 });
+export const CreateWordsBatchSchema = z.object({
+    words: z.array(CreateWordSchema).min(1).max(1000),
+});
+export const DeleteWordsBatchSchema = z.object({
+    wordIds: z.array(z.string()).min(1).max(1000),
+});
 export const UpdateWordSchema = CreateWordSchema.partial();
 export const StartPracticeSessionSchema = z.object({
     deckId: z.string(),
