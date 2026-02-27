@@ -14,6 +14,8 @@ export async function buildServer(options?: { repository?: Repository }) {
 
   await app.register(cors, {
     origin: [env.FRONTEND_URL],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    credentials: true,
   });
   await app.register(sensible);
 
