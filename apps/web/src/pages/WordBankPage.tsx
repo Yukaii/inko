@@ -25,6 +25,8 @@ export function WordBankPage() {
   const [addTab, setAddTab] = useState<AddTab>("single");
   const [importText, setImportText] = useState("");
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [importMode, setImportMode] = useState<"text" | "csv">("text");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [focusedDeckIndex, setFocusedDeckIndex] = useState(-1);
 
   const [wordForm, setWordForm] = useState({
@@ -250,34 +252,135 @@ export function WordBankPage() {
   });
 
   // ---- bulk import ----
-  const handleBulkImport = useCallback(async () => {
-    if (!selectedDeckId || !importText.trim()) return;
+  const [importPreview, setImportPreview] = useState<Array<Record<string, string>> | null>(null);
+  const [importColumnMapping, setImportColumnMapping] = useState<Record<number, string>>({});
+  const [rawImportData, setRawImportData] = useState<{ headers: string[]; rows: string[][] } | null>(null);
+
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  const detectDelimiter = (text: string): string => {
+    const firstLine = text.split('\n')[0] || '';
+    const tabCount = (firstLine.match(/\t/g) || []).length;
+    const commaCount = (firstLine.match(/,/g) || []).length;
+    return tabCount > commaCount ? '\t' : ',';
+  };
+
+  const parseImportData = (text: string) => {
+    const delimiter = detectDelimiter(text);
+    const lines = text.split('\n').filter(l => l.trim());
+    
+    if (lines.length === 0) return null;
+
+    // Parse all lines
+    const allRows = lines.map(line => 
+      delimiter === '\t' ? line.split('\t').map(s => s.trim()) : parseCSVLine(line)
+    );
+
+    // Detect if first row is a header (contains text like 'target', 'meaning', etc.)
+    const firstRow = allRows[0];
+    const headerKeywords = ['target', 'word', 'reading', 'meaning', 'definition', 'example', 'sentence', 'romanization', 'romaji', 'tags'];
+    const hasHeader = firstRow.some(cell => 
+      headerKeywords.some(keyword => cell.toLowerCase().includes(keyword))
+    );
+
+    const headers = hasHeader ? firstRow : firstRow.map((_, i) => `Column ${i + 1}`);
+    const dataRows = hasHeader ? allRows.slice(1) : allRows;
+
+    return { headers, rows: dataRows };
+  };
+
+  const autoMapColumns = (headers: string[]): Record<number, string> => {
+    const mapping: Record<number, string> = {};
+    const lowerHeaders = headers.map(h => h.toLowerCase());
+    
+    for (let index = 0; index < lowerHeaders.length; index++) {
+      const header = lowerHeaders[index];
+      if (header.includes('target') || header.includes('word') || header.includes('kanji') || header.includes('japanese')) {
+        mapping[index] = 'target';
+      } else if (header.includes('reading') || header.includes('furigana') || header.includes('kana')) {
+        mapping[index] = 'reading';
+      } else if (header.includes('meaning') || header.includes('definition') || header.includes('english') || header.includes('translation')) {
+        mapping[index] = 'meaning';
+      } else if (header.includes('romanization') || header.includes('romaji')) {
+        mapping[index] = 'romanization';
+      } else if (header.includes('example') || header.includes('sentence')) {
+        mapping[index] = 'example';
+      } else if (header.includes('tag') || header.includes('category')) {
+        mapping[index] = 'tags';
+      } else {
+        mapping[index] = '';
+      }
+    }
+
+    return mapping;
+  };
+
+  const processImportData = async () => {
+    if (!selectedDeckId || !rawImportData) return;
+    
     setImportStatus("Importing...");
-
-    const lines = importText
-      .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean);
-
     let imported = 0;
     let failed = 0;
 
-    for (const line of lines) {
-      // Support tab-separated or comma-separated: target, reading, meaning
-      const parts = line.includes("\t") ? line.split("\t") : line.split(",");
-      const [target, reading, meaning] = parts.map((p) => p.trim());
+    for (const row of rawImportData.rows) {
+      const data: Record<string, string | undefined> = {
+        target: undefined,
+        reading: undefined,
+        meaning: undefined,
+        romanization: undefined,
+        example: undefined,
+        tags: undefined,
+      };
 
-      if (!target || !meaning) {
+      // Map columns to fields
+      for (const [colIndex, field] of Object.entries(importColumnMapping)) {
+        if (field && field !== '') {
+          const value = row[Number.parseInt(colIndex)];
+          if (field === 'tags') {
+            data.tags = value;
+          } else {
+            data[field] = value || undefined;
+          }
+        }
+      }
+
+      if (!data.target || !data.meaning) {
         failed++;
         continue;
       }
 
       try {
         await api.createWord(token ?? "", selectedDeckId, {
-          target,
-          reading: reading || undefined,
-          meaning,
-          tags: [],
+          target: data.target,
+          reading: data.reading,
+          meaning: data.meaning,
+          romanization: data.romanization,
+          example: data.example,
+          tags: data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
         });
         imported++;
       } catch {
@@ -285,11 +388,45 @@ export function WordBankPage() {
       }
     }
 
-    setImportText("");
     setImportStatus(`Done: ${imported} imported${failed ? `, ${failed} failed` : ""}`);
+    setImportPreview(null);
+    setRawImportData(null);
+    setImportColumnMapping({});
     await queryClient.invalidateQueries({ queryKey: ["words", selectedDeckId] });
     setTimeout(() => setImportStatus(null), 4000);
-  }, [selectedDeckId, importText, token, queryClient]);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      if (content) {
+        const parsed = parseImportData(content);
+        if (parsed && parsed.rows.length > 0) {
+          setRawImportData(parsed);
+          const mapping = autoMapColumns(parsed.headers);
+          setImportColumnMapping(mapping);
+          
+          // Generate preview
+          const preview = parsed.rows.slice(0, 5).map(row => {
+            const item: Record<string, string> = {};
+            for (const [colIndex, field] of Object.entries(mapping)) {
+              if (field && field !== '') {
+                item[field] = row[Number.parseInt(colIndex)] || '';
+              }
+            }
+            return item;
+          });
+          setImportPreview(preview);
+        }
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = "";
+  };
 
   // ---- field updater ----
   const updateField = (field: keyof typeof wordForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -523,21 +660,170 @@ export function WordBankPage() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              <p className="m-0 text-[13px] text-text-secondary">
-                Paste words below, one per line. Format: <code>target, reading, meaning</code>
-              </p>
-              <textarea
-                className="min-h-40 w-full resize-y rounded-[10px] border border-[#2f2f2f] bg-[#141414] p-[14px] font-mono text-sm leading-relaxed text-inherit"
-                placeholder={"食べる\tたべる\tto eat\n飲む\tのむ\tto drink\n読む\tよむ\tto read"}
-                value={importText}
-                onChange={(e) => setImportText(e.target.value)}
-              />
+              {!rawImportData ? (
+                <>
+                  <div className="flex flex-col gap-3">
+                    <p className="m-0 text-[13px] text-text-secondary">
+                      Upload a CSV/TSV file or paste data directly. Supported columns: target, reading, meaning, romanization, example, tags
+                    </p>
+                    
+                    {/* File Upload */}
+                    <div className="flex items-center gap-3">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".csv,.tsv,.txt"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                      />
+                      <button
+                        type="button"
+                        className="px-4 py-2 text-sm"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        Choose File
+                      </button>
+                      <span className="text-[13px] text-text-secondary">or paste below</span>
+                    </div>
+
+                    {/* Text Input */}
+                    <textarea
+                      className="min-h-40 w-full resize-y rounded-[10px] border border-[#2f2f2f] bg-[#141414] p-[14px] font-mono text-sm leading-relaxed text-inherit"
+                      placeholder={`target,reading,meaning,romanization,example,tags
+食べる,たべる,to eat,taberu,私は寿司を食べます。,verb,n5
+飲む,のむ,to drink,nomu,お茶を飲みます。,verb,n5
+読む,よむ,to read,yomu,本を読みます。,verb,n5`}
+                      value={importText}
+                      onChange={(e) => setImportText(e.target.value)}
+                    />
+                    
+                    <button 
+                      type="button" 
+                      className="w-fit px-6 py-3 text-sm" 
+                      onClick={() => {
+                        if (importText.trim()) {
+                          const parsed = parseImportData(importText);
+                          if (parsed && parsed.rows.length > 0) {
+                            setRawImportData(parsed);
+                            const mapping = autoMapColumns(parsed.headers);
+                            setImportColumnMapping(mapping);
+                            
+                            // Generate preview
+                            const preview = parsed.rows.slice(0, 5).map(row => {
+                              const item: Record<string, string> = {};
+                              for (const [colIndex, field] of Object.entries(mapping)) {
+                                if (field && field !== '') {
+                                  item[field] = row[Number.parseInt(colIndex)] || '';
+                                }
+                              }
+                              return item;
+                            });
+                            setImportPreview(preview);
+                          }
+                        }
+                      }} 
+                      disabled={!importText.trim()}
+                    >
+                      Preview Import
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Field Mapping */}
+                  <div className="flex flex-col gap-3 rounded-lg border border-[#2f2f2f] bg-bg-elevated p-4">
+                    <h3 className="m-0 text-sm font-semibold">Field Mapping</h3>
+                    <p className="m-0 text-[12px] text-text-secondary">Map each column to the correct field:</p>
+                    
+                     <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                      {rawImportData.headers.map((header, index) => (
+                        <div key={`header-${header}-${index}`} className="flex flex-col gap-1">
+                          <label htmlFor={`col-map-${index}`} className="text-[11px] text-text-secondary truncate" title={header}>
+                            {header}
+                          </label>
+                          <select
+                            id={`col-map-${index}`}
+                            className="text-sm py-1 px-2"
+                            value={importColumnMapping[index] || ''}
+                            onChange={(e) => {
+                              setImportColumnMapping(prev => ({
+                                ...prev,
+                                [index]: e.target.value
+                              }));
+                            }}
+                          >
+                            <option value="">-- Skip --</option>
+                            <option value="target">Target (required)</option>
+                            <option value="reading">Reading</option>
+                            <option value="meaning">Meaning (required)</option>
+                            <option value="romanization">Romanization</option>
+                            <option value="example">Example</option>
+                            <option value="tags">Tags</option>
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Preview */}
+                  {importPreview && importPreview.length > 0 && (
+                    <div className="flex flex-col gap-3">
+                      <h3 className="m-0 text-sm font-semibold">Preview ({importPreview.length} of {rawImportData.rows.length} rows)</h3>
+                      <div className="max-h-60 overflow-auto rounded-lg border border-[#2f2f2f]">
+                        <table className="w-full text-sm">
+                          <thead className="sticky top-0 bg-bg-elevated">
+                            <tr>
+                              <th className="px-3 py-2 text-left text-[11px] text-text-secondary">Target</th>
+                              <th className="px-3 py-2 text-left text-[11px] text-text-secondary">Reading</th>
+                              <th className="px-3 py-2 text-left text-[11px] text-text-secondary">Meaning</th>
+                              <th className="px-3 py-2 text-left text-[11px] text-text-secondary">Example</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {importPreview.map((row, i) => (
+                              <tr key={i} className="border-t border-[#2f2f2f]">
+                                <td className="px-3 py-2 [font-family:var(--font-jp)]">{row.target || '-'}</td>
+                                <td className="px-3 py-2 text-text-secondary [font-family:var(--font-jp)]">{row.reading || '-'}</td>
+                                <td className="px-3 py-2 text-text-secondary">{row.meaning || '-'}</td>
+                                <td className="px-3 py-2 text-text-secondary [font-family:var(--font-jp)] truncate max-w-[200px]" title={row.example}>
+                                  {row.example || '-'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Import Actions */}
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      className="bg-bg-elevated text-text-primary"
+                      onClick={() => {
+                        setRawImportData(null);
+                        setImportPreview(null);
+                        setImportColumnMapping({});
+                        setImportText('');
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={processImportData}
+                      disabled={!Object.values(importColumnMapping).includes('target') || !Object.values(importColumnMapping).includes('meaning')}
+                    >
+                      Import {rawImportData.rows.length} Words
+                    </button>
+                  </div>
+                </>
+              )}
+              
               {importStatus && (
                 <p className="m-0 text-[13px] text-accent-teal">{importStatus}</p>
               )}
-              <button type="button" className="w-fit px-6 py-3 text-sm" onClick={handleBulkImport} disabled={!importText.trim()}>
-                Import Words
-              </button>
             </div>
           )}
         </section>
