@@ -1,16 +1,25 @@
 import type { FastifyInstance } from "fastify";
 import { MagicLinkRequestSchema, MagicLinkVerifySchema } from "@inko/shared";
 import { consumeMagicToken, createMagicToken, issueAccessToken } from "../lib/auth.js";
+import type { Mailer } from "../lib/mailer.js";
 import { repository, type Repository } from "../services/repository.js";
 import { requireAuth } from "../plugins/auth.js";
 
-export async function authRoutes(app: FastifyInstance, repo: Repository = repository) {
+export async function authRoutes(app: FastifyInstance, repo: Repository = repository, mailer: Mailer) {
   app.post("/api/auth/magic-link/request", async (request) => {
     const body = MagicLinkRequestSchema.parse(request.body);
-    const token = createMagicToken(body.email.toLowerCase());
+    const email = body.email.toLowerCase();
+    const token = createMagicToken(email);
 
-    app.log.info({ email: body.email, token }, "magic link token generated");
-    return { ok: true };
+    try {
+      await mailer.sendMagicLink({ email, token });
+      app.log.info({ email, mailProvider: mailer.kind }, "magic link sent");
+    } catch (error) {
+      app.log.error({ err: error, email, mailProvider: mailer.kind }, "failed to send magic link");
+      throw app.httpErrors.serviceUnavailable("Failed to send magic link");
+    }
+
+    return mailer.kind === "log" ? { ok: true, devToken: token } : { ok: true };
   });
 
   app.post("/api/auth/magic-link/verify", async (request, reply) => {

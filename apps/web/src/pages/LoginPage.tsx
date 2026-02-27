@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
@@ -11,11 +11,38 @@ export function LoginPage() {
   const { setToken } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get("token");
+    if (!token) return;
+
+    setTokenInput(token);
+
+    const verifyFromLink = async () => {
+      setLoading(true);
+      try {
+        const result = await api.verifyMagicLink(token);
+        setToken(result.accessToken);
+        navigate("/dashboard", { replace: true });
+      } catch (error) {
+        setMessage(String(error));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void verifyFromLink();
+  }, [navigate, setToken]);
+
   const requestLink = async () => {
     setLoading(true);
     try {
-      await api.requestMagicLink(email);
-      setMessage("Magic link token generated in API logs. Paste token below.");
+      const result = await api.requestMagicLink(email);
+      if (result.devToken) {
+        setTokenInput(result.devToken);
+        setMessage("Magic link generated locally. Token auto-filled below for dev.");
+      } else {
+        setMessage("Magic link sent. Check your email.");
+      }
     } catch (error) {
       setMessage(String(error));
     } finally {
@@ -69,7 +96,7 @@ export function LoginPage() {
             id="token-input"
             value={tokenInput}
             onChange={(e) => setTokenInput(e.target.value)}
-            placeholder="paste token from API logs"
+            placeholder="paste token if needed"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
