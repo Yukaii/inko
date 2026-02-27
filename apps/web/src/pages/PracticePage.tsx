@@ -92,8 +92,20 @@ export function getTypingFeedback(input: {
 }
 
 export function isEscDoublePress(lastEscPressedAt: number | null, now: number, windowMs = 1000) {
-  if (lastEscPressedAt === null) return false;
+  if (!lastEscPressedAt) return false;
   return now - lastEscPressedAt <= windowMs;
+}
+
+export function getPracticeCompletionTitle(input: {
+  sessionCapped: boolean;
+  cardsCompleted: number;
+  sessionTargetCards: number;
+  t: (key: string) => string;
+}) {
+  if (input.sessionCapped || (input.sessionTargetCards > 0 && input.cardsCompleted >= input.sessionTargetCards)) {
+    return input.t("practice.daily_target_reached");
+  }
+  return input.t("practice.session_complete");
 }
 
 export function PracticePage() {
@@ -125,16 +137,7 @@ export function PracticePage() {
   const hiddenInputRef = useRef<HTMLInputElement | null>(null);
   const zoneRef = useRef<HTMLDivElement | null>(null);
 
-  const getPracticeCompletionTitle = useCallback((input: {
-    sessionCapped: boolean;
-    cardsCompleted: number;
-    sessionTargetCards: number;
-  }) => {
-    if (input.sessionCapped || (input.sessionTargetCards > 0 && input.cardsCompleted >= input.sessionTargetCards)) {
-      return t("practice.daily_target_reached");
-    }
-    return t("practice.session_complete");
-  }, [t]);
+
 
   useEffect(() => {
     if (!deckId || !token) return;
@@ -415,6 +418,7 @@ export function PracticePage() {
       sessionCapped,
       cardsCompleted: completedCards,
       sessionTargetCards,
+      t,
     });
 
     return (

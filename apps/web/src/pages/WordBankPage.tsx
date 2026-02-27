@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { LANGUAGE_LABELS, type LanguageCode, SUPPORTED_LANGUAGES } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
@@ -44,6 +44,9 @@ export function WordBankPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [focusedDeckIndex, setFocusedDeckIndex] = useState(-1);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const isResizingRef = useRef(false);
 
   const [wordForm, setWordForm] = useState({
     target: "",
@@ -293,7 +296,9 @@ export function WordBankPage() {
     <div className="flex h-screen overflow-hidden -m-5 md:-m-10 bg-bg-page relative">
       {/* Deck Sidebar Panel */}
       <aside 
-        className={`hidden md:flex flex-col border-r border-[var(--border-subtle)] bg-bg-card transition-all duration-300 relative h-full ${isPanelCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-[320px] opacity-100'}`}
+        ref={sidebarRef}
+        className={`hidden md:flex flex-col border-r border-[var(--border-subtle)] bg-bg-card transition-all duration-300 relative h-full ${isPanelCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'opacity-100'}`}
+        style={{ width: isPanelCollapsed ? 0 : sidebarWidth }}
       >
         <div className="flex flex-col h-full overflow-y-auto p-6 gap-8">
           <section className="flex flex-col gap-4">
@@ -451,15 +456,63 @@ export function WordBankPage() {
           )}
         </div>
         
-        <button 
-          type="button"
-          onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
-          className="absolute -right-3 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-bg-card text-text-secondary shadow-sm hover:text-text-primary cursor-pointer"
-          aria-label={isPanelCollapsed ? "Expand panel" : "Collapse panel"}
-        >
-          {isPanelCollapsed ? "❯" : "❮"}
-        </button>
       </aside>
+
+      {/* Resize Handle - Outside aside so it's always accessible */}
+      {!isPanelCollapsed && (
+        <div
+          className="hidden md:block fixed z-20 cursor-col-resize group"
+          style={{ 
+            left: sidebarWidth,
+            top: 0,
+            height: '100vh',
+            width: '4px',
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            isResizingRef.current = true;
+            const startX = e.clientX;
+            const startWidth = sidebarWidth;
+            
+            const handleMouseMove = (moveEvent: MouseEvent) => {
+              if (!isResizingRef.current) return;
+              moveEvent.preventDefault();
+              const delta = moveEvent.clientX - startX;
+              const newWidth = Math.max(240, Math.min(600, startWidth + delta));
+              setSidebarWidth(newWidth);
+            };
+            
+            const handleMouseUp = () => {
+              isResizingRef.current = false;
+              document.removeEventListener('mousemove', handleMouseMove);
+              document.removeEventListener('mouseup', handleMouseUp);
+            };
+            
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+          }}
+        >
+          <div className="h-full w-[2px] mx-auto bg-transparent group-hover:bg-accent-orange transition-colors" />
+        </div>
+      )}
+      
+      {/* Toggle Button - Fixed position outside aside */}
+      <button 
+        type="button"
+        onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
+        className="hidden md:flex fixed z-30 h-6 w-6 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-bg-card text-text-secondary shadow-sm hover:text-text-primary cursor-pointer transition-all duration-300"
+        style={{ 
+          left: isPanelCollapsed ? '0px' : sidebarWidth - 12,
+          top: '50%',
+          transform: 'translateY(-50%)',
+        }}
+        aria-label={isPanelCollapsed ? "Expand panel" : "Collapse panel"}
+      >
+        <ChevronLeft 
+          size={14} 
+          className={`transition-transform duration-300 ${isPanelCollapsed ? 'rotate-180' : ''}`}
+        />
+      </button>
 
       {/* Main Words Content Area */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-bg-page relative">
@@ -469,7 +522,7 @@ export function WordBankPage() {
             onClick={() => setIsPanelCollapsed(false)}
             className="hidden md:flex absolute left-4 top-20 z-10 h-8 w-8 items-center justify-center rounded-lg bg-bg-card border border-[var(--border-subtle)] text-text-secondary shadow-md hover:text-text-primary cursor-pointer animate-in fade-in zoom-in-95 duration-200"
           >
-            ❯
+            <ChevronRight size={18} />
           </button>
         )}
 

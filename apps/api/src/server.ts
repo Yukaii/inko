@@ -1,4 +1,4 @@
-import Fastify from "fastify";
+import Fastify, { type FastifyError } from "fastify";
 import cors from "@fastify/cors";
 import sensible from "@fastify/sensible";
 import { ErrorCode } from "@inko/shared";
@@ -15,7 +15,7 @@ export async function buildServer(options?: { repository?: Repository; mailer?: 
   const repo = options?.repository ?? repository;
   const mailer = options?.mailer ?? createMailer();
 
-  app.setErrorHandler((error, request, reply) => {
+  app.setErrorHandler((error: FastifyError, request, reply) => {
     app.log.error(error);
 
     if (error.validation) {
@@ -28,7 +28,7 @@ export async function buildServer(options?: { repository?: Repository; mailer?: 
     }
 
     const statusCode = error.statusCode || 500;
-    const code = (error as any).code || (statusCode >= 500 ? ErrorCode.INTERNAL_ERROR : undefined);
+    const code = error.code || (statusCode >= 500 ? ErrorCode.INTERNAL_ERROR : undefined);
 
     reply.status(statusCode).send({
       statusCode,
