@@ -7,6 +7,7 @@ import { DashboardPage } from "./pages/DashboardPage.js";
 import { WordBankPage } from "./pages/WordBankPage.js";
 import { PracticePage } from "./pages/PracticePage.js";
 import { SettingsPage } from "./pages/SettingsPage.js";
+import { LandingPage } from "./pages/LandingPage.js";
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
@@ -29,6 +30,7 @@ export function App() {
         Skip to main content
       </a>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route
           path="/dashboard"

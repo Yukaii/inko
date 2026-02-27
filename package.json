@@ -19,5 +19,8 @@
     "concurrently": "^9.1.2",
     "convex": "^1.20.0",
     "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@google/gemini-cli": "^0.30.0"
   }
 }
