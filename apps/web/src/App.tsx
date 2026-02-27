@@ -49,6 +49,14 @@ export function App() {
           }
         />
         <Route
+          path="/word-bank/:deckId"
+          element={
+            <ProtectedLayout>
+              <WordBankPage />
+            </ProtectedLayout>
+          }
+        />
+        <Route
           path="/practice/:deckId"
           element={
             <ProtectedLayout>
