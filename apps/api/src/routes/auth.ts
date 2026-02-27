@@ -1,5 +1,10 @@
 import type { FastifyInstance } from "fastify";
-import { MagicLinkRequestSchema, MagicLinkVerifySchema, UpdateProfileSchema } from "@inko/shared";
+import {
+  ErrorCode,
+  MagicLinkRequestSchema,
+  MagicLinkVerifySchema,
+  UpdateProfileSchema,
+} from "@inko/shared";
 import { consumeMagicToken, createMagicToken, issueAccessToken } from "../lib/auth";
 import type { Mailer } from "../lib/mailer";
 import { repository, type Repository } from "../services/repository";
@@ -16,7 +21,9 @@ export async function authRoutes(app: FastifyInstance, repo: Repository = reposi
       app.log.info({ email, mailProvider: mailer.kind }, "magic link sent");
     } catch (error) {
       app.log.error({ err: error, email, mailProvider: mailer.kind }, "failed to send magic link");
-      throw app.httpErrors.serviceUnavailable("Failed to send magic link");
+      const err = app.httpErrors.serviceUnavailable("Failed to send magic link");
+      (err as any).code = ErrorCode.SERVICE_UNAVAILABLE;
+      throw err;
     }
 
     return mailer.kind === "log" ? { ok: true, devToken: token } : { ok: true };
@@ -27,7 +34,12 @@ export async function authRoutes(app: FastifyInstance, repo: Repository = reposi
     const email = consumeMagicToken(body.token);
 
     if (!email) {
-      return reply.badRequest("Invalid or expired token");
+      return reply.status(400).send({
+        statusCode: 400,
+        code: ErrorCode.INVALID_TOKEN,
+        error: "Bad Request",
+        message: "Invalid or expired token",
+      });
     }
 
     const user = await repo.getOrCreateUser(email);
@@ -43,7 +55,12 @@ export async function authRoutes(app: FastifyInstance, repo: Repository = reposi
   app.get("/api/me", { preHandler: requireAuth }, async (request, reply) => {
     const user = await repo.getUserById(request.auth!.userId);
     if (!user) {
-      return reply.notFound("User not found");
+      return reply.status(404).send({
+        statusCode: 404,
+        code: ErrorCode.USER_NOT_FOUND,
+        error: "Not Found",
+        message: "User not found",
+      });
     }
     return user;
   });
@@ -52,7 +69,12 @@ export async function authRoutes(app: FastifyInstance, repo: Repository = reposi
     const body = UpdateProfileSchema.parse(request.body);
     const user = await repo.updateUserProfile(request.auth!.userId, body);
     if (!user) {
-      return reply.notFound("User not found");
+      return reply.status(404).send({
+        statusCode: 404,
+        code: ErrorCode.USER_NOT_FOUND,
+        error: "Not Found",
+        message: "User not found",
+      });
     }
     return user;
   });

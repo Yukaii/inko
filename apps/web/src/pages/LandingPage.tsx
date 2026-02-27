@@ -1,5 +1,7 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { PracticeSimulator } from "../components/PracticeSimulator";
 import {
   Keyboard,
@@ -8,6 +10,7 @@ import {
   Layers,
   Zap,
   Smartphone,
+  Globe,
 } from "lucide-react";
 
 const fadeInUp = {
@@ -25,6 +28,28 @@ const staggerContainer = {
 };
 
 export function LandingPage() {
+  const { t, i18n } = useTranslation();
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const langMenuRef = useRef<HTMLDivElement>(null);
+
+  const languages = [
+    { code: "en", label: "English", short: "EN" },
+    { code: "ja", label: "日本語", short: "JA" },
+    { code: "zh-TW", label: "繁體中文", short: "ZH" },
+  ];
+
+  const currentLang = languages.find(l => i18n.language.startsWith(l.code)) || languages[0];
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
+        setShowLangMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
     <div className="min-h-screen bg-bg-page text-text-primary selection:bg-accent-orange/30">
       {/* Nav Bar */}
@@ -38,19 +63,66 @@ export function LandingPage() {
           </Link>
           <div className="hidden items-center gap-6 md:flex font-mono text-sm text-text-secondary">
             <a href="#how-it-works" className="hover:text-text-primary transition-colors">
-              how_it_works
+              {t("landing.nav.how_it_works")}
             </a>
             <a href="#features" className="hover:text-text-primary transition-colors">
-              features
+              {t("landing.nav.features")}
             </a>
           </div>
         </div>
-        <Link
-          to="/login"
-          className="rounded-base bg-accent-orange px-5 py-2.5 font-mono text-xs font-semibold text-text-on-accent transition-transform hover:scale-105 active:scale-95"
-        >
-          get_started
-        </Link>
+        <div className="flex items-center gap-4">
+          <div className="relative" ref={langMenuRef}>
+            <button
+              type="button"
+              onClick={() => setShowLangMenu(!showLangMenu)}
+              title={t("common.change_language")}
+              className="flex items-center gap-2 rounded-base bg-accent-orange px-4 py-2.5 font-mono text-xs font-semibold text-text-on-accent transition-transform hover:scale-105 active:scale-95"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span className="min-w-[20px] text-left uppercase">{currentLang.short}</span>
+              <span className={`text-[8px] transition-transform duration-200 ${showLangMenu ? "rotate-180" : ""}`}>▼</span>
+            </button>
+            
+            <AnimatePresence>
+              {showLangMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                  transition={{ duration: 0.1 }}
+                  className="absolute right-0 mt-2 flex w-40 flex-col gap-1 overflow-hidden rounded-xl border border-white/10 bg-[#1A1A1A] p-1.5 shadow-2xl ring-1 ring-black/50"
+                >
+                  {languages.map((lang) => {
+                    const isActive = i18n.language.startsWith(lang.code);
+                    return (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        onClick={() => {
+                          void i18n.changeLanguage(lang.code);
+                          setShowLangMenu(false);
+                        }}
+                        className={`flex w-full items-center rounded-lg px-3 py-2 text-left font-mono text-[11px] font-bold transition-all ${
+                          isActive 
+                            ? "bg-accent-teal text-text-on-accent" 
+                            : "text-white/80 hover:bg-white/10 hover:text-white"
+                        }`}
+                      >
+                        {lang.label}
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          <Link
+            to="/login"
+            className="rounded-base bg-accent-orange px-5 py-2.5 font-mono text-xs font-semibold text-text-on-accent transition-transform hover:scale-105 active:scale-95"
+          >
+            {t("landing.nav.get_started")}
+          </Link>
+        </div>
       </nav>
 
       {/* Hero Section */}
@@ -65,20 +137,19 @@ export function LandingPage() {
             variants={fadeInUp}
             className="mb-8 inline-flex items-center justify-center rounded-full bg-bg-elevated px-3 py-1.5 font-mono text-[10px] font-bold text-accent-teal uppercase tracking-wider"
           >
-            THE_FUTURE_OF_RETENTION
+            {t("landing.hero.badge")}
           </motion.div>
           <motion.h1 
             variants={fadeInUp}
             className="mb-6 font-display text-5xl font-bold leading-tight md:text-7xl"
           >
-            type it until you own it
+            {t("landing.hero.title")}
           </motion.h1>
           <motion.p 
             variants={fadeInUp}
             className="mb-10 max-w-[600px] font-mono text-base text-text-secondary md:text-lg leading-relaxed"
           >
-            The flashcard app that makes you prove you know it. Type your answers,
-            build muscle memory, and never forget again.
+            {t("landing.hero.subtitle")}
           </motion.p>
           <motion.div 
             variants={fadeInUp}
@@ -88,13 +159,13 @@ export function LandingPage() {
               to="/login"
               className="rounded-base bg-accent-orange px-7 py-3.5 text-text-on-accent transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-accent-orange/20"
             >
-              Start Typing
+              {t("landing.hero.cta_primary")}
             </Link>
             <a
               href="#how-it-works"
               className="rounded-base border border-text-primary px-7 py-3.5 text-text-primary transition-colors hover:bg-bg-elevated"
             >
-              Learn More
+              {t("landing.hero.cta_secondary")}
             </a>
           </motion.div>
         </motion.div>
@@ -126,10 +197,10 @@ export function LandingPage() {
             className="mb-12 flex flex-col gap-2"
           >
             <h2 className="font-display text-3xl md:text-4xl font-bold text-text-primary">
-              // how_it_works
+              {t("landing.how_it_works.title")}
             </h2>
             <p className="font-mono text-sm text-text-secondary">
-              Three steps to never forgetting again
+              {t("landing.how_it_works.subtitle")}
             </p>
           </motion.div>
           <motion.div 
@@ -140,9 +211,9 @@ export function LandingPage() {
             className="grid gap-6 md:grid-cols-3"
           >
             {[
-              { num: "01", title: "Create Decks", desc: "Build custom decks for any subject. Add your terms and definitions." },
-              { num: "02", title: "Type Answers", desc: "No multiple choice. Recall the answer from memory and type it out." },
-              { num: "03", title: "Review Smartly", desc: "Our algorithm schedules reviews just before you're likely to forget." }
+              { num: "01", title: t("landing.how_it_works.step1.title"), desc: t("landing.how_it_works.step1.desc") },
+              { num: "02", title: t("landing.how_it_works.step2.title"), desc: t("landing.how_it_works.step2.desc") },
+              { num: "03", title: t("landing.how_it_works.step3.title"), desc: t("landing.how_it_works.step3.desc") }
             ].map((step) => (
               <motion.div
                 key={step.num}
@@ -151,7 +222,7 @@ export function LandingPage() {
                 className="flex flex-col gap-4 rounded-base bg-bg-elevated p-6 transition-colors border border-transparent hover:border-accent-teal/30"
               >
                 <div className="flex items-center justify-between font-display">
-                  <span className="text-xl font-bold">Step {step.num}</span>
+                  <span className="text-xl font-bold">{t("common.step", "Step")} {step.num}</span>
                   <div className="h-8 w-8 rounded-full bg-bg-card flex items-center justify-center text-accent-teal font-bold">{step.num.replace('0','')}</div>
                 </div>
                 <div>
@@ -176,13 +247,13 @@ export function LandingPage() {
             className="mb-12 flex flex-col items-center text-center gap-4"
           >
             <div className="inline-flex rounded-base bg-bg-elevated px-3 py-1.5 font-mono text-[11px] font-semibold text-accent-teal">
-              // features
+              {t("landing.features.badge")}
             </div>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-text-primary">
-              everything_you_need
+              {t("landing.features.title")}
             </h2>
             <p className="max-w-[500px] font-mono text-sm text-text-secondary">
-              Built for learners who want real retention, not just recognition.
+              {t("landing.features.subtitle")}
             </p>
           </motion.div>
 
@@ -196,38 +267,38 @@ export function LandingPage() {
             {[
               {
                 icon: Keyboard,
-                title: "typing_first",
-                desc: "No multiple choice. No matching. Type your answers from memory to build real neural pathways.",
+                title: t("landing.features.typing_first.title"),
+                desc: t("landing.features.typing_first.desc"),
                 color: "text-accent-orange",
               },
               {
                 icon: Repeat,
-                title: "spaced_repetition",
-                desc: "Smart scheduling surfaces cards right before you forget. Every review is perfectly timed.",
+                title: t("landing.features.spaced_repetition.title"),
+                desc: t("landing.features.spaced_repetition.desc"),
                 color: "text-accent-orange",
               },
               {
                 icon: TrendingUp,
-                title: "progress_tracking",
-                desc: "Visual dashboards show mastery levels, streaks, and weak spots so you know exactly where to focus.",
+                title: t("landing.features.progress_tracking.title"),
+                desc: t("landing.features.progress_tracking.desc"),
                 color: "text-accent-teal",
               },
               {
                 icon: Layers,
-                title: "custom_decks",
-                desc: "Create decks for any subject — languages, code syntax, med terms, history dates. Your knowledge, your way.",
+                title: t("landing.features.custom_decks.title"),
+                desc: t("landing.features.custom_decks.desc"),
                 color: "text-accent-teal",
               },
               {
                 icon: Zap,
-                title: "streak_system",
-                desc: "Daily streaks and scoring keep you motivated. Consistency beats cramming every time.",
+                title: t("landing.features.streak_system.title"),
+                desc: t("landing.features.streak_system.desc"),
                 color: "text-accent-orange",
               },
               {
                 icon: Smartphone,
-                title: "practice_anywhere",
-                desc: "Works on any device with a keyboard. Practice on your commute, at your desk, or in bed.",
+                title: t("landing.features.practice_anywhere.title"),
+                desc: t("landing.features.practice_anywhere.desc"),
                 color: "text-accent-teal",
               },
             ].map((feat, i) => (
@@ -260,17 +331,17 @@ export function LandingPage() {
           className="mx-auto max-w-[1200px] flex flex-col items-center text-center gap-8 rounded-[24px] bg-gradient-to-t from-[#1A1A1A] to-[#2D2D2D] p-12 md:p-20 shadow-2xl shadow-black/50"
         >
           <h2 className="font-display text-4xl md:text-[64px] font-bold leading-tight text-text-primary">
-            Master anything by typing.
+            {t("landing.cta.title")}
           </h2>
           <p className="max-w-[550px] font-mono text-sm md:text-base leading-relaxed text-text-secondary">
-            Type your way to lasting knowledge.
+            {t("landing.cta.subtitle")}
           </p>
           <div className="flex flex-col items-center gap-4 mt-4">
             <Link
               to="/login"
               className="rounded-base bg-accent-orange px-8 py-4 font-mono font-semibold text-text-on-accent transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-accent-orange/20"
             >
-              Start Typing Now
+              {t("landing.cta.button")}
             </Link>
           </div>
         </motion.div>
@@ -285,22 +356,21 @@ export function LandingPage() {
                 inko_
               </span>
               <p className="font-mono text-xs leading-relaxed text-text-secondary">
-                Type it until you own it. The flashcard app that builds real
-                recall through active typing practice.
+                {t("landing.footer.desc")}
               </p>
             </div>
             <div className="flex flex-wrap gap-16 font-mono text-sm">
               <div className="flex flex-col gap-3">
-                <span className="font-bold text-text-primary mb-2">Product</span>
-                <a href="#features" className="text-text-secondary hover:text-accent-teal transition-colors">Features</a>
-                <a href="#how-it-works" className="text-text-secondary hover:text-accent-teal transition-colors">How it Works</a>
+                <span className="font-bold text-text-primary mb-2">{t("landing.footer.product")}</span>
+                <a href="#features" className="text-text-secondary hover:text-accent-teal transition-colors">{t("landing.nav.features")}</a>
+                <a href="#how-it-works" className="text-text-secondary hover:text-accent-teal transition-colors">{t("landing.nav.how_it_works")}</a>
               </div>
             </div>
           </div>
           <div className="h-[1px] w-full bg-[#2D2D2D] mb-6" />
           <div className="flex flex-col sm:flex-row items-center justify-between font-mono text-xs text-[#555]">
-            <span>© 2026 inko. all rights reserved.</span>
-            <span>// built with care for learners</span>
+            <span>{t("landing.footer.rights")}</span>
+            <span>{t("landing.footer.built_with")}</span>
           </div>
         </div>
       </footer>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
@@ -90,23 +91,13 @@ export function getTypingFeedback(input: {
   };
 }
 
-export function getPracticeCompletionTitle(input: {
-  sessionCapped: boolean;
-  cardsCompleted: number;
-  sessionTargetCards: number;
-}) {
-  if (input.sessionCapped || (input.sessionTargetCards > 0 && input.cardsCompleted >= input.sessionTargetCards)) {
-    return "Daily target reached";
-  }
-  return "Session Complete";
-}
-
 export function isEscDoublePress(lastEscPressedAt: number | null, now: number, windowMs = 1000) {
   if (lastEscPressedAt === null) return false;
   return now - lastEscPressedAt <= windowMs;
 }
 
 export function PracticePage() {
+  const { t } = useTranslation();
   const { deckId } = useParams<{ deckId: string }>();
   const { token } = useAuth();
   const navigate = useNavigate();
@@ -134,6 +125,17 @@ export function PracticePage() {
   const hiddenInputRef = useRef<HTMLInputElement | null>(null);
   const zoneRef = useRef<HTMLDivElement | null>(null);
 
+  const getPracticeCompletionTitle = useCallback((input: {
+    sessionCapped: boolean;
+    cardsCompleted: number;
+    sessionTargetCards: number;
+  }) => {
+    if (input.sessionCapped || (input.sessionTargetCards > 0 && input.cardsCompleted >= input.sessionTargetCards)) {
+      return t("practice.daily_target_reached");
+    }
+    return t("practice.session_complete");
+  }, [t]);
+
   useEffect(() => {
     if (!deckId || !token) return;
     api.startPractice(token, deckId).then((res) => {
@@ -154,11 +156,11 @@ export function PracticePage() {
     const cleanup = registerShortcut({
       key: "b",
       handler: () => navigate("/dashboard"),
-      description: "Back to dashboard",
+      description: t("practice.back_to_dashboard"),
     });
 
     return cleanup;
-  }, [sessionDone, navigate]);
+  }, [sessionDone, navigate, t]);
 
   const focusInput = useCallback(() => {
     hiddenInputRef.current?.focus();
@@ -404,7 +406,7 @@ export function PracticePage() {
   }, [card, typingInput, typingFeedback.target, typingMode]);
 
   const typingPrompt =
-    typingMode === "language_specific" && card?.language === "ja" ? "type romaji..." : "type answer...";
+    typingMode === "language_specific" && card?.language === "ja" ? t("practice.type_romaji") : t("practice.type_answer");
 
   // Session done screen
   if (sessionDone) {
@@ -424,20 +426,20 @@ export function PracticePage() {
             <div className="mt-4 flex gap-10">
               <div className="flex flex-col items-center gap-1">
                 <span className="text-[32px] text-accent-orange [font-family:var(--font-display)]">{sessionSummary.cardsCompleted}</span>
-                <span className="text-xs uppercase tracking-[0.06em] text-text-secondary">cards</span>
+                <span className="text-xs uppercase tracking-[0.06em] text-text-secondary">{t("practice.cards")}</span>
               </div>
               <div className="flex flex-col items-center gap-1">
                 <span className="text-[32px] text-accent-orange [font-family:var(--font-display)]">{sessionSummary.avgTypingScore}</span>
-                <span className="text-xs uppercase tracking-[0.06em] text-text-secondary">avg typing</span>
+                <span className="text-xs uppercase tracking-[0.06em] text-text-secondary">{t("practice.avg_typing")}</span>
               </div>
               <div className="flex flex-col items-center gap-1">
                 <span className="text-[32px] text-accent-orange [font-family:var(--font-display)]">{bestCardStreak}</span>
-                <span className="text-xs uppercase tracking-[0.06em] text-text-secondary">best streak</span>
+                <span className="text-xs uppercase tracking-[0.06em] text-text-secondary">{t("practice.best_streak")}</span>
               </div>
             </div>
           ) : null}
           <button type="button" className="mt-8 rounded-[10px] border border-[var(--border-muted)] bg-bg-elevated px-6 py-3 text-sm font-medium text-text-primary hover:border-accent-orange" onClick={() => navigate("/dashboard")}>
-            Back to Dashboard
+            {t("practice.back_to_dashboard")}
             <kbd className="ml-3 rounded border border-[var(--border-strong)] bg-bg-card px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">b</kbd>
           </button>
         </div>
@@ -450,7 +452,7 @@ export function PracticePage() {
     return (
       <section className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-center overflow-hidden bg-bg-page" aria-label="Loading practice">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-pulse text-base text-text-secondary">Loading...</div>
+          <div className="animate-pulse text-base text-text-secondary">{t("common.loading")}</div>
         </div>
       </section>
     );
@@ -491,20 +493,20 @@ export function PracticePage() {
           ) : null}
         </div>
         <button type="button" className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-1.5 text-[13px] font-normal text-text-secondary hover:border-[var(--border-strong)] hover:text-text-primary" onClick={() => requestExitIntent("button")}>
-          end session
+          {t("practice.end_session")}
           <kbd className="rounded border border-[var(--border-strong)] bg-bg-card px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">esc</kbd>
         </button>
       </div>
       {finishError ? <div className="fixed left-1/2 top-14 z-[220] -translate-x-1/2 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-toast-bg)] px-3 py-2 text-xs text-[var(--danger-text)]">{finishError}</div> : null}
       {exitEscHint ? (
         <div className="fixed left-1/2 top-14 z-[220] -translate-x-1/2 rounded-lg border border-[var(--border-strong)] bg-bg-elevated px-3 py-2 text-xs text-text-primary">
-          Press Esc again within 1 second to exit
+          {t("practice.esc_hint")}
         </div>
       ) : null}
       {exitConfirmOpen ? (
         <div className="fixed left-1/2 top-16 z-[230] w-[min(92vw,420px)] -translate-x-1/2 rounded-xl border border-[var(--border-strong)] bg-bg-card p-4 shadow-xl">
-          <p className="m-0 text-sm text-text-primary">End this practice session?</p>
-          <p className="mt-1 mb-0 text-xs text-text-secondary">Progress for this session will be saved.</p>
+          <p className="m-0 text-sm text-text-primary">{t("practice.end_confirm_title")}</p>
+          <p className="mt-1 mb-0 text-xs text-text-secondary">{t("practice.end_confirm_desc")}</p>
           <div className="mt-3 flex items-center justify-end gap-2">
             <button
               type="button"
@@ -514,7 +516,7 @@ export function PracticePage() {
                 setExitEscHint(false);
               }}
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type="button"
@@ -524,7 +526,7 @@ export function PracticePage() {
                 requestFinish();
               }}
             >
-              Confirm Exit
+              {t("practice.confirm_exit")}
             </button>
           </div>
         </div>
@@ -614,9 +616,9 @@ export function PracticePage() {
         {/* Feedback line */}
         <div className="mt-2 min-h-6 text-sm" aria-live="polite">
           {lastSubmitAccepted === false ? (
-            <span className="text-sm text-[var(--danger-text)]">not quite &mdash; try again</span>
+            <span className="text-sm text-[var(--danger-text)]">{t("practice.not_quite")}</span>
           ) : typingInput && !typingFeedback.onTrack ? (
-            <span className="text-[13px] text-[var(--danger-text)]">off track</span>
+            <span className="text-[13px] text-[var(--danger-text)]">{t("practice.off_track")}</span>
           ) : typingInput && typingFeedback.onTrack ? (
             <span className="font-mono text-[13px] text-accent-teal">{typingFeedback.progress}%</span>
           ) : null}

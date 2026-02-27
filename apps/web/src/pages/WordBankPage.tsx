@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Pencil, Trash2 } from "lucide-react";
 import { LANGUAGE_LABELS, type LanguageCode, SUPPORTED_LANGUAGES } from "@inko/shared";
 import { api } from "../api/client";
@@ -32,6 +33,7 @@ function getInitialDeckLanguage(): LanguageCode {
 }
 
 export function WordBankPage() {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -488,7 +490,7 @@ export function WordBankPage() {
   const processImportData = async () => {
     if (!selectedDeckId || !rawImportData) return;
     
-    setImportStatus("Importing...");
+    setImportStatus(t("word_bank.import.importing"));
     let imported = 0;
     let failed = 0;
 
@@ -539,7 +541,7 @@ export function WordBankPage() {
       }
     }
 
-    setImportStatus(`Done: ${imported} imported${failed ? `, ${failed} failed` : ""}`);
+    setImportStatus(t("word_bank.import.done", { imported, failed: failed ? `, ${failed} failed` : "" }));
     setRawImportData(null);
     setImportColumnMapping({});
     if (importedWords.length > 0) {
@@ -636,16 +638,16 @@ export function WordBankPage() {
     <div className="flex flex-col gap-8">
       {/* Page Header */}
       <header className="mb-2">
-        <h1 className="m-0 text-4xl font-semibold [font-family:var(--font-display)]">Word Bank</h1>
-        <p className="mt-1 text-sm text-text-secondary">Manage your decks and vocabulary</p>
+        <h1 className="m-0 text-4xl font-semibold [font-family:var(--font-display)]">{t("word_bank.title")}</h1>
+        <p className="mt-1 text-sm text-text-secondary">{t("word_bank.subtitle")}</p>
       </header>
 
       {/* Deck Grid */}
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">Decks</h2>
+          <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">{t("word_bank.decks.title")}</h2>
           <span className="inline-flex items-center gap-1 rounded border border-[var(--border-muted)] bg-bg-elevated px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">
-            <kbd className="font-mono">d</kbd> to focus
+            <kbd className="font-mono">d</kbd> {t("word_bank.decks.to_focus")}
           </span>
         </div>
 
@@ -676,7 +678,7 @@ export function WordBankPage() {
               </div>
               <div className="mt-auto flex gap-2">
                 <Link to={`/practice/${deck.id}`} onClick={(e) => e.stopPropagation()} className="flex min-w-0 flex-1 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-lg bg-accent-orange px-2.5 py-2 text-xs font-semibold text-text-on-accent no-underline">
-                  <span>Practice</span>
+                  <span>{t("word_bank.decks.practice")}</span>
                   <kbd className="shrink-0 rounded border border-[var(--border-strong)] bg-bg-page px-1 py-[1px] font-mono text-[9px] text-text-primary">p</kbd>
                 </Link>
                 <button
@@ -687,7 +689,7 @@ export function WordBankPage() {
                     setSelectedDeckId(deck.id);
                   }}
                 >
-                  <span>Manage</span>
+                  <span>{t("word_bank.decks.manage")}</span>
                   <kbd className="shrink-0 rounded border border-[var(--border-muted)] bg-bg-card px-1 py-[1px] font-mono text-[9px] text-text-secondary">Enter</kbd>
                 </button>
               </div>
@@ -700,7 +702,7 @@ export function WordBankPage() {
                     setEditingDeck({ id: deck.id, name: deck.name, archived: deck.archived });
                     setShowEditDeckModal(true);
                   }}
-                  aria-label="Edit deck"
+                  aria-label={t("word_bank.decks.edit_deck")}
                 >
                   <Pencil size={14} />
                 </button>
@@ -712,7 +714,7 @@ export function WordBankPage() {
                     setDeckToDelete({ id: deck.id, name: deck.name });
                     setShowDeleteConfirm(true);
                   }}
-                  aria-label="Delete deck"
+                  aria-label={t("word_bank.decks.delete_deck")}
                 >
                   <Trash2 size={14} />
                 </button>
@@ -729,7 +731,7 @@ export function WordBankPage() {
             tabIndex={focusedDeckIndex === decks.length ? 0 : -1}
           >
             <span className="text-[28px] leading-none font-light">+</span>
-            <span className="text-[13px]">New Deck</span>
+            <span className="text-[13px]">{t("word_bank.decks.new_deck")}</span>
           </button>
         </div>
       </section>
@@ -738,7 +740,7 @@ export function WordBankPage() {
       {selectedDeckId && (
         <section className="flex flex-col gap-5 rounded-base bg-bg-card p-6">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">Add to {activeDeck?.name ?? "Deck"}</h2>
+            <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">{t("word_bank.add.title", { deck: activeDeck?.name ?? "Deck" })}</h2>
           </div>
 
           {/* Tabs */}
@@ -750,7 +752,7 @@ export function WordBankPage() {
               className={`relative flex-1 rounded-lg border-0 px-4 py-2.5 text-sm font-medium transition-all ${addTab === "single" ? "bg-bg-elevated text-text-primary" : "bg-transparent text-text-secondary hover:text-text-primary"}`}
               onClick={() => setAddTab("single")}
             >
-              Single Word
+              {t("word_bank.add.tab_single")}
               <kbd className="ml-2 rounded border border-[var(--border-muted)] bg-bg-elevated px-[5px] py-[1px] font-mono text-[10px] text-text-secondary opacity-70">Shift+1</kbd>
             </button>
             <button
@@ -760,7 +762,7 @@ export function WordBankPage() {
               className={`relative flex-1 rounded-lg border-0 px-4 py-2.5 text-sm font-medium transition-all ${addTab === "import" ? "bg-bg-elevated text-text-primary" : "bg-transparent text-text-secondary hover:text-text-primary"}`}
               onClick={() => setAddTab("import")}
             >
-              Bulk Import
+              {t("word_bank.add.tab_import")}
               <kbd className="ml-2 rounded border border-[var(--border-muted)] bg-bg-elevated px-[5px] py-[1px] font-mono text-[10px] text-text-secondary opacity-70">Shift+2</kbd>
             </button>
           </div>
@@ -769,50 +771,50 @@ export function WordBankPage() {
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-target`}>Target word</label>
+                  <label htmlFor={`${formId}-target`}>{t("word_bank.add.target_word")}</label>
                   <input
                     id={`${formId}-target`}
-                    placeholder={isJapaneseDeck ? "e.g. 勉強" : "e.g. palabra"}
+                    placeholder={t("word_bank.add.target_placeholder", { example: isJapaneseDeck ? "勉強" : "palabra" })}
                     value={wordForm.target}
                     onChange={updateField("target")}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-meaning`}>Meaning</label>
-                  <input id={`${formId}-meaning`} placeholder="e.g. study; learning" value={wordForm.meaning} onChange={updateField("meaning")} />
+                  <label htmlFor={`${formId}-meaning`}>{t("word_bank.add.meaning")}</label>
+                  <input id={`${formId}-meaning`} placeholder={t("word_bank.add.meaning_placeholder")} value={wordForm.meaning} onChange={updateField("meaning")} />
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-reading`}>Reading</label>
+                  <label htmlFor={`${formId}-reading`}>{t("word_bank.add.reading")}</label>
                   <input
                     id={`${formId}-reading`}
-                    placeholder={isJapaneseDeck ? "e.g. べんきょう" : "Optional pronunciation"}
+                    placeholder={isJapaneseDeck ? t("word_bank.add.reading_placeholder_jp") : t("word_bank.add.reading_placeholder")}
                     value={wordForm.reading}
                     onChange={updateField("reading")}
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-romanization`}>Romanization</label>
-                  <input id={`${formId}-romanization`} placeholder="e.g. benkyou" value={wordForm.romanization} onChange={updateField("romanization")} />
+                  <label htmlFor={`${formId}-romanization`}>{t("word_bank.add.romanization")}</label>
+                  <input id={`${formId}-romanization`} placeholder={t("word_bank.add.romanization_placeholder")} value={wordForm.romanization} onChange={updateField("romanization")} />
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">
-                <label htmlFor={`${formId}-example`}>Example sentence</label>
+                <label htmlFor={`${formId}-example`}>{t("word_bank.add.example")}</label>
                 <input
                   id={`${formId}-example`}
-                  placeholder={isJapaneseDeck ? "e.g. 毎日日本語を勉強しています。" : "e.g. Estoy aprendiendo cada dia."}
+                  placeholder={isJapaneseDeck ? t("word_bank.add.example_placeholder_jp") : t("word_bank.add.example_placeholder")}
                   value={wordForm.example}
                   onChange={updateField("example")}
                 />
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-audio`}>Audio URL (optional)</label>
+                  <label htmlFor={`${formId}-audio`}>{t("word_bank.add.audio_url")}</label>
                   <input id={`${formId}-audio`} placeholder="https://..." value={wordForm.audioUrl} onChange={updateField("audioUrl")} />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-tags`}>Tags (comma separated)</label>
+                  <label htmlFor={`${formId}-tags`}>{t("word_bank.add.tags")}</label>
                   <input id={`${formId}-tags`} placeholder="e.g. n5, verb" value={wordForm.tags} onChange={updateField("tags")} />
                 </div>
               </div>
@@ -822,7 +824,7 @@ export function WordBankPage() {
                 onClick={() => createWord.mutate()}
                 disabled={!wordForm.target || !wordForm.meaning || createWord.isPending}
               >
-                {createWord.isPending ? "Adding..." : "Add Word"}
+                {createWord.isPending ? t("word_bank.add.submitting") : t("word_bank.add.submit")}
               </button>
             </div>
           ) : (
@@ -831,7 +833,7 @@ export function WordBankPage() {
                 <>
                   <div className="flex flex-col gap-3">
                     <p className="m-0 text-[13px] text-text-secondary">
-                      Upload a CSV/TSV file or paste data directly. Supported columns: target, reading, meaning, romanization, example, tags
+                      {t("word_bank.import.instruction")}
                     </p>
                     
                     {/* File Upload */}
@@ -848,9 +850,9 @@ export function WordBankPage() {
                         className="px-4 py-2 text-sm"
                         onClick={() => fileInputRef.current?.click()}
                       >
-                        Choose File
+                        {t("word_bank.import.choose_file")}
                       </button>
-                      <span className="text-[13px] text-text-secondary">or paste below</span>
+                      <span className="text-[13px] text-text-secondary">{t("word_bank.import.or_paste")}</span>
                     </div>
 
                     {/* Text Input */}
@@ -880,7 +882,7 @@ export function WordBankPage() {
                       }} 
                       disabled={!importText.trim()}
                     >
-                      Preview Import
+                      {t("word_bank.import.preview")}
                     </button>
                   </div>
                 </>
@@ -888,8 +890,8 @@ export function WordBankPage() {
                 <>
                   {/* Field Mapping */}
                   <div className="flex flex-col gap-3 rounded-lg border border-[var(--border-muted)] bg-bg-elevated p-4">
-                    <h3 className="m-0 text-sm font-semibold">Field Mapping</h3>
-                    <p className="m-0 text-[12px] text-text-secondary">Map each column to the correct field:</p>
+                    <h3 className="m-0 text-sm font-semibold">{t("word_bank.import.field_mapping")}</h3>
+                    <p className="m-0 text-[12px] text-text-secondary">{t("word_bank.import.map_instruction")}</p>
                     
                      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
                       {rawImportData.headers.map((header, index) => (
@@ -909,10 +911,10 @@ export function WordBankPage() {
                               setImportPreviewPage(1);
                             }}
                           >
-                            <option value="">-- Skip --</option>
-                            <option value="target">Target (required)</option>
+                            <option value="">{t("word_bank.import.skip")}</option>
+                            <option value="target">{t("word_bank.import.target_req")}</option>
                             <option value="reading">Reading</option>
-                            <option value="meaning">Meaning (required)</option>
+                            <option value="meaning">{t("word_bank.import.meaning_req")}</option>
                             <option value="romanization">Romanization</option>
                             <option value="example">Example</option>
                             <option value="tags">Tags</option>
@@ -927,7 +929,7 @@ export function WordBankPage() {
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between gap-3">
                         <h3 className="m-0 text-sm font-semibold">
-                          Preview ({previewStart + 1}-{Math.min(previewStart + previewRows.length, mappedImportRows.length)} of {mappedImportRows.length})
+                          {t("word_bank.import.preview_title")} ({previewStart + 1}-{Math.min(previewStart + previewRows.length, mappedImportRows.length)} of {mappedImportRows.length})
                         </h3>
                         <div className="flex items-center gap-2 text-xs text-text-secondary">
                           <button
@@ -936,16 +938,16 @@ export function WordBankPage() {
                             onClick={() => setImportPreviewPage((prev) => Math.max(1, prev - 1))}
                             disabled={previewPage <= 1}
                           >
-                            Prev
+                            {t("common.prev", "Prev")}
                           </button>
-                          <span>Page {previewPage} / {totalPreviewPages}</span>
+                          <span>{t("common.page_of", { x: previewPage, y: totalPreviewPages })}</span>
                           <button
                             type="button"
                             className="bg-bg-elevated px-2 py-1 text-xs"
                             onClick={() => setImportPreviewPage((prev) => Math.min(totalPreviewPages, prev + 1))}
                             disabled={previewPage >= totalPreviewPages}
                           >
-                            Next
+                            {t("common.next", "Next")}
                           </button>
                         </div>
                       </div>
@@ -988,14 +990,14 @@ export function WordBankPage() {
                         setImportText('');
                       }}
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </button>
                     <button
                       type="button"
                       onClick={processImportData}
                       disabled={!Object.values(importColumnMapping).includes('target') || !Object.values(importColumnMapping).includes('meaning')}
                     >
-                      Import {rawImportData.rows.length} Words
+                      {t("word_bank.import.submit", { count: rawImportData.rows.length })}
                     </button>
                   </div>
                 </>
@@ -1015,12 +1017,12 @@ export function WordBankPage() {
           {/* Header with search */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">
-              Words ({filteredWords.length}{wordSearch ? ` of ${words.length}` : ''})
+              {t("word_bank.words.title")} ({filteredWords.length}{wordSearch ? ` of ${words.length}` : ''})
             </h2>
             <div className="flex items-center gap-3">
               <input
                 type="text"
-                placeholder="Search words..."
+                placeholder={t("word_bank.words.search_placeholder")}
                 value={wordSearch}
                 onChange={(e) => setWordSearch(e.target.value)}
                 className="w-full md:w-64"
@@ -1031,7 +1033,7 @@ export function WordBankPage() {
                   className="border-0 bg-transparent p-0 text-text-secondary hover:text-text-primary"
                   onClick={() => setWordSearch('')}
                 >
-                  Clear
+                  {t("common.clear", "Clear")}
                 </button>
               )}
             </div>
@@ -1040,25 +1042,25 @@ export function WordBankPage() {
           {/* Bulk actions */}
           {selectedWordIds.size > 0 && (
             <div className="flex items-center gap-3 rounded-lg bg-bg-elevated p-3">
-              <span className="text-sm text-text-secondary">{selectedWordIds.size} selected</span>
+              <span className="text-sm text-text-secondary">{t("word_bank.words.selected", { count: selectedWordIds.size })}</span>
               <button
                 type="button"
                 className="border-0 bg-red-500/20 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/30"
                 onClick={() => {
-                  if (confirm(`Delete ${selectedWordIds.size} words?`)) {
+                  if (confirm(t("word_bank.words.delete_selected"))) {
                     bulkDeleteWords.mutate();
                   }
                 }}
                 disabled={bulkDeleteWords.isPending}
               >
-                {bulkDeleteWords.isPending ? 'Deleting...' : 'Delete Selected'}
+                {bulkDeleteWords.isPending ? t("word_bank.words.deleting") : t("word_bank.words.delete_selected")}
               </button>
               <button
                 type="button"
                 className="border-0 bg-transparent px-3 py-1.5 text-sm text-text-secondary"
                 onClick={() => setSelectedWordIds(new Set())}
               >
-                Clear selection
+                {t("word_bank.words.clear_selection")}
               </button>
             </div>
           )}
@@ -1067,7 +1069,7 @@ export function WordBankPage() {
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between text-xs text-text-secondary">
                 <span>
-                  Showing {pagedWords.length} words on this page
+                  {t("word_bank.words.showing_count", { count: pagedWords.length })}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
@@ -1081,10 +1083,10 @@ export function WordBankPage() {
                     }}
                     disabled={!hasPrevWordsPage}
                   >
-                    Prev
+                    {t("common.prev", "Prev")}
                   </button>
                   <span>
-                    Page {wordsPageLabel}
+                    {t("common.page", "Page")} {wordsPageLabel}
                   </span>
                   <button
                     type="button"
@@ -1098,7 +1100,7 @@ export function WordBankPage() {
                     }}
                     disabled={!hasNextWordsPage}
                   >
-                    Next
+                    {t("common.next", "Next")}
                   </button>
                 </div>
               </div>
@@ -1239,7 +1241,7 @@ export function WordBankPage() {
                               )}
                               {(word.tags ?? []).length > 0 && (
                                 <div>
-                                  <span className="text-[11px] uppercase tracking-wider text-text-secondary">All Tags</span>
+                                  <span className="text-[11px] uppercase tracking-wider text-text-secondary">{t("word_bank.words.all_tags")}</span>
                                   <div className="mt-1 flex flex-wrap gap-1">
                                     {(word.tags ?? []).map((t: string) => (
                                       <span key={t} className="rounded bg-bg-elevated px-2 py-1 text-[11px] text-text-secondary">{t}</span>
@@ -1261,13 +1263,13 @@ export function WordBankPage() {
             <div className="rounded-base bg-bg-card p-10 text-center text-text-secondary">
               {wordSearch ? (
                 <>
-                  <p>No words match your search.</p>
-                  <p className="mt-2 text-[13px]">Try a different search term or clear the filter.</p>
+                  <p>{t("word_bank.words.no_match")}</p>
+                  <p className="mt-2 text-[13px]">{t("word_bank.words.try_different")}</p>
                 </>
               ) : (
                 <>
-                  <p>No words yet.</p>
-                  <p className="mt-2 text-[13px]">Add words using the form above.</p>
+                  <p>{t("word_bank.words.no_words")}</p>
+                  <p className="mt-2 text-[13px]">{t("word_bank.words.add_using_form")}</p>
                 </>
               )}
             </div>
@@ -1278,7 +1280,7 @@ export function WordBankPage() {
       {/* No deck selected hint */}
       {!selectedDeckId && decks.length > 0 && (
         <div className="rounded-base bg-bg-card p-10 text-center text-text-secondary">
-          <p>Select a deck to view and manage its words.</p>
+          <p>{t("word_bank.words.select_deck")}</p>
         </div>
       )}
 
@@ -1305,12 +1307,12 @@ export function WordBankPage() {
             open
             aria-label="Create new deck"
           >
-            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">Create New Deck</h2>
+            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">{t("word_bank.new_deck.title")}</h2>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor={`${formId}-deckname`}>Deck name</label>
+              <label htmlFor={`${formId}-deckname`}>{t("word_bank.new_deck.name")}</label>
               <input
                 id={`${formId}-deckname`}
-                placeholder="e.g. JLPT N5 Vocabulary"
+                placeholder={t("word_bank.new_deck.name_placeholder")}
                 value={newDeckName}
                 onChange={(e) => setNewDeckName(e.target.value)}
                 onKeyDown={(e) => {
@@ -1319,7 +1321,7 @@ export function WordBankPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor={`${formId}-deck-language`}>Target language</label>
+              <label htmlFor={`${formId}-deck-language`}>{t("word_bank.new_deck.language")}</label>
               <select
                 id={`${formId}-deck-language`}
                 value={newDeckLanguage}
@@ -1338,10 +1340,10 @@ export function WordBankPage() {
                 className="bg-bg-elevated text-text-primary"
                 onClick={() => setShowNewDeckModal(false)}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button type="button" onClick={() => createDeck.mutate()} disabled={!newDeckName.trim() || createDeck.isPending}>
-                {createDeck.isPending ? "Creating..." : "Create"}
+                {createDeck.isPending ? t("common.creating") : t("common.create")}
               </button>
             </div>
           </dialog>
@@ -1362,9 +1364,9 @@ export function WordBankPage() {
             open
             aria-label="Edit deck"
           >
-            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">Edit Deck</h2>
+            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">{t("word_bank.edit_deck.title")}</h2>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor={`${formId}-edit-deckname`}>Deck name</label>
+              <label htmlFor={`${formId}-edit-deckname`}>{t("word_bank.new_deck.name")}</label>
               <input
                 id={`${formId}-edit-deckname`}
                 value={editingDeck.name}
@@ -1380,7 +1382,7 @@ export function WordBankPage() {
                 className="!mt-0.5 !h-4 !w-4 shrink-0 cursor-pointer"
               />
               <label htmlFor={`${formId}-archive`} className="min-w-0 flex-1 cursor-pointer text-sm text-text-primary">
-                Archive deck (hide from dashboard)
+                {t("word_bank.edit_deck.archive")}
               </label>
             </div>
             <div className="mt-2 flex justify-end gap-2.5">
@@ -1392,14 +1394,14 @@ export function WordBankPage() {
                   setEditingDeck(null);
                 }}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
                 onClick={() => updateDeck.mutate({ name: editingDeck.name, archived: editingDeck.archived })}
                 disabled={!editingDeck.name.trim() || updateDeck.isPending}
               >
-                {updateDeck.isPending ? "Saving..." : "Save"}
+                {updateDeck.isPending ? t("common.saving") : t("common.save")}
               </button>
             </div>
           </dialog>
@@ -1420,9 +1422,9 @@ export function WordBankPage() {
             open
             aria-label="Delete deck confirmation"
           >
-            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">Delete Deck</h2>
+            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">{t("word_bank.delete_deck.title")}</h2>
             <p className="text-text-secondary">
-              Are you sure you want to delete "<strong>{deckToDelete.name}</strong>"? This will remove the deck and unlink all words from it. Words in other decks will not be affected.
+              {t("word_bank.delete_deck.confirm", { name: deckToDelete.name })}
             </p>
             <div className="mt-2 flex justify-end gap-2.5">
               <button
@@ -1433,7 +1435,7 @@ export function WordBankPage() {
                   setDeckToDelete(null);
                 }}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -1441,7 +1443,7 @@ export function WordBankPage() {
                 onClick={() => deleteDeck.mutate()}
                 disabled={deleteDeck.isPending}
               >
-                {deleteDeck.isPending ? "Deleting..." : "Delete"}
+                {deleteDeck.isPending ? t("common.deleting") : t("common.delete")}
               </button>
             </div>
           </dialog>
@@ -1465,12 +1467,12 @@ export function WordBankPage() {
             open
             aria-label="Edit word"
           >
-            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">Edit Word</h2>
+            <h2 className="m-0 text-2xl [font-family:var(--font-display)]">{t("word_bank.edit_word.title")}</h2>
             
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-edit-target`}>Target word *</label>
+                  <label htmlFor={`${formId}-edit-target`}>{t("word_bank.add.target_word")} *</label>
                   <input
                     id={`${formId}-edit-target`}
                     value={editingWord.target}
@@ -1479,7 +1481,7 @@ export function WordBankPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-edit-meaning`}>Meaning *</label>
+                  <label htmlFor={`${formId}-edit-meaning`}>{t("word_bank.add.meaning")} *</label>
                   <input
                     id={`${formId}-edit-meaning`}
                     value={editingWord.meaning}
@@ -1490,7 +1492,7 @@ export function WordBankPage() {
               
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-edit-reading`}>Reading</label>
+                  <label htmlFor={`${formId}-edit-reading`}>{t("word_bank.add.reading")}</label>
                   <input
                     id={`${formId}-edit-reading`}
                     value={editingWord.reading}
@@ -1499,7 +1501,7 @@ export function WordBankPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor={`${formId}-edit-romanization`}>Romanization</label>
+                  <label htmlFor={`${formId}-edit-romanization`}>{t("word_bank.add.romanization")}</label>
                   <input
                     id={`${formId}-edit-romanization`}
                     value={editingWord.romanization}
@@ -1509,7 +1511,7 @@ export function WordBankPage() {
               </div>
               
               <div className="flex flex-col gap-1.5">
-                <label htmlFor={`${formId}-edit-example`}>Example sentence</label>
+                <label htmlFor={`${formId}-edit-example`}>{t("word_bank.add.example")}</label>
                 <input
                   id={`${formId}-edit-example`}
                   value={editingWord.example}
@@ -1519,7 +1521,7 @@ export function WordBankPage() {
               </div>
               
               <div className="flex flex-col gap-1.5">
-                <label htmlFor={`${formId}-edit-audio`}>Audio URL</label>
+                <label htmlFor={`${formId}-edit-audio`}>{t("word_bank.add.audio_url")}</label>
                 <input
                   id={`${formId}-edit-audio`}
                   value={editingWord.audioUrl}
@@ -1529,7 +1531,7 @@ export function WordBankPage() {
               </div>
               
               <div className="flex flex-col gap-1.5">
-                <label htmlFor={`${formId}-edit-tags`}>Tags (comma separated)</label>
+                <label htmlFor={`${formId}-edit-tags`}>{t("word_bank.add.tags")}</label>
                 <input
                   id={`${formId}-edit-tags`}
                   value={editingWord.tags.join(', ')}
@@ -1548,14 +1550,14 @@ export function WordBankPage() {
                   setEditingWord(null);
                 }}
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
                 onClick={() => updateWord.mutate()}
                 disabled={!editingWord.target.trim() || !editingWord.meaning.trim() || updateWord.isPending}
               >
-                {updateWord.isPending ? "Saving..." : "Save Changes"}
+                {updateWord.isPending ? t("common.saving") : t("common.save_changes")}
               </button>
             </div>
           </dialog>

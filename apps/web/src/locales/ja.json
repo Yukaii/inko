@@ -1,0 +1,290 @@
+{
+  "common": {
+    "loading": "読み込み中...",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "error": "エラー",
+    "clear": "クリア",
+    "or": "または",
+    "handwriting": "手書き",
+    "change_language": "言語を切替",
+    "step": "ステップ",
+    "prev": "前へ",
+    "next": "次へ",
+    "page": "ページ",
+    "page_of": "ページ {{x}} / {{y}}",
+    "creating": "作成中...",
+    "saving": "保存中...",
+    "deleting": "削除中...",
+    "create": "作成",
+    "save_changes": "変更を保存"
+  },
+  "errors": {
+    "unknown": "予期せぬエラーが発生しました。",
+    "INTERNAL_ERROR": "サーバー内部エラーが発生しました。",
+    "INVALID_TOKEN": "トークンが無効または期限切れです。",
+    "USER_NOT_FOUND": "ユーザーが見つかりません。",
+    "DECK_NOT_FOUND": "デッキが見つかりません。",
+    "WORD_NOT_FOUND": "単語が見つかりません。",
+    "UNAUTHORIZED": "認証エラーが発生しました。",
+    "VALIDATION_ERROR": "入力内容が正しくありません。",
+    "SERVICE_UNAVAILABLE": "サービスが一時的に利用できません。",
+    "network_error": "ネットワークエラーが発生しました。接続を確認してください。"
+  },
+  "auth": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "magic_link_sent": "マジックリンクをメールで送信しました。確認してください。",
+    "request_magic_link": "マジックリンクをリクエスト",
+    "verify_token": "トークンを認証",
+    "profile": "プロフィール",
+    "settings": "設定",
+    "sign_out": "サインアウト",
+    "email_label": "メールアドレス",
+    "token_label": "トークン",
+    "token_placeholder": "トークンをここに貼り付けてください",
+    "dev_magic_link_msg": "ローカルでマジックリンクが生成されました。開発用にトークンが自動入力されています。"
+  },
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "word_bank": "ワードバンク",
+    "settings": "設定",
+    "shortcuts": "ショートカット",
+    "home": "ホーム",
+    "decks": "デッキ",
+    "shortcuts_help": "キーボードショートカット"
+  },
+  "landing": {
+    "nav": {
+      "how_it_works": "使い方",
+      "features": "特徴",
+      "get_started": "始める"
+    },
+    "hero": {
+      "badge": "記憶の未来へ",
+      "title": "打って、覚える。",
+      "subtitle": "本当に覚えているか、タイピングで証明する。手を動かしてマッスルメモリーを構築し、二度と忘れない学習を。",
+      "cta_primary": "学習を始める",
+      "cta_secondary": "詳細を見る"
+    },
+    "how_it_works": {
+      "title": "// 使い方",
+      "subtitle": "忘れないための3つのステップ",
+      "step1": {
+        "title": "デッキを作成",
+        "desc": "好きな科目のカスタムデッキを作成。用語と定義を追加します。"
+      },
+      "step2": {
+        "title": "答えをタイピング",
+        "desc": "選択肢はありません。記憶から答えを呼び出し、実際に打ち込みます。"
+      },
+      "step3": {
+        "title": "スマートに復習",
+        "desc": "忘れる直前の最適なタイミングでアルゴリズムが復習をスケジュールします。"
+      }
+    },
+    "features": {
+      "badge": "// 特徴",
+      "title": "必要なすべてがここに",
+      "subtitle": "ただの「見覚え」ではなく、本当の「定着」を目指す学習者のために。",
+      "typing_first": {
+        "title": "タイピング重視",
+        "desc": "選択肢もマッチングもなし。記憶から直接打ち込むことで、本物の神経回路を構築します。"
+      },
+      "spaced_repetition": {
+        "title": "間隔反復",
+        "desc": "忘れる直前にカードを表示。すべての復習が完璧なタイミングで行われます。"
+      },
+      "progress_tracking": {
+        "title": "進捗トラッキング",
+        "desc": "習得レベルや継続記録、弱点を視覚化。どこに集中すべきか一目でわかります。"
+      },
+      "custom_decks": {
+        "title": "カスタムデッキ",
+        "desc": "言語、コード、医学用語、歴史など、あらゆる科目のデッキを作成可能。あなたの知識を、あなたのやり方で。"
+      },
+      "streak_system": {
+        "title": "継続システム",
+        "desc": "毎日の継続記録とスコアでモチベーションを維持。コツコツ続けることが力になります。"
+      },
+      "practice_anywhere": {
+        "title": "どこでも練習",
+        "desc": "キーボードのあるデバイスなら何でも。通勤中、デスク、あるいは寝る前にも。"
+      }
+    },
+    "cta": {
+      "title": "タイピングで、すべてをマスターする。",
+      "subtitle": "一生忘れない知識への最短ルート。",
+      "button": "今すぐ始める"
+    },
+    "footer": {
+      "desc": "打って、覚える。能動的なタイピング練習を通じて、本物の想起力を養うフラッシュカードアプリ。",
+      "product": "製品",
+      "rights": "© 2026 inko. all rights reserved.",
+      "built_with": "// 学習者のために真心を込めて"
+    },
+    "simulator": {
+      "badge": "シミュレーター",
+      "auto_play": "自動再生モード",
+      "hint": "// 視覚的なデモンストレーションのみ"
+    }
+  },
+  "dashboard": {
+    "welcome_back": "お帰りなさい、",
+    "good_day": "こんにちは、{{name}}さん",
+    "learner": "学習者",
+    "stats": {
+      "words_learned": "学習済み単語数",
+      "due_today": "今日の復習",
+      "day_streak": "連続学習日数",
+      "session_time": "学習時間"
+    },
+    "quick_practice": "クイック練習",
+    "to_focus": "フォーカスする",
+    "start_practice": "練習を開始",
+    "no_decks": "デッキがありません。",
+    "head_to": "最初のデッキを作成するには、",
+    "create_first_deck": "へ移動してください。",
+    "recent_sessions": "最近のセッション",
+    "cards_count": "{{count}} 枚のカード",
+    "no_sessions": "完了したセッションはまだありません。"
+  },
+  "word_bank": {
+    "title": "ワードバンク",
+    "subtitle": "デッキと語彙を管理します",
+    "decks": {
+      "title": "デッキ",
+      "to_focus": "フォーカスする",
+      "practice": "練習",
+      "manage": "管理",
+      "new_deck": "新しいデッキ",
+      "edit_deck": "デッキを編集",
+      "delete_deck": "デッキを削除"
+    },
+    "add": {
+      "title": "{{deck}} に追加",
+      "tab_single": "単語を1つ追加",
+      "tab_import": "一括インポート",
+      "target_word": "対象の単語",
+      "target_placeholder": "例: {{example}}",
+      "meaning": "意味",
+      "meaning_placeholder": "例: study; learning",
+      "reading": "読み方",
+      "reading_placeholder_jp": "例: べんきょう",
+      "reading_placeholder": "任意の発音",
+      "romanization": "ローマ字",
+      "romanization_placeholder": "例: benkyou",
+      "example": "例文",
+      "example_placeholder_jp": "例: 毎日日本語を勉強しています。",
+      "example_placeholder": "例: Estoy aprendiendo cada dia.",
+      "audio_url": "音声URL (任意)",
+      "tags": "タグ (カンマ区切り)",
+      "submit": "単語を追加",
+      "submitting": "追加中..."
+    },
+    "import": {
+      "instruction": "CSV/TSVファイルをアップロードするか、データを直接貼り付けてください。サポートされている列: target, reading, meaning, romanization, example, tags",
+      "choose_file": "ファイルを選択",
+      "or_paste": "または下に貼り付け",
+      "preview": "インポートをプレビュー",
+      "field_mapping": "フィールドのマッピング",
+      "map_instruction": "各列を正しいフィールドにマッピングしてください:",
+      "skip": "-- スキップ --",
+      "target_req": "対象の単語 (必須)",
+      "meaning_req": "意味 (必須)",
+      "preview_title": "プレビュー",
+      "submit": "{{count}}語をインポート",
+      "importing": "インポート中...",
+      "done": "完了: {{imported}}語をインポートしました{{failed}}"
+    },
+    "words": {
+      "title": "単語",
+      "search_placeholder": "単語を検索...",
+      "selected": "{{count}} 選択中",
+      "delete_selected": "選択した項目を削除",
+      "deleting": "削除中...",
+      "clear_selection": "選択をクリア",
+      "showing_count": "このページに {{count}} 語を表示中",
+      "all_tags": "すべてのタグ",
+      "no_match": "検索条件に一致する単語はありません。",
+      "try_different": "別の検索語を試すか、フィルターをクリアしてください。",
+      "no_words": "単語はまだありません。",
+      "add_using_form": "上のフォームから単語を追加してください。",
+      "select_deck": "デッキを選択して、その単語を表示・管理します。"
+    },
+    "new_deck": {
+      "title": "新しいデッキを作成",
+      "name": "デッキ名",
+      "name_placeholder": "例: JLPT N5 語彙",
+      "language": "対象言語"
+    },
+    "edit_deck": {
+      "title": "デッキを編集",
+      "archive": "デッキをアーカイブする（ダッシュボードから隠す）"
+    },
+    "delete_deck": {
+      "title": "デッキを削除",
+      "confirm": "本当に「{{name}}」を削除しますか？ デッキが削除され、すべての単語のリンクが解除されます。他のデッキにある単語には影響しません。"
+    },
+    "edit_word": {
+      "title": "単語を編集"
+    }
+  },
+  "settings": {
+    "title": "設定",
+    "subtitle": "体験をカスタマイズする",
+    "nav": {
+      "profile": "プロフィール",
+      "preferences": "環境設定",
+      "appearance": "外観",
+      "about": "アプリについて"
+    },
+    "profile": {
+      "display_name": "表示名",
+      "name_placeholder": "あなたの名前",
+      "email": "メールアドレス",
+      "joined": "登録日"
+    },
+    "preferences": {
+      "theme_mode": "テーマモード",
+      "dark": "ダーク",
+      "light": "ライト",
+      "typing_mode": "タイピングモード",
+      "lang_specific": "言語固有",
+      "universal": "ユニバーサル",
+      "typing_mode_desc": "言語固有モードはスクリプトを意識したマッチング（例: 日本語のローマ字からかなへ）を使用します。ユニバーサルモードは正規化された直接タイピングを使用します。"
+    },
+    "appearance": {
+      "reset": "{{mode}}をリセット",
+      "dark_palette": "ダークパレット",
+      "light_palette": "ライトパレット",
+      "theme_presets": "テーマプリセット",
+      "export_theme": "テーマをエクスポート",
+      "copy_json": "JSONをコピー",
+      "copy_css": "CSS変数をコピー",
+      "copy_hex": "{{mode}} Hexをコピー",
+      "export_json_btn": "JSONでエクスポート"
+    },
+    "about": {
+      "desc": "monkeytypeにインスパイアされた、シンプルで集中できる言語タイピング練習アプリです。"
+    }
+  },
+  "practice": {
+    "daily_target_reached": "一日の目標を達成しました",
+    "session_complete": "セッション完了",
+    "cards": "カード",
+    "avg_typing": "平均タイピング",
+    "best_streak": "最高連続正解数",
+    "back_to_dashboard": "ダッシュボードに戻る",
+    "end_session": "セッションを終了",
+    "esc_hint": "終了するには、1秒以内にもう一度Escを押してください",
+    "end_confirm_title": "この練習セッションを終了しますか？",
+    "end_confirm_desc": "このセッションの進捗は保存されます。",
+    "confirm_exit": "終了を確認",
+    "type_romaji": "ローマ字を入力...",
+    "type_answer": "答えを入力...",
+    "not_quite": "惜しい — もう一度試してください",
+    "off_track": "少し違います"
+  }
+}

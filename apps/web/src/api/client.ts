@@ -66,7 +66,17 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string):
   });
 
   if (!res.ok) {
-    throw new Error(await res.text());
+    let errorData;
+    try {
+      errorData = await res.json();
+    } catch {
+      throw new Error(await res.text() || res.statusText);
+    }
+    
+    const error = new Error(errorData.message || res.statusText) as any;
+    error.code = errorData.code;
+    error.statusCode = res.status;
+    throw error;
   }
 
   return (await res.json()) as T;

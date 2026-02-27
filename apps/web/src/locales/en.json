@@ -1,0 +1,290 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "error": "Error",
+    "clear": "Clear",
+    "or": "or",
+    "handwriting": "Handwriting",
+    "change_language": "Change Language",
+    "step": "Step",
+    "prev": "Prev",
+    "next": "Next",
+    "page": "Page",
+    "page_of": "Page {{x}} / {{y}}",
+    "creating": "Creating...",
+    "saving": "Saving...",
+    "deleting": "Deleting...",
+    "create": "Create",
+    "save_changes": "Save Changes"
+  },
+  "errors": {
+    "unknown": "An unexpected error occurred.",
+    "INTERNAL_ERROR": "Internal server error.",
+    "INVALID_TOKEN": "Invalid or expired token.",
+    "USER_NOT_FOUND": "User not found.",
+    "DECK_NOT_FOUND": "Deck not found.",
+    "WORD_NOT_FOUND": "Word not found.",
+    "UNAUTHORIZED": "Unauthorized access.",
+    "VALIDATION_ERROR": "Invalid input provided.",
+    "SERVICE_UNAVAILABLE": "Service temporarily unavailable.",
+    "network_error": "Network error. Please check your connection."
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "magic_link_sent": "Check your email for the magic link!",
+    "request_magic_link": "Request Magic Link",
+    "verify_token": "Verify Token",
+    "profile": "Profile",
+    "settings": "Settings",
+    "sign_out": "Sign Out",
+    "email_label": "Email",
+    "token_label": "Token",
+    "token_placeholder": "paste token here",
+    "dev_magic_link_msg": "Magic link generated locally. Token auto-filled below for dev."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "word_bank": "Word Bank",
+    "settings": "Settings",
+    "shortcuts": "Shortcuts",
+    "home": "Home",
+    "decks": "Decks",
+    "shortcuts_help": "Keyboard Shortcuts"
+  },
+  "landing": {
+    "nav": {
+      "how_it_works": "how_it_works",
+      "features": "features",
+      "get_started": "get_started"
+    },
+    "hero": {
+      "badge": "THE_FUTURE_OF_RETENTION",
+      "title": "type it until you own it",
+      "subtitle": "The flashcard app that makes you prove you know it. Type your answers, build muscle memory, and never forget again.",
+      "cta_primary": "Start Typing",
+      "cta_secondary": "Learn More"
+    },
+    "how_it_works": {
+      "title": "// how_it_works",
+      "subtitle": "Three steps to never forgetting again",
+      "step1": {
+        "title": "Create Decks",
+        "desc": "Build custom decks for any subject. Add your terms and definitions."
+      },
+      "step2": {
+        "title": "Type Answers",
+        "desc": "No multiple choice. Recall the answer from memory and type it out."
+      },
+      "step3": {
+        "title": "Review Smartly",
+        "desc": "Our algorithm schedules reviews just before you're likely to forget."
+      }
+    },
+    "features": {
+      "badge": "// features",
+      "title": "everything_you_need",
+      "subtitle": "Built for learners who want real retention, not just recognition.",
+      "typing_first": {
+        "title": "typing_first",
+        "desc": "No multiple choice. No matching. Type your answers from memory to build real neural pathways."
+      },
+      "spaced_repetition": {
+        "title": "spaced_repetition",
+        "desc": "Smart scheduling surfaces cards right before you forget. Every review is perfectly timed."
+      },
+      "progress_tracking": {
+        "title": "progress_tracking",
+        "desc": "Visual dashboards show mastery levels, streaks, and weak spots so you know exactly where to focus."
+      },
+      "custom_decks": {
+        "title": "custom_decks",
+        "desc": "Create decks for any subject — languages, code syntax, med terms, history dates. Your knowledge, your way."
+      },
+      "streak_system": {
+        "title": "streak_system",
+        "desc": "Daily streaks and scoring keep you motivated. Consistency beats cramming every time."
+      },
+      "practice_anywhere": {
+        "title": "practice_anywhere",
+        "desc": "Works on any device with a keyboard. Practice on your commute, at your desk, or in bed."
+      }
+    },
+    "cta": {
+      "title": "Master anything by typing.",
+      "subtitle": "Type your way to lasting knowledge.",
+      "button": "Start Typing Now"
+    },
+    "footer": {
+      "desc": "Type it until you own it. The flashcard app that builds real recall through active typing practice.",
+      "product": "Product",
+      "rights": "© 2026 inko. all rights reserved.",
+      "built_with": "// built with care for learners"
+    },
+    "simulator": {
+      "badge": "SIMULATOR",
+      "auto_play": "AUTO-PLAY MODE",
+      "hint": "// visual_demonstration_only"
+    }
+  },
+  "dashboard": {
+    "welcome_back": "welcome_back,",
+    "good_day": "Good day, {{name}}",
+    "learner": "learner",
+    "stats": {
+      "words_learned": "words_learned",
+      "due_today": "due_today",
+      "day_streak": "day_streak",
+      "session_time": "session_time"
+    },
+    "quick_practice": "Quick Practice",
+    "to_focus": "to focus",
+    "start_practice": "Start Practice",
+    "no_decks": "No decks yet.",
+    "head_to": "Head to the",
+    "create_first_deck": "to create your first deck.",
+    "recent_sessions": "Recent Sessions",
+    "cards_count": "{{count}} cards",
+    "no_sessions": "No completed sessions yet."
+  },
+  "word_bank": {
+    "title": "Word Bank",
+    "subtitle": "Manage your decks and vocabulary",
+    "decks": {
+      "title": "Decks",
+      "to_focus": "to focus",
+      "practice": "Practice",
+      "manage": "Manage",
+      "new_deck": "New Deck",
+      "edit_deck": "Edit deck",
+      "delete_deck": "Delete deck"
+    },
+    "add": {
+      "title": "Add to {{deck}}",
+      "tab_single": "Single Word",
+      "tab_import": "Bulk Import",
+      "target_word": "Target word",
+      "target_placeholder": "e.g. {{example}}",
+      "meaning": "Meaning",
+      "meaning_placeholder": "e.g. study; learning",
+      "reading": "Reading",
+      "reading_placeholder_jp": "e.g. べんきょう",
+      "reading_placeholder": "Optional pronunciation",
+      "romanization": "Romanization",
+      "romanization_placeholder": "e.g. benkyou",
+      "example": "Example sentence",
+      "example_placeholder_jp": "e.g. 毎日日本語を勉強しています。",
+      "example_placeholder": "e.g. Estoy aprendiendo cada dia.",
+      "audio_url": "Audio URL (optional)",
+      "tags": "Tags (comma separated)",
+      "submit": "Add Word",
+      "submitting": "Adding..."
+    },
+    "import": {
+      "instruction": "Upload a CSV/TSV file or paste data directly. Supported columns: target, reading, meaning, romanization, example, tags",
+      "choose_file": "Choose File",
+      "or_paste": "or paste below",
+      "preview": "Preview Import",
+      "field_mapping": "Field Mapping",
+      "map_instruction": "Map each column to the correct field:",
+      "skip": "-- Skip --",
+      "target_req": "Target (required)",
+      "meaning_req": "Meaning (required)",
+      "preview_title": "Preview",
+      "submit": "Import {{count}} Words",
+      "importing": "Importing...",
+      "done": "Done: {{imported}} imported{{failed}}"
+    },
+    "words": {
+      "title": "Words",
+      "search_placeholder": "Search words...",
+      "selected": "{{count}} selected",
+      "delete_selected": "Delete Selected",
+      "deleting": "Deleting...",
+      "clear_selection": "Clear selection",
+      "showing_count": "Showing {{count}} words on this page",
+      "all_tags": "All Tags",
+      "no_match": "No words match your search.",
+      "try_different": "Try a different search term or clear the filter.",
+      "no_words": "No words yet.",
+      "add_using_form": "Add words using the form above.",
+      "select_deck": "Select a deck to view and manage its words."
+    },
+    "new_deck": {
+      "title": "Create New Deck",
+      "name": "Deck name",
+      "name_placeholder": "e.g. JLPT N5 Vocabulary",
+      "language": "Target language"
+    },
+    "edit_deck": {
+      "title": "Edit Deck",
+      "archive": "Archive deck (hide from dashboard)"
+    },
+    "delete_deck": {
+      "title": "Delete Deck",
+      "confirm": "Are you sure you want to delete \"{{name}}\"? This will remove the deck and unlink all words from it. Words in other decks will not be affected."
+    },
+    "edit_word": {
+      "title": "Edit Word"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Customize your experience",
+    "nav": {
+      "profile": "Profile",
+      "preferences": "Preferences",
+      "appearance": "Appearance",
+      "about": "About"
+    },
+    "profile": {
+      "display_name": "Display Name",
+      "name_placeholder": "Your name",
+      "email": "Email",
+      "joined": "Joined"
+    },
+    "preferences": {
+      "theme_mode": "Theme Mode",
+      "dark": "Dark",
+      "light": "Light",
+      "typing_mode": "Typing Mode",
+      "lang_specific": "Language Specific",
+      "universal": "Universal",
+      "typing_mode_desc": "Language-specific uses script-aware matching (e.g. romaji to kana for Japanese). Universal uses normalized direct typing."
+    },
+    "appearance": {
+      "reset": "Reset {{mode}}",
+      "dark_palette": "Dark Palette",
+      "light_palette": "Light Palette",
+      "theme_presets": "Theme Presets",
+      "export_theme": "Export Theme",
+      "copy_json": "Copy JSON",
+      "copy_css": "Copy CSS Vars",
+      "copy_hex": "Copy {{mode}} Hex",
+      "export_json_btn": "Export JSON"
+    },
+    "about": {
+      "desc": "A minimal, focused language typing practice app inspired by monkeytype."
+    }
+  },
+  "practice": {
+    "daily_target_reached": "Daily target reached",
+    "session_complete": "Session Complete",
+    "cards": "cards",
+    "avg_typing": "avg typing",
+    "best_streak": "best streak",
+    "back_to_dashboard": "Back to Dashboard",
+    "end_session": "end session",
+    "esc_hint": "Press Esc again within 1 second to exit",
+    "end_confirm_title": "End this practice session?",
+    "end_confirm_desc": "Progress for this session will be saved.",
+    "confirm_exit": "Confirm Exit",
+    "type_romaji": "type romaji...",
+    "type_answer": "type answer...",
+    "not_quite": "not quite — try again",
+    "off_track": "off track"
+  }
+}
