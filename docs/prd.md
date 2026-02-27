@@ -312,7 +312,7 @@ It is designed to turn passive learners into active producers of language — st
 
 ---
 
-## 12. Implementation Status (as of February 26, 2026)
+## 12. Implementation Status (as of February 27, 2026)
 
 ### 12.1 Delivered
 
@@ -335,19 +335,29 @@ It is designed to turn passive learners into active producers of language — st
   * Typing validation (normalized JP input; target or reading)
   * Audio gate (must be played/marked played)
   * Score generation (shape/typing/listening)
+  * Session safety UX: accidental exit protection via double-`Esc` intent + explicit confirm exit
+  * Large-deck consumption strategy: fixed per-session quota (default 50 cards) with auto carry-over across sessions
+  * Session progress metadata (`cardsCompleted`, `remainingCards`, `sessionTargetCards`) and capped completion handling
 * Scheduling:
   * Per-word channel stats (shape/typing/listening)
   * Weakest-channel-first and due-date updates after attempts
 * Dashboard:
   * Summary endpoint and frontend cards for core KPIs
   * Recent session list support
+  * Bounded summary computation for large datasets to avoid Convex read/paginate limits
 * Starter seed:
   * Convex mutation for `Core N5` deck + starter JP vocabulary
   * Bun script for quick seeding
+* Performance and scalability hardening:
+  * Batch word create/delete now chunked to respect Convex argument and execution limits
+  * Deck deletion made incremental/paged to avoid large read explosions
+  * Practice submit latency reduced via session-level attempted-word tracking and candidate-window cache
+  * Practice candidate scans reduced and bounded for faster start/submit under large decks
 * Quality gates:
   * Shared/unit tests
   * API integration tests (Fastify `inject`)
   * Web component tests for practice submit gating
+  * API performance guard tests for large batch chunking
 
 ### 12.2 Partially Delivered
 
@@ -371,7 +381,7 @@ It is designed to turn passive learners into active producers of language — st
 ## 13. Current MVP Focus (Immediate Next Steps)
 
 1. Replace log-based magic-link with real dev/prod mail delivery.
-2. Improve visual fidelity against `inko.pen` for dashboard and practice screens.
-3. Expand API integration coverage for all authorization edge cases.
-4. Add operational docs for cloud deployment + environment matrix.
-
+2. Reduce practice cold-start latency (`/practice/session/start`) with production tracing and cache-aware preselection.
+3. Improve visual fidelity against `inko.pen` for dashboard and practice screens.
+4. Expand API integration coverage for all authorization edge cases and large-deck regression paths.
+5. Add operational docs for cloud deployment + environment matrix.
