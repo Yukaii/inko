@@ -10,6 +10,16 @@ import { registerShortcut } from "../hooks/useKeyboard.js";
 type AddTab = "single" | "import";
 const NEW_DECK_LANGUAGE_STORAGE_KEY = "inko:new-deck-language";
 const IMPORT_PREVIEW_PAGE_SIZE = 20;
+const IMPORT_BATCH_SIZE = 1000;
+
+function chunkArray<T>(items: T[], size: number): T[][] {
+  if (size <= 0) return [items];
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
 
 function getInitialDeckLanguage(): LanguageCode {
   if (typeof window === "undefined") return "ja";
@@ -502,13 +512,16 @@ export function WordBankPage() {
     }
 
     if (wordsToImport.length > 0) {
-      try {
-        const result = await api.createWordsBatch(token ?? "", selectedDeckId, {
-          words: wordsToImport,
-        });
-        imported = result.created;
-      } catch {
-        failed += wordsToImport.length;
+      const batches = chunkArray(wordsToImport, IMPORT_BATCH_SIZE);
+      for (const batch of batches) {
+        try {
+          const result = await api.createWordsBatch(token ?? "", selectedDeckId, {
+            words: batch,
+          });
+          imported += result.created;
+        } catch {
+          failed += batch.length;
+        }
       }
     }
 
