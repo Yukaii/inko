@@ -263,7 +263,7 @@ export function LandingPage() {
             Master anything by typing.
           </h2>
           <p className="max-w-[550px] font-mono text-sm md:text-base leading-relaxed text-text-secondary">
-            Type your way to lasting knowledge. Free to start.
+            Type your way to lasting knowledge.
           </p>
           <div className="flex flex-col items-center gap-4 mt-4">
             <Link
@@ -272,9 +272,6 @@ export function LandingPage() {
             >
               Start Typing Now
             </Link>
-            <span className="font-mono text-xs text-text-secondary">
-              // it's free, forever
-            </span>
           </div>
         </motion.div>
       </section>
