@@ -31,7 +31,7 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string):
 
 export const api = {
   requestMagicLink: (email: string) =>
-    request<{ ok: boolean }>("/api/auth/magic-link/request", {
+    request<{ ok: boolean; devToken?: string }>("/api/auth/magic-link/request", {
       method: "POST",
       body: JSON.stringify({ email }),
     }),

@@ -124,6 +124,9 @@ Runs on PRs and pushes to `main`:
 - `zeabur.yml` deployed successfully (4 services created)
 - Convex backend volume mounted at `/convex/data`
 - API `JWT_SECRET` replaced with strong value
+- API `MAIL_PROVIDER` set to `resend`
+- API `RESEND_API_KEY` configured
+- API `MAIL_FROM` configured with verified sender domain
 - Convex `INSTANCE_SECRET` is valid hex
 - API `FRONTEND_URL` matches frontend domain
 - frontend `VITE_API_URL` points to API domain

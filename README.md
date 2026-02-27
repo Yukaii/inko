@@ -63,9 +63,9 @@ bunx convex run seed:seedStarterData '{"email":"you@example.com"}'
 
 ## Auth Flow (Local)
 
-- Request magic link token from login page.
-- API logs the token in terminal.
-- Paste token in login form to verify.
+- Request magic link from login page.
+- With `MAIL_PROVIDER=log` (default), token is returned for local/dev and can be pasted in login form.
+- With `MAIL_PROVIDER=resend`, magic link is sent via email and login page can auto-verify from `?token=...`.
 
 ## Implemented Routes
 
