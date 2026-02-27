@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.zeabur.com/zbpack.schema.json",
   "dockerfile": {
-    "name": "API"
+    "name": "api"
   }
 }
