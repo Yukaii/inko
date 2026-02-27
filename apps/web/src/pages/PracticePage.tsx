@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { isJapaneseTypingMatch, normalizeJapaneseInput, romajiToHiragana } from "@inko/shared";
@@ -71,18 +71,23 @@ export function getTypingFeedback(input: { typingInput: string; expected: string
 export function PracticePage() {
   const { deckId } = useParams<{ deckId: string }>();
   const { token } = useAuth();
+  const navigate = useNavigate();
 
   const [sessionId, setSessionId] = useState("");
   const [card, setCard] = useState<PracticeCard | null>(null);
   const [typingInput, setTypingInput] = useState("");
-  const [result, setResult] = useState<string>("");
   const [cardStreak, setCardStreak] = useState(0);
   const [bestCardStreak, setBestCardStreak] = useState(0);
   const [lastSubmitAccepted, setLastSubmitAccepted] = useState<boolean | null>(null);
+  const [sessionDone, setSessionDone] = useState(false);
+  const [sessionSummary, setSessionSummary] = useState<{ cardsCompleted: number; avgTypingScore: number } | null>(null);
+  const [cardTransition, setCardTransition] = useState(false);
+  const [finishError, setFinishError] = useState("");
+
   const startedAtRef = useRef<number>(Date.now());
   const autoSubmitKeyRef = useRef<string>("");
-  const pageRef = useRef<HTMLDivElement | null>(null);
-  const typingInputRef = useRef<HTMLInputElement | null>(null);
+  const hiddenInputRef = useRef<HTMLInputElement | null>(null);
+  const zoneRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!deckId || !token) return;
@@ -93,10 +98,13 @@ export function PracticePage() {
     });
   }, [deckId, token]);
 
-  useEffect(() => {
-    pageRef.current?.focus();
-    typingInputRef.current?.focus();
+  const focusInput = useCallback(() => {
+    hiddenInputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    focusInput();
+  }, [focusInput]);
 
   const submitMutation = useMutation({
     mutationFn: () => {
@@ -111,12 +119,6 @@ export function PracticePage() {
       });
     },
     onSuccess: (res) => {
-      setResult(
-        res.accepted
-          ? `Accepted: shape ${res.scores.shape}, typing ${res.scores.typing}, listening ${res.scores.listening}`
-          : "Rejected: typing does not match target",
-      );
-
       if (res.accepted) {
         setLastSubmitAccepted(true);
         setCardStreak((prev) => {
@@ -124,13 +126,19 @@ export function PracticePage() {
           setBestCardStreak((best) => Math.max(best, next));
           return next;
         });
-        setTypingInput("");
-        if (res.nextCard) {
-          setCard(res.nextCard as PracticeCard);
-        } else {
-          finishMutation.mutate();
-        }
-        startedAtRef.current = Date.now();
+
+        setCardTransition(true);
+        setTimeout(() => {
+          setTypingInput("");
+          if (res.nextCard) {
+            setCard(res.nextCard as PracticeCard);
+          } else {
+            requestFinish();
+          }
+          startedAtRef.current = Date.now();
+          setCardTransition(false);
+          focusInput();
+        }, 400);
       } else {
         setLastSubmitAccepted(false);
         setCardStreak(0);
@@ -138,15 +146,37 @@ export function PracticePage() {
     },
   });
 
+  const finishRequestedRef = useRef(false);
+
   const finishMutation = useMutation({
-    mutationFn: () => {
-      if (!token) throw new Error("Not authenticated");
-      return api.finishPractice(token, sessionId);
+    mutationFn: (vars: { token: string; sessionId: string }) => {
+      return api.finishPractice(vars.token, vars.sessionId);
     },
     onSuccess: (summary) => {
-      setResult(`Session done: ${summary.cardsCompleted} cards, avg typing ${summary.avgTypingScore}`);
+      setFinishError("");
+      setSessionDone(true);
+      setSessionSummary(summary);
+    },
+    onError: (error) => {
+      setFinishError(error instanceof Error ? error.message : "Failed to finish session");
+      finishRequestedRef.current = false;
     },
   });
+
+  const requestFinish = useCallback(() => {
+    if (!sessionId) {
+      setFinishError("Session is still starting. Try again.");
+      return;
+    }
+    if (!token) {
+      setFinishError("You are not authenticated.");
+      return;
+    }
+    if (finishRequestedRef.current || finishMutation.isPending || sessionDone) return;
+    finishRequestedRef.current = true;
+    setFinishError("");
+    finishMutation.mutate({ token, sessionId });
+  }, [finishMutation, sessionDone, sessionId, token]);
 
   const submitEnabled = useMemo(() => {
     if (!card) return false;
@@ -179,19 +209,14 @@ export function PracticePage() {
     });
   }, [card, typingInput]);
 
-  const typingSpeed = useMemo(() => {
-    const elapsedMs = Math.max(1, Date.now() - startedAtRef.current);
-    const typed = normalizeJapaneseInput(typingInput).length;
-    return Math.round((typed * 60000) / elapsedMs);
-  }, [typingInput]);
-
   const focusKey = card?.wordId ?? "";
 
   useEffect(() => {
     if (!focusKey) return;
-    typingInputRef.current?.focus();
-  }, [focusKey]);
+    focusInput();
+  }, [focusKey, focusInput]);
 
+  // Auto-submit on match
   useEffect(() => {
     if (!card || submitMutation.isPending || !submitEnabled) return;
     const normalizedTyped = normalizeJapaneseInput(typingInput).toLowerCase();
@@ -204,91 +229,204 @@ export function PracticePage() {
     submitMutation.mutate();
   }, [card, sessionId, submitEnabled, submitMutation, typingInput]);
 
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        requestFinish();
+        return;
+      }
+      // Any printable key focuses the hidden input
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      focusInput();
+    },
+    [requestFinish, focusInput],
+  );
+
+  // Build character-by-character display for monkeytype effect
+  const romajiChars = useMemo(() => {
+    const target = typingFeedback.target;
+    if (!target) return [];
+
+    const typed = normalizeJapaneseInput(typingInput).toLowerCase();
+    const chars: Array<{ char: string; pos: number; state: "correct" | "wrong" | "cursor" | "pending" }> = [];
+
+    for (let i = 0; i < target.length; i++) {
+      if (i < typed.length) {
+        chars.push({
+          char: target[i],
+          pos: i,
+          state: typed[i] === target[i] ? "correct" : "wrong",
+        });
+      } else if (i === typed.length) {
+        chars.push({ char: target[i], pos: i, state: "cursor" });
+      } else {
+        chars.push({ char: target[i], pos: i, state: "pending" });
+      }
+    }
+
+    // If typed is longer than target, show extra chars as wrong
+    if (typed.length > target.length) {
+      for (let i = target.length; i < typed.length; i++) {
+        chars.push({ char: typed[i], pos: i, state: "wrong" });
+      }
+    }
+
+    return chars;
+  }, [typingInput, typingFeedback.target]);
+
+  // Session done screen
+  if (sessionDone) {
+    return (
+      <section className="zen-zone" aria-label="Practice complete">
+        <div className="zen-center">
+          <div className="zen-complete-icon" aria-hidden="true">&#x2714;</div>
+          <h1 className="zen-complete-title">Session Complete</h1>
+          {sessionSummary ? (
+            <div className="zen-complete-stats">
+              <div className="zen-stat">
+                <span className="zen-stat-value">{sessionSummary.cardsCompleted}</span>
+                <span className="zen-stat-label">cards</span>
+              </div>
+              <div className="zen-stat">
+                <span className="zen-stat-value">{sessionSummary.avgTypingScore}</span>
+                <span className="zen-stat-label">avg typing</span>
+              </div>
+              <div className="zen-stat">
+                <span className="zen-stat-value">{bestCardStreak}</span>
+                <span className="zen-stat-label">best streak</span>
+              </div>
+            </div>
+          ) : null}
+          <button type="button" className="zen-back-btn" onClick={() => navigate("/dashboard")}>
+            Back to Dashboard
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  // Loading state
   if (!card) {
-    return <p>Loading card...</p>;
+    return (
+      <section className="zen-zone" aria-label="Loading practice">
+        <div className="zen-center">
+          <div className="zen-loading">Loading...</div>
+        </div>
+      </section>
+    );
   }
 
   return (
-    <div
-      ref={pageRef}
+    <section
+      ref={zoneRef}
+      className="zen-zone"
       tabIndex={-1}
-      style={{ display: "grid", gap: 20 }}
-      onKeyDown={(event) => {
-        if (event.metaKey || event.ctrlKey || event.altKey) return;
-        typingInputRef.current?.focus();
-      }}
+      aria-label="Practice session"
+      onKeyDown={handleKeyDown}
+      onClick={focusInput}
     >
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <p style={{ marginBottom: 6, color: "var(--text-secondary)" }}>triple_input_mode</p>
-          <h1 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 42 }}>Practice Session</h1>
+      {/* Minimal top bar */}
+      <div className="zen-topbar">
+        <div className="zen-topbar-left">
+          <span className="zen-streak-pill" aria-label={`Current streak: ${cardStreak}`}>
+            {cardStreak > 0 ? (
+              <>
+                <span className="zen-streak-fire" aria-hidden="true">&#x1F525;</span>
+                <span>{cardStreak}</span>
+              </>
+            ) : (
+              <span className="zen-streak-zero">0</span>
+            )}
+          </span>
+          {bestCardStreak > 0 ? (
+            <span className="zen-best-streak" aria-label={`Best streak: ${bestCardStreak}`}>
+              best: {bestCardStreak}
+            </span>
+          ) : null}
         </div>
-        <button type="button" className="secondary" onClick={() => finishMutation.mutate()}>
-          Finish Session
+        <button type="button" className="zen-end-btn" onClick={() => requestFinish()}>
+          end session
+          <kbd className="zen-kbd">esc</kbd>
         </button>
-      </header>
+      </div>
+      {finishError ? <div className="zen-finish-error">{finishError}</div> : null}
 
-      <section className="card" style={{ display: "flex", justifyContent: "space-between", gap: 20 }}>
-        <div>
-          <div style={{ fontFamily: "var(--font-jp)", fontSize: 56 }}>{card.target}</div>
-          <div style={{ color: "var(--accent-orange)", fontFamily: "var(--font-jp)" }}>{card.reading}</div>
-          <div style={{ color: "var(--text-secondary)" }}>{card.romanization}</div>
-        </div>
-        <div style={{ maxWidth: 340 }}>
-          <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>meaning</div>
-          <div>{card.meaning}</div>
-          <div style={{ color: "var(--text-secondary)", marginTop: 12, fontSize: 12 }}>example</div>
-          <div style={{ color: "var(--text-secondary)", fontFamily: "var(--font-jp)" }}>{card.example}</div>
-        </div>
-      </section>
+      {/* Center focus area */}
+      <div className={`zen-center ${cardTransition ? "zen-card-exit" : ""}`}>
+        {/* Meaning as a subtle hint above */}
+        {card.meaning ? (
+          <div className="zen-meaning">{card.meaning}</div>
+        ) : null}
 
-      <section className="card" style={{ display: "grid", gap: 10 }}>
-        <strong>IME Typing</strong>
+        {/* Large kanji target */}
+        <div className="zen-target" lang="ja">{card.target}</div>
+
+        {/* Reading hint (small, below kanji) */}
+        {card.reading ? (
+          <div className="zen-reading" lang="ja">{card.reading}</div>
+        ) : null}
+
+        {/* Monkeytype-style character display */}
+        <div className="zen-romaji-track" aria-hidden="true">
+          {romajiChars.map((c) => (
+            <span
+              key={`${focusKey}-p${c.pos}-${c.char}`}
+              className={`zen-char zen-char-${c.state}`}
+            >
+              {c.char}
+            </span>
+          ))}
+          {romajiChars.length === 0 ? (
+            <span className="zen-char zen-char-pending zen-romaji-placeholder">
+              type romaji...
+            </span>
+          ) : null}
+        </div>
+
+        {/* Hidden input for capturing keystrokes */}
+        <label className="zen-sr-only" htmlFor="zen-typing-input">
+          Type romaji for {card.target}
+        </label>
         <input
+          id="zen-typing-input"
           key={card.wordId}
-          ref={typingInputRef}
+          ref={hiddenInputRef}
+          className="zen-hidden-input"
           value={typingInput}
           onChange={(event) => setTypingInput(event.target.value)}
-          placeholder="Type romaji (lowercase)"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              requestFinish();
+            }
+          }}
+          aria-label={`Type romaji for ${card.target}`}
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
         />
-        <div className="typing-feedback" aria-live="polite">
-          <div className="typing-feedback-topline">
-            <span>{typingFeedback.complete ? "locked_in" : typingFeedback.onTrack ? "on_track" : "mistyped"}</span>
-            <span>{typingFeedback.progress}%</span>
-          </div>
-          <div className="typing-progress-track" aria-hidden="true">
-            <div className="typing-progress-fill" style={{ width: `${typingFeedback.progress}%` }} />
-          </div>
-          <div className="typing-feedback-metrics">
-            <span>char streak: {typingFeedback.currentStreak}</span>
-            <span>accuracy: {typingFeedback.accuracy}%</span>
-            <span>speed: {typingSpeed} cpm</span>
-          </div>
-          <div className="typing-feedback-target">target: {typingFeedback.target || "-"}</div>
-        </div>
-      </section>
 
-      <section className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", gap: 20 }}>
-          <span>typing: {typingInput ? (typingFeedback.complete ? "ready" : "keep typing") : "pending"}</span>
-          <span>{submitMutation.isPending ? "auto-submitting" : "auto-submit enabled"}</span>
+        {/* Feedback line */}
+        <div className="zen-feedback" aria-live="polite">
+          {lastSubmitAccepted === false ? (
+            <span className="zen-feedback-miss">not quite &mdash; try again</span>
+          ) : typingInput && !typingFeedback.onTrack ? (
+            <span className="zen-feedback-off">off track</span>
+          ) : typingInput && typingFeedback.onTrack ? (
+            <span className="zen-feedback-on">{typingFeedback.progress}%</span>
+          ) : null}
         </div>
-      </section>
+      </div>
 
-      <section className="card streak-card">
-        <div className="streak-headline">
-          <span>continuous streak</span>
-          <strong>{cardStreak}</strong>
+      {/* Subtle progress bar at bottom */}
+      <div className="zen-bottom-bar">
+        <div className="zen-progress-track" aria-hidden="true">
+          <div
+            className={`zen-progress-fill ${typingFeedback.complete ? "zen-progress-complete" : ""}`}
+            style={{ width: `${typingFeedback.progress}%` }}
+          />
         </div>
-        <div className="streak-meta">
-          <span>best run: {bestCardStreak}</span>
-          <span>
-            last: {lastSubmitAccepted === null ? "-" : lastSubmitAccepted ? "accepted" : "reset"}
-          </span>
-        </div>
-      </section>
-
-      {result ? <p style={{ color: "var(--accent-teal)", margin: 0 }}>{result}</p> : null}
-    </div>
+      </div>
+    </section>
   );
 }
