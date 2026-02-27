@@ -219,7 +219,8 @@
       "try_different": "Try a different search term or clear the filter.",
       "no_words": "No words yet.",
       "add_using_form": "Add words using the form above.",
-      "select_deck": "Select a deck to view and manage its words."
+      "select_deck": "Select a deck to view and manage its words.",
+      "select_deck_desc": "Choose a deck from the sidebar to manage your vocabulary."
     },
     "new_deck": {
       "title": "Create New Deck",
@@ -290,6 +291,7 @@
     "end_confirm_title": "End this practice session?",
     "end_confirm_desc": "Progress for this session will be saved.",
     "confirm_exit": "Confirm Exit",
+    "no_words_available": "No words available in this deck yet.",
     "type_romaji": "type romaji...",
     "type_answer": "type answer...",
     "not_quite": "not quite — try again",

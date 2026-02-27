@@ -131,6 +131,7 @@ export function PracticePage() {
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const [exitEscHint, setExitEscHint] = useState(false);
   const [lastEscPressedAt, setLastEscPressedAt] = useState<number | null>(null);
+  const [startError, setStartError] = useState("");
 
   const startedAtRef = useRef<number>(Date.now());
   const autoSubmitKeyRef = useRef<string>("");
@@ -141,16 +142,44 @@ export function PracticePage() {
 
   useEffect(() => {
     if (!deckId || !token) return;
-    api.startPractice(token, deckId).then((res) => {
-      setSessionId(res.sessionId);
-      setCard(res.card as PracticeCard);
-      setTypingMode((res.typingMode as TypingMode | undefined) ?? "language_specific");
-      setSessionTargetCards(res.sessionTargetCards ?? PRACTICE_SESSION_CARD_CAP_DEFAULT);
-      setCardsCompleted(res.cardsCompleted ?? 0);
-      setSessionCapped(false);
-      startedAtRef.current = Date.now();
-    });
-  }, [deckId, token]);
+    let cancelled = false;
+    setStartError("");
+
+    api.startPractice(token, deckId)
+      .then((res) => {
+        if (cancelled) return;
+        setSessionId(res.sessionId);
+        setCard(res.card as PracticeCard);
+        setTypingMode((res.typingMode as TypingMode | undefined) ?? "language_specific");
+        setSessionTargetCards(res.sessionTargetCards ?? PRACTICE_SESSION_CARD_CAP_DEFAULT);
+        setCardsCompleted(res.cardsCompleted ?? 0);
+        setSessionCapped(false);
+        startedAtRef.current = Date.now();
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        const statusCode =
+          typeof error === "object" && error !== null && "statusCode" in error
+            ? Number((error as { statusCode?: number }).statusCode)
+            : undefined;
+
+        if (statusCode === 409) {
+          setStartError(t("practice.no_words_available"));
+          return;
+        }
+
+        if (error instanceof Error && error.message) {
+          setStartError(error.message);
+          return;
+        }
+
+        setStartError(t("errors.unknown"));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [deckId, t, token]);
 
   // Register shortcut for going back to dashboard when session is done
   useEffect(() => {
@@ -453,6 +482,23 @@ export function PracticePage() {
 
   // Loading state
   if (!card) {
+    if (startError) {
+      return (
+        <section className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-center overflow-hidden bg-bg-page" aria-label="Practice unavailable">
+          <div className="flex flex-col items-center gap-4 px-6 text-center">
+            <p className="m-0 text-base text-text-secondary">{startError}</p>
+            <button
+              type="button"
+              className="rounded-[10px] border border-[var(--border-muted)] bg-bg-elevated px-6 py-3 text-sm font-medium text-text-primary hover:border-accent-orange"
+              onClick={() => navigate("/dashboard")}
+            >
+              {t("practice.back_to_dashboard")}
+            </button>
+          </div>
+        </section>
+      );
+    }
+
     return (
       <section className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-center overflow-hidden bg-bg-page" aria-label="Loading practice">
         <div className="flex flex-col items-center gap-4">
