@@ -20,7 +20,7 @@ import {
   scoreTyping,
   applyAttempt,
 } from "@inko/shared";
-import { convex } from "../lib/convex.js";
+import { convex } from "../lib/convex";
 
 type ConvexUser = {
   _id: string;

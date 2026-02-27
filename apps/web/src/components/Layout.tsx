@@ -2,10 +2,10 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ThemeConfig, ThemeMode } from "@inko/shared";
-import { registerShortcut, getShortcutsList } from "../hooks/useKeyboard.js";
-import { useAuth } from "../hooks/useAuth.js";
-import { api } from "../api/client.js";
-import { applyThemePreferences, saveThemePreferences } from "../theme/theme.js";
+import { registerShortcut, getShortcutsList } from "../hooks/useKeyboard";
+import { useAuth } from "../hooks/useAuth";
+import { api } from "../api/client";
+import { applyThemePreferences, saveThemePreferences } from "../theme/theme";
 
 // Simple icon components
 function HomeIcon({ className }: { className?: string }) {

@@ -1,9 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import { MagicLinkRequestSchema, MagicLinkVerifySchema, UpdateProfileSchema } from "@inko/shared";
-import { consumeMagicToken, createMagicToken, issueAccessToken } from "../lib/auth.js";
-import type { Mailer } from "../lib/mailer.js";
-import { repository, type Repository } from "../services/repository.js";
-import { requireAuth } from "../plugins/auth.js";
+import { consumeMagicToken, createMagicToken, issueAccessToken } from "../lib/auth";
+import type { Mailer } from "../lib/mailer";
+import { repository, type Repository } from "../services/repository";
+import { requireAuth } from "../plugins/auth";
 
 export async function authRoutes(app: FastifyInstance, repo: Repository = repository, mailer: Mailer) {
   app.post("/api/auth/magic-link/request", async (request) => {

@@ -1,4 +1,4 @@
-import { clampStrength } from "./scoring.js";
+import { clampStrength } from "./scoring";
 
 export type ChannelState = {
   strength: number;

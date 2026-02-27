@@ -1,3 +1,3 @@
-export * from "./schemas.js";
-export * from "./scoring.js";
-export * from "./scheduling.js";
+export * from "./schemas";
+export * from "./scoring";
+export * from "./scheduling";

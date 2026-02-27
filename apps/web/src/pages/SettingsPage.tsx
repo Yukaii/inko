@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { DefaultThemes, type ThemeConfig, type ThemeMode, type ThemePalette, type TypingMode } from "@inko/shared";
-import { api } from "../api/client.js";
-import { useAuth } from "../hooks/useAuth.js";
-import { applyThemePreferences, saveThemePreferences } from "../theme/theme.js";
+import { api } from "../api/client";
+import { useAuth } from "../hooks/useAuth";
+import { applyThemePreferences, saveThemePreferences } from "../theme/theme";
 
 type MeResponse = {
   id: string;

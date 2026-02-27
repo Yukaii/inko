@@ -1,6 +1,6 @@
 import { jwtVerify, SignJWT } from "jose";
 import { randomBytes } from "node:crypto";
-import { env } from "./env.js";
+import { env } from "./env";
 
 type MagicTokenRecord = {
   email: string;
