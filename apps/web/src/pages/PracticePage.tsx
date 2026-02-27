@@ -471,15 +471,15 @@ export function PracticePage() {
       <div className="fixed inset-x-0 top-0 z-[210] flex items-center justify-between px-6 py-4 opacity-60 transition-opacity hover:opacity-100 focus-within:opacity-100">
         <div className="flex items-center gap-3">
           <span
-            className="inline-flex items-center rounded-full border border-[var(--border-muted)] bg-bg-page px-3 py-1 text-xs text-text-secondary"
+            className="inline-flex items-center rounded-full border border-[var(--border-muted)] bg-bg-page px-3 py-1 text-xs text-text-secondary font-medium"
             aria-label={`Session progress: ${cardsCompleted} of ${sessionTargetCards}`}
           >
             {cardsCompleted}/{sessionTargetCards}
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-muted)] bg-bg-page px-3.5 py-1.5 text-sm text-accent-orange [font-family:var(--font-display)]" aria-label={`Current streak: ${cardStreak}`}>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-muted)] bg-bg-page px-3.5 py-1.5 text-sm text-accent-orange font-bold [font-family:var(--font-display)]" aria-label={`Current streak: ${cardStreak}`}>
             {cardStreak > 0 ? (
               <>
-                <span className="text-base" aria-hidden="true">&#x1F525;</span>
+                <span className="text-base" aria-hidden="true">🔥</span>
                 <span>{cardStreak}</span>
               </>
             ) : (
@@ -487,7 +487,7 @@ export function PracticePage() {
             )}
           </span>
           {bestCardStreak > 0 ? (
-            <span className="text-xs text-text-secondary" aria-label={`Best streak: ${bestCardStreak}`}>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary opacity-60" aria-label={`Best streak: ${bestCardStreak}`}>
               best: {bestCardStreak}
             </span>
           ) : null}

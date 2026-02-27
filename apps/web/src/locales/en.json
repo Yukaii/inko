@@ -18,6 +18,7 @@
     "saving": "Saving...",
     "deleting": "Deleting...",
     "create": "Create",
+    "new": "New",
     "save_changes": "Save Changes"
   },
   "errors": {
@@ -160,10 +161,13 @@
       "manage": "Manage",
       "new_deck": "New Deck",
       "edit_deck": "Edit deck",
-      "delete_deck": "Delete deck"
+      "delete_deck": "Delete deck",
+      "manage_deck": "Manage {{name}}",
+      "select_deck_desc": "Choose a deck from the sidebar to manage your vocabulary."
     },
     "add": {
       "title": "Add to {{deck}}",
+      "title_short": "Add Word",
       "tab_single": "Single Word",
       "tab_import": "Bulk Import",
       "target_word": "Target word",
@@ -207,6 +211,9 @@
       "clear_selection": "Clear selection",
       "showing_count": "Showing {{count}} words on this page",
       "all_tags": "All Tags",
+      "target": "Target",
+      "reading": "Reading",
+      "meaning": "Meaning",
       "no_match": "No words match your search.",
       "try_different": "Try a different search term or clear the filter.",
       "no_words": "No words yet.",
