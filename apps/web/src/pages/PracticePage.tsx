@@ -530,8 +530,11 @@ export function PracticePage() {
         </div>
       ) : null}
 
+      {/* Success Glow */}
+      <div className={`pointer-events-none fixed inset-0 z-[190] bg-[radial-gradient(circle_at_center,var(--accent-teal)_0%,transparent_40%)] opacity-0 transition-opacity duration-300 ${cardTransition ? "opacity-5" : ""}`} aria-hidden="true" />
+
       {/* Center focus area */}
-      <div className={`flex flex-col items-center gap-4 transition-all ${cardTransition ? "-translate-y-3 opacity-0" : ""}`}>
+      <div className={`relative z-[200] flex flex-col items-center gap-4 transition-all duration-300 ${cardTransition ? "-translate-y-2 opacity-0" : ""}`}>
         {/* Meaning as a subtle hint above */}
         {card.meaning ? (
           <div className="text-base tracking-[0.02em] text-text-secondary">{card.meaning}</div>
@@ -556,7 +559,7 @@ export function PracticePage() {
         ) : null}
 
         {/* Monkeytype-style character display */}
-        <div className="mt-3 flex min-h-[42px] justify-center gap-0.5 font-mono text-[22px] tracking-[0.08em] md:text-[28px]" aria-hidden="true">
+        <div className={`mt-3 flex min-h-[42px] justify-center gap-0.5 font-mono text-[22px] tracking-[0.08em] md:text-[28px] ${lastSubmitAccepted === false ? "animate-shake text-[var(--danger-text)]" : ""}`} aria-hidden="true">
           {romajiChars.map((c) => (
             <span
               key={`${focusKey}-p${c.pos}-${c.char}`}
