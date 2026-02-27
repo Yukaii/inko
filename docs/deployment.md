@@ -1,7 +1,7 @@
 # Deployment Guide (Production)
 
 This project uses:
-- Frontend (`apps/web`) on GitHub Pages
+- Frontend (`apps/web`) on Zeabur or GitHub Pages
 - API (`apps/api`) on Zeabur
 - Self-hosted Convex (backend + dashboard) on Zeabur
 
@@ -10,10 +10,11 @@ This project uses:
 This repo now includes a multi-service template:
 - `zeabur.yml`
 
-It deploys 3 services into one Zeabur project:
+It deploys 4 services into one Zeabur project:
 - `API` (Git source from this repo)
 - `Convex Backend` (official prebuilt image)
 - `Convex Dashboard` (official prebuilt image)
+- `Frontend` (Git source from `apps/web`)
 
 Dockerfile selection for API:
 - `Dockerfile.api`
@@ -38,6 +39,8 @@ npx -y zeabur@latest template deploy \
   --file zeabur.yml \
   --project-id <ZEABUR_PROJECT_ID> \
   --var BACKEND_DOMAIN=<convex-backend-subdomain> \
+  --var API_DOMAIN=<api-subdomain> \
+  --var FRONTEND_DOMAIN=<frontend-subdomain> \
   --var CONVEX_INSTANCE_SECRET=<hex-secret>
 ```
 
@@ -49,6 +52,7 @@ openssl rand -hex 32
 
 Notes:
 - `BACKEND_DOMAIN` is the Zeabur-generated subdomain (without `.zeabur.app`).
+- `API_DOMAIN` and `FRONTEND_DOMAIN` are Zeabur-generated subdomains (without `.zeabur.app`).
 - `CONVEX_INSTANCE_SECRET` must be hex. Non-hex values will crash Convex backend on startup.
 - Template currently pins GitHub repo id for `Yukaii/inko`. If you fork/rename repo, update `spec.services[API].spec.source.repo` in `zeabur.yml`.
 
@@ -61,6 +65,8 @@ Required GitHub secrets:
 - `ZEABUR_TOKEN`
 - `ZEABUR_PROJECT_ID`
 - `ZEABUR_BACKEND_DOMAIN`
+- `ZEABUR_API_DOMAIN`
+- `ZEABUR_FRONTEND_DOMAIN`
 - `ZEABUR_CONVEX_INSTANCE_SECRET` (output of `openssl rand -hex 32`)
 
 This workflow is `workflow_dispatch` (manual trigger) to avoid accidental production redeploys.
@@ -82,7 +88,15 @@ After first boot, generate admin key in Convex backend service terminal:
 `CONVEX_URL` for API should point to Convex backend public URL:
 - `https://<BACKEND_DOMAIN>.zeabur.app`
 
-## 5. Frontend on GitHub Pages
+## 5. Frontend on Zeabur (recommended when GitHub Actions quota is limited)
+
+The template deploys `Frontend` from `apps/web` and sets:
+- `VITE_API_URL=https://${API_DOMAIN}.zeabur.app`
+
+After deploy, use:
+- `https://<FRONTEND_DOMAIN>.zeabur.app`
+
+## 6. Frontend on GitHub Pages (optional alternative)
 
 Workflow file:
 - `.github/workflows/deploy-frontend-pages.yml`
@@ -94,7 +108,7 @@ Notes:
 - Workflow builds Vite with repo base path: `/<repo-name>/`
 - Workflow copies `index.html` to `404.html` for SPA fallback on GitHub Pages
 
-## 6. CI checks
+## 7. CI checks
 
 Workflow file:
 - `.github/workflows/ci.yml`
@@ -105,13 +119,13 @@ Runs on PRs and pushes to `main`:
 - test
 - build
 
-## 7. Recommended production checklist
+## 8. Recommended production checklist
 
-- `zeabur.yml` deployed successfully (3 services created)
+- `zeabur.yml` deployed successfully (4 services created)
 - Convex backend volume mounted at `/convex/data`
 - API `JWT_SECRET` replaced with strong value
 - Convex `INSTANCE_SECRET` is valid hex
-- API `FRONTEND_URL` matches GitHub Pages domain
-- `VITE_API_URL` points to API domain
-- CORS requests from GitHub Pages domain succeed
+- API `FRONTEND_URL` matches frontend domain
+- frontend `VITE_API_URL` points to API domain
+- CORS requests from frontend domain succeed
 - API `/health` returns `{"ok": true}`
