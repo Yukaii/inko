@@ -108,52 +108,54 @@ export function DashboardPage() {
     }
   }, [focusedDeckIndex]);
 
-  if (isLoading) return <p>Loading...</p>;
+  if (isLoading) {
+    return (
+      <div className="dashboard-container">
+        <div className="dashboard-loading">Loading...</div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ display: "grid", gap: 24 }}>
-      <header>
-        <p style={{ color: "var(--text-secondary)", marginBottom: 8 }}>welcome_back,</p>
-        <h1 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 46 }}>Good day, learner</h1>
+    <div className="dashboard-container">
+      {/* Welcome Header */}
+      <header className="dashboard-header">
+        <p className="dashboard-welcome">welcome_back,</p>
+        <h1 className="dashboard-title">Good day, learner</h1>
       </header>
 
-      <section className="grid cols-4" aria-label="Statistics">
-        <div className="card">
-          <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>words_learned</div>
-          <div className="metric-value">{data?.totalWordsLearned ?? 0}</div>
+      {/* Stats Row */}
+      <section className="stats-grid" aria-label="Statistics">
+        <div className="stat-card">
+          <div className="stat-label">words_learned</div>
+          <div className="stat-value">{data?.totalWordsLearned ?? 0}</div>
         </div>
-        <div className="card">
-          <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>due_today</div>
-          <div className="metric-value" style={{ color: "var(--accent-orange)" }}>
-            {data?.wordsDueToday ?? 0}
-          </div>
+        <div className="stat-card">
+          <div className="stat-label">due_today</div>
+          <div className="stat-value accent-orange">{data?.wordsDueToday ?? 0}</div>
         </div>
-        <div className="card">
-          <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>day_streak</div>
-          <div className="metric-value" style={{ color: "var(--accent-teal)" }}>
-            {data?.learningStreak ?? 0}
-          </div>
+        <div className="stat-card">
+          <div className="stat-label">day_streak</div>
+          <div className="stat-value accent-teal">{data?.learningStreak ?? 0}</div>
         </div>
-        <div className="card">
-          <div style={{ color: "var(--text-secondary)", fontSize: 12 }}>session_time_seconds</div>
-          <div className="metric-value">{data?.sessionTimeSeconds ?? 0}</div>
+        <div className="stat-card">
+          <div className="stat-label">session_time</div>
+          <div className="stat-value">{Math.floor((data?.sessionTimeSeconds ?? 0) / 60)}m</div>
         </div>
       </section>
 
-      {/* ---- Quick Practice ---- */}
+      {/* Quick Practice Section */}
       {activeDecks.length > 0 && (
-        <section>
-          <div className="section-header" style={{ marginBottom: 14 }}>
-            <h2 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 28 }}>
-              Quick Practice
-            </h2>
+        <section className="practice-section">
+          <div className="section-header">
+            <h2 className="section-title">Quick Practice</h2>
             <span className="keyboard-hint">
               <kbd>p</kbd> to focus
             </span>
           </div>
           <ul
             ref={practiceGridRef}
-            className="quick-practice-grid"
+            className="deck-grid"
             onKeyDown={handlePracticeKeyDown}
             aria-label="Practice decks"
           >
@@ -161,7 +163,7 @@ export function DashboardPage() {
               <li
                 key={deck.id}
                 data-deck-index={index}
-                className="quick-practice-card"
+                className="deck-tile"
                 tabIndex={focusedDeckIndex === index ? 0 : -1}
                 onClick={() => navigate(`/practice/${deck.id}`)}
                 onKeyDown={(e) => {
@@ -171,10 +173,12 @@ export function DashboardPage() {
                   }
                 }}
               >
-                <div className="quick-practice-card-name">{deck.name}</div>
-                <div className="quick-practice-card-meta">{deck.language.toUpperCase()}</div>
-                <button type="button" style={{ width: "100%", marginTop: "auto" }}>
-                  Start Session
+                <div className="deck-tile-content">
+                  <span className="deck-tile-lang">{deck.language.toUpperCase()}</span>
+                  <span className="deck-tile-name">{deck.name}</span>
+                </div>
+                <button type="button" className="deck-tile-action">
+                  Start
                 </button>
               </li>
             ))}
@@ -183,17 +187,18 @@ export function DashboardPage() {
       )}
 
       {activeDecks.length === 0 && !decksQuery.isLoading && (
-        <section className="card empty-state">
+        <section className="empty-state-card">
           <p>No decks yet.</p>
-          <p style={{ fontSize: 13 }}>
-            Head to the <Link to="/word-bank" style={{ color: "var(--accent-orange)" }}>Word Bank</Link> to create your first deck and start practicing.
+          <p className="empty-state-hint">
+            Head to the <Link to="/word-bank" className="accent-link">Word Bank</Link> to create your first deck.
           </p>
         </section>
       )}
 
-      <section className="card">
-        <h2 style={{ marginTop: 0, fontFamily: "var(--font-display)", fontSize: 28 }}>Recent Sessions</h2>
-        <div style={{ display: "grid", gap: 8 }}>
+      {/* Recent Sessions */}
+      <section className="sessions-section">
+        <h2 className="section-title">Recent Sessions</h2>
+        <div className="sessions-list">
           {(data?.recentSessions ?? []).map((session: { 
             sessionId: string; 
             cardsCompleted: number; 
@@ -209,16 +214,16 @@ export function DashboardPage() {
             });
             
             return (
-              <div key={session.sessionId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ color: "var(--text-secondary)", fontSize: 13 }}>{formattedDate}</span>
-                <span style={{ fontSize: 13 }}>
+              <div key={session.sessionId} className="session-item">
+                <span className="session-date">{formattedDate}</span>
+                <span className="session-stats">
                   {session.cardsCompleted} cards · {Math.floor(duration / 60)}:{String(duration % 60).padStart(2, '0')}
                 </span>
               </div>
             );
           })}
           {data?.recentSessions?.length === 0 ? (
-            <p style={{ color: "var(--text-secondary)", margin: 0 }}>No completed sessions yet.</p>
+            <p className="empty-text">No completed sessions yet.</p>
           ) : null}
         </div>
       </section>
