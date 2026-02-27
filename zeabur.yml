@@ -1,0 +1,81 @@
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: Inko
+spec:
+  description: Inko API + self-hosted Convex stack on Zeabur
+  variables:
+    - key: BACKEND_DOMAIN
+      type: DOMAIN
+      name: Convex Backend Domain
+      description: Subdomain for Convex backend (resulting in <value>.zeabur.app)
+    - key: CONVEX_INSTANCE_SECRET
+      type: PASSWORD
+      name: Convex Instance Secret
+      description: "64-char hex secret for Convex backend (generate with: openssl rand -hex 32)"
+  services:
+    - name: API
+      template: GIT
+      dependencies:
+        - Convex Backend
+      spec:
+        source:
+          source: GITHUB
+          repo: 1167879584
+          branch: main
+          rootDirectory: .
+        ports:
+          - id: web
+            port: 4000
+            type: HTTP
+        env:
+          PORT:
+            default: "4000"
+          CONVEX_URL:
+            default: "https://${BACKEND_DOMAIN}.zeabur.app"
+          JWT_SECRET:
+            default: "replace-with-strong-secret-at-least-16-chars"
+          FRONTEND_URL:
+            default: "https://example.com"
+        healthCheck:
+          type: HTTP
+          port: web
+          http:
+            path: /health
+
+    - name: Convex Backend
+      template: PREBUILT_V2
+      spec:
+        source:
+          image: ghcr.io/get-convex/convex-backend:latest
+        ports:
+          - id: convex-http
+            port: 3210
+            type: HTTP
+          - id: convex-sync
+            port: 3211
+            type: TCP
+        volumes:
+          - id: data
+            dir: /convex/data
+        env:
+          INSTANCE_NAME:
+            default: "inko-prod"
+          INSTANCE_SECRET:
+            default: "${CONVEX_INSTANCE_SECRET}"
+      domainKey: BACKEND_DOMAIN
+
+    - name: Convex Dashboard
+      template: PREBUILT_V2
+      dependencies:
+        - Convex Backend
+      spec:
+        source:
+          image: ghcr.io/get-convex/convex-dashboard:latest
+        ports:
+          - id: web
+            port: 6791
+            type: HTTP
+        env:
+          NEXT_PUBLIC_DEPLOYMENT_URL:
+            default: "https://${BACKEND_DOMAIN}.zeabur.app"

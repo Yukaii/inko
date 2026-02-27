@@ -1,0 +1,35 @@
+name: Deploy Zeabur Template
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Login Zeabur CLI
+        env:
+          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
+        run: npx -y zeabur@latest auth login --token "$ZEABUR_TOKEN" -i=false
+
+      - name: Deploy template
+        env:
+          ZEABUR_PROJECT_ID: ${{ secrets.ZEABUR_PROJECT_ID }}
+          ZEABUR_BACKEND_DOMAIN: ${{ secrets.ZEABUR_BACKEND_DOMAIN }}
+          ZEABUR_CONVEX_INSTANCE_SECRET: ${{ secrets.ZEABUR_CONVEX_INSTANCE_SECRET }}
+        run: |
+          npx -y zeabur@latest template deploy \
+            -i=false \
+            --file zeabur.yml \
+            --project-id "$ZEABUR_PROJECT_ID" \
+            --skip-validation \
+            --var BACKEND_DOMAIN="$ZEABUR_BACKEND_DOMAIN" \
+            --var CONVEX_INSTANCE_SECRET="$ZEABUR_CONVEX_INSTANCE_SECRET"
