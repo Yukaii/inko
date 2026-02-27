@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
+import { BookOpen, Target, Flame, Clock, Play } from "lucide-react";
 
 export function DashboardPage() {
   const { token } = useAuth();
@@ -134,19 +135,27 @@ export function DashboardPage() {
       {/* Stats Row */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Statistics">
         <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
-          <div className="text-xs tracking-[0.04em] text-text-secondary">words_learned</div>
+          <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
+            <BookOpen size={14} /> words_learned
+          </div>
           <div className="text-[32px] font-semibold [font-family:var(--font-display)]">{data?.totalWordsLearned ?? 0}</div>
         </div>
         <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
-          <div className="text-xs tracking-[0.04em] text-text-secondary">due_today</div>
+          <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
+            <Target size={14} className="text-accent-orange" /> due_today
+          </div>
           <div className="text-[32px] font-semibold text-accent-orange [font-family:var(--font-display)]">{data?.wordsDueToday ?? 0}</div>
         </div>
         <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
-          <div className="text-xs tracking-[0.04em] text-text-secondary">day_streak</div>
+          <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
+            <Flame size={14} className="text-accent-teal" /> day_streak
+          </div>
           <div className="text-[32px] font-semibold text-accent-teal [font-family:var(--font-display)]">{data?.learningStreak ?? 0}</div>
         </div>
         <div className="flex flex-col gap-2 rounded-base bg-bg-card p-5">
-          <div className="text-xs tracking-[0.04em] text-text-secondary">session_time</div>
+          <div className="flex items-center gap-2 text-xs tracking-[0.04em] text-text-secondary uppercase">
+            <Clock size={14} /> session_time
+          </div>
           <div className="text-[32px] font-semibold [font-family:var(--font-display)]">{Math.floor((data?.sessionTimeSeconds ?? 0) / 60)}m</div>
         </div>
       </section>
@@ -171,7 +180,7 @@ export function DashboardPage() {
               <li
                 key={deck.id}
                 data-deck-index={index}
-                className="relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-base border border-[var(--border-muted)] bg-bg-card p-4 text-left transition-all hover:-translate-y-0.5 hover:border-accent-orange focus:-translate-y-0.5 focus:border-accent-orange"
+                className="group relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-base border border-[var(--border-muted)] bg-bg-card p-4 text-left transition-all hover:-translate-y-0.5 hover:border-accent-orange hover:shadow-[0_4px_20px_-10px_var(--accent-orange)] focus:-translate-y-0.5 focus:border-accent-orange"
                 tabIndex={focusedDeckIndex === index ? 0 : -1}
                 onClick={() => navigate(`/practice/${deck.id}`)}
                 onKeyDown={(e) => {
@@ -181,12 +190,17 @@ export function DashboardPage() {
                   }
                 }}
               >
-                <div className="flex flex-col gap-1">
-                  <span className="text-[11px] uppercase tracking-[0.1em] text-text-secondary">{deck.language.toUpperCase()}</span>
-                  <span className="text-lg font-semibold text-text-primary [font-family:var(--font-display)]">{deck.name}</span>
+                <div className="flex items-start justify-between">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[11px] uppercase tracking-[0.1em] text-text-secondary">{deck.language.toUpperCase()}</span>
+                    <span className="text-lg font-semibold text-text-primary [font-family:var(--font-display)]">{deck.name}</span>
+                  </div>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-bg-elevated text-text-secondary opacity-0 transition-all group-hover:bg-accent-orange/10 group-hover:text-accent-orange group-hover:opacity-100">
+                    <Play size={16} className="ml-0.5 fill-current" />
+                  </div>
                 </div>
-                <button type="button" className="mt-auto w-full rounded-lg px-3 py-2 text-sm">
-                  Start
+                <button type="button" className="mt-auto w-full rounded-lg bg-bg-elevated px-3 py-2 text-sm text-text-secondary transition-colors group-hover:bg-accent-orange group-hover:text-text-on-accent">
+                  Start Practice
                 </button>
               </li>
             ))}
