@@ -1176,7 +1176,7 @@ export function WordBankPage() {
           />
           <dialog
             ref={modalRef}
-            className="fixed left-1/2 top-1/2 z-[101] flex w-[420px] max-w-[90vw] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
+            className="fixed inset-0 z-[101] m-auto flex h-fit max-h-[90vh] w-[420px] max-w-[90vw] flex-col gap-5 rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
             open
             aria-label="Create new deck"
           >
@@ -1233,7 +1233,7 @@ export function WordBankPage() {
             aria-label="Close edit deck modal"
           />
           <dialog
-            className="fixed left-1/2 top-1/2 z-[101] flex w-[420px] max-w-[90vw] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
+            className="fixed inset-0 z-[101] m-auto flex h-fit max-h-[90vh] w-[420px] max-w-[90vw] flex-col gap-5 rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
             open
             aria-label="Edit deck"
           >
@@ -1288,7 +1288,7 @@ export function WordBankPage() {
             aria-label="Close delete confirmation"
           />
           <dialog
-            className="fixed left-1/2 top-1/2 z-[101] flex w-[420px] max-w-[90vw] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
+            className="fixed inset-0 z-[101] m-auto flex h-fit max-h-[90vh] w-[420px] max-w-[90vw] flex-col gap-5 rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
             open
             aria-label="Delete deck confirmation"
           >
@@ -1333,7 +1333,7 @@ export function WordBankPage() {
             aria-label="Close edit word modal"
           />
           <dialog
-            className="fixed left-1/2 top-1/2 z-[101] flex w-[500px] max-w-[90vw] max-h-[90vh] overflow-auto -translate-x-1/2 -translate-y-1/2 flex-col gap-5 rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
+            className="fixed inset-0 z-[101] m-auto flex h-fit max-h-[90vh] w-[500px] max-w-[90vw] flex-col gap-5 overflow-auto rounded-base border border-[var(--border-muted)] bg-bg-card p-7 text-text-primary"
             open
             aria-label="Edit word"
           >
