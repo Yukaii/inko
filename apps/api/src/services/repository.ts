@@ -82,6 +82,17 @@ type ConvexPracticeSession = {
   cardsCompleted: number;
 };
 
+const CONVEX_ARRAY_ARG_LIMIT = 8192;
+
+function chunkArray<T>(items: T[], chunkSize: number): T[][] {
+  if (chunkSize <= 0) return [items];
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += chunkSize) {
+    chunks.push(items.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
 export class RepositoryError extends Error {
   statusCode: number;
 
@@ -296,16 +307,25 @@ export const repository = {
     if (!deck) throw new RepositoryError("Deck not found", 404);
     if (deck.userId !== userId) throw new RepositoryError("Forbidden", 403);
 
-    const words = (await convex.mutation("decks:createWordsBatch", {
-      userId,
-      deckId,
-      words: input.words.map((word) => ({
-        ...word,
-        tags: word.tags ?? [],
-      })),
-    })) as ConvexWord[];
+    const normalizedWords = input.words.map((word) => ({
+      ...word,
+      tags: word.tags ?? [],
+    }));
 
-    return words.map(toWordDTO);
+    const chunkSize = CONVEX_ARRAY_ARG_LIMIT - 1;
+    const chunks = chunkArray(normalizedWords, chunkSize);
+    const createdWords: ConvexWord[] = [];
+
+    for (const wordsChunk of chunks) {
+      const chunkResult = (await convex.mutation("decks:createWordsBatch", {
+        userId,
+        deckId,
+        words: wordsChunk,
+      })) as ConvexWord[];
+      createdWords.push(...chunkResult);
+    }
+
+    return createdWords.map(toWordDTO);
   },
 
   async updateWord(userId: string, wordId: string, input: UpdateWordInput) {
@@ -336,12 +356,23 @@ export const repository = {
     if (!existingDeck) throw new RepositoryError("Deck not found", 404);
     if (existingDeck.userId !== userId) throw new RepositoryError("Forbidden", 403);
 
-    const result = (await convex.mutation("decks:deleteWordsBatch", {
-      deckId,
-      wordIds: input.wordIds,
-    })) as { deleted: number; failedWordIds: string[] };
+    const chunkSize = CONVEX_ARRAY_ARG_LIMIT - 1;
+    const chunks = chunkArray(input.wordIds, chunkSize);
 
-    return result;
+    let deleted = 0;
+    const failedWordIds: string[] = [];
+
+    for (const wordIdsChunk of chunks) {
+      const chunkResult = (await convex.mutation("decks:deleteWordsBatch", {
+        deckId,
+        wordIds: wordIdsChunk,
+      })) as { deleted: number; failedWordIds: string[] };
+
+      deleted += chunkResult.deleted;
+      failedWordIds.push(...chunkResult.failedWordIds);
+    }
+
+    return { deleted, failedWordIds };
   },
 
   async deleteDeck(userId: string, deckId: string) {
