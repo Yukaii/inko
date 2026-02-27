@@ -263,7 +263,7 @@ export function WordBankPage() {
   const hasPrevWordsPage = wordsCursorHistory.length > 0;
   const hasNextWordsPage = !!wordsQuery.data?.nextCursor;
   const wordsPageLabel = wordsCursorHistory.length + 1;
-  const totalWordsCount = wordsQuery.data?.totalCount ?? 0;
+  const totalWordsCount = wordsQuery.data?.totalCount ?? null;
   const isWordsLoading = wordsQuery.isLoading;
   const showWordActionsColumn = isWordsLoading || pagedWords.length > 0;
   const wordsTableColumnCount = showWordActionsColumn ? 6 : 5;
@@ -676,7 +676,11 @@ export function WordBankPage() {
                     >
                       {t("common.prev")}
                     </button>
-                    <span className="text-xs text-text-secondary">{t("word_bank.words.page_summary", { page: wordsPageLabel, shown: pagedWords.length, total: totalWordsCount })}</span>
+                    <span className="text-xs text-text-secondary">
+                      {totalWordsCount === null
+                        ? t("word_bank.words.page_summary_no_total", { page: wordsPageLabel, shown: pagedWords.length })
+                        : t("word_bank.words.page_summary", { page: wordsPageLabel, shown: pagedWords.length, total: totalWordsCount })}
+                    </span>
                     <button
                       type="button"
                       className="bg-bg-elevated px-3 py-1.5 text-xs rounded-lg border-0 cursor-pointer text-text-primary hover:bg-bg-hover transition-colors"

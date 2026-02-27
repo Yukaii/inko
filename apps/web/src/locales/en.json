@@ -213,6 +213,7 @@
       "showing_count": "Showing {{count}} words on this page",
       "total_count": "Total {{count}} words",
       "page_summary": "P{{page}} · {{shown}}/{{total}}",
+      "page_summary_no_total": "P{{page}} · {{shown}} shown",
       "all_tags": "All Tags",
       "target": "Target",
       "reading": "Reading",

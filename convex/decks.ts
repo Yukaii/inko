@@ -48,6 +48,7 @@ export const createDeck = mutation({
       name: args.name,
       language: args.language,
       archived: false,
+      wordCount: 0,
       createdAt: Date.now(),
     });
 
@@ -108,16 +109,15 @@ export const createWord = mutation({
       createdAt: Date.now(),
     });
 
-    const existing = await ctx.db
-      .query("deck_words")
-      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
-      .collect();
-
     await ctx.db.insert("deck_words", {
       deckId: args.deckId,
       wordId,
-      position: existing.length,
+      position: Date.now() * 1000,
     });
+
+    if (deck.wordCount !== undefined) {
+      await ctx.db.patch(args.deckId, { wordCount: deck.wordCount + 1 });
+    }
 
     return await ctx.db.get(wordId);
   },
@@ -174,6 +174,10 @@ export const createWordsBatch = mutation({
       });
     }
 
+    if (deck.wordCount !== undefined) {
+      await ctx.db.patch(args.deckId, { wordCount: deck.wordCount + args.words.length });
+    }
+
     return createdWords;
   },
 });
@@ -228,17 +232,64 @@ export const listDeckWordsPage = query({
   },
 });
 
-export const countDeckWords = query({
+// One-off maintenance helpers for backfilling denormalized deck.wordCount.
+export const listDeckIdsPage = query({
   args: {
-    deckId: v.id("decks"),
+    cursor: v.union(v.string(), v.null()),
+    limit: v.number(),
   },
   handler: async (ctx, args) => {
-    const links = await ctx.db
+    const result = await ctx.db
+      .query("decks")
+      .order("asc")
+      .paginate({
+        cursor: args.cursor,
+        numItems: args.limit,
+      });
+
+    return {
+      page: result.page.map((deck) => ({
+        deckId: deck._id,
+        name: deck.name,
+      })),
+      continueCursor: result.continueCursor,
+      isDone: result.isDone,
+    };
+  },
+});
+
+export const countDeckWordsPage = query({
+  args: {
+    deckId: v.id("decks"),
+    cursor: v.union(v.string(), v.null()),
+    limit: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const result = await ctx.db
       .query("deck_words")
       .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
-      .collect();
+      .order("asc")
+      .paginate({
+        cursor: args.cursor,
+        numItems: args.limit,
+      });
 
-    return links.length;
+    return {
+      counted: result.page.length,
+      continueCursor: result.continueCursor,
+      isDone: result.isDone,
+    };
+  },
+});
+
+export const setDeckWordCount = mutation({
+  args: {
+    deckId: v.id("decks"),
+    wordCount: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.deckId, { wordCount: args.wordCount });
+    return { ok: true };
   },
 });
 
@@ -295,7 +346,16 @@ export const deleteWord = mutation({
       .filter((q) => q.eq(q.field("wordId"), args.wordId))
       .collect();
 
+    const deckIds = [...new Set(links.map((link) => link.deckId))];
+
     await Promise.all(links.map((link) => ctx.db.delete(link._id)));
+
+    for (const deckId of deckIds) {
+      const deck = await ctx.db.get(deckId);
+      if (deck?.wordCount !== undefined) {
+        await ctx.db.patch(deck._id, { wordCount: Math.max(0, deck.wordCount - 1) });
+      }
+    }
 
     const stats = await ctx.db
       .query("word_channel_stats")
@@ -334,6 +394,14 @@ export const deleteWordsBatch = mutation({
         .filter((q) => q.eq(q.field("wordId"), wordId))
         .collect();
       await Promise.all(links.map((link) => ctx.db.delete(link._id)));
+
+      const deckIds = [...new Set(links.map((link) => link.deckId))];
+      for (const linkedDeckId of deckIds) {
+        const deck = await ctx.db.get(linkedDeckId);
+        if (deck?.wordCount !== undefined) {
+          await ctx.db.patch(deck._id, { wordCount: Math.max(0, deck.wordCount - 1) });
+        }
+      }
 
       const stats = await ctx.db
         .query("word_channel_stats")

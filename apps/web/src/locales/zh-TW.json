@@ -213,6 +213,7 @@
       "showing_count": "本頁顯示 {{count}} 個單字",
       "total_count": "共 {{count}} 個單字",
       "page_summary": "第{{page}}頁 ・ {{shown}}/{{total}}",
+      "page_summary_no_total": "第{{page}}頁 ・ {{shown}}個",
       "all_tags": "所有標籤",
       "target": "目標",
       "reading": "讀音",

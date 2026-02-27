@@ -37,6 +37,7 @@ type ConvexDeck = {
   name: string;
   language: LanguageCode;
   archived: boolean;
+  wordCount?: number;
   createdAt: number;
 };
 type ConvexWord = {
@@ -311,13 +312,11 @@ export const repository = {
       cursor,
       limit: safeLimit,
     })) as { page: ConvexWord[]; continueCursor: string; isDone: boolean };
-    const totalCount = (await convex.query("decks:countDeckWords", { deckId })) as number;
-
     return {
       words: page.page.map(toWordDTO),
       nextCursor: page.isDone ? null : page.continueCursor,
       isDone: page.isDone,
-      totalCount,
+      totalCount: deck.wordCount ?? null,
     };
   },
 
