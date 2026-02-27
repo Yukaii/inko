@@ -546,25 +546,75 @@ button.danger:hover {
 @media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-    height: auto;
-    overflow: auto;
+    grid-template-rows: 1fr auto;
+    height: 100vh;
+    overflow: hidden;
   }
 
+  /* Hide sidebar on mobile */
   .sidebar {
-    flex-direction: row;
-    overflow-x: auto;
+    display: none;
+  }
+
+  /* Show mobile bottom nav */
+  .mobile-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: var(--bg-page);
+    background-color: #1a1a1a;
+    border-top: 1px solid #2f2f2f;
+    z-index: 9999;
+    justify-content: space-around;
     align-items: center;
-    height: auto;
-    padding: 16px;
-    border-right: none;
-    border-bottom: 1px solid #2f2f2f;
+    padding: 0 8px;
+    visibility: visible;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.15s;
+    flex: 1;
+    max-width: 80px;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--accent-orange);
+  }
+
+  .mobile-nav-item:hover,
+  .mobile-nav-item:focus {
+    color: var(--text-primary);
+  }
+
+  .mobile-nav-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .mobile-nav-label {
+    font-size: 11px;
+    font-weight: 500;
   }
 
   .main {
-    padding: 20px;
-    height: auto;
-    overflow: visible;
+    padding: 20px 20px 80px 20px;
+    height: 100vh;
+    overflow-y: auto;
+    padding-bottom: 84px; /* Space for bottom nav */
   }
 
   .grid.cols-4 {
@@ -1813,6 +1863,7 @@ select:focus-visible {
   color: var(--text-secondary);
   transition: background 0.15s, color 0.15s;
   position: relative;
+  white-space: nowrap;
 }
 
 .nav-link:hover,
@@ -1826,6 +1877,15 @@ select:focus-visible {
   color: var(--text-primary);
 }
 
+.nav-link-label.mobile {
+  display: none;
+}
+
+/* Mobile Bottom Navigation - default hidden, shown in media query below */
+.mobile-nav {
+  display: none;
+}
+
 .nav-link-shortcut {
   background: var(--bg-card);
   color: var(--text-secondary);
@@ -1836,6 +1896,7 @@ select:focus-visible {
   font-family: var(--font-mono);
   opacity: 0.6;
   transition: opacity 0.15s;
+  flex-shrink: 0;
 }
 
 .nav-link:hover .nav-link-shortcut,
