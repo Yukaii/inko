@@ -80,6 +80,14 @@ describe("getTypingFeedback", () => {
   });
 });
 
+const mockT = (key: string) => {
+  const translations: Record<string, string> = {
+    "practice.daily_target_reached": "Daily target reached",
+    "practice.session_complete": "Session Complete",
+  };
+  return translations[key] || key;
+};
+
 describe("getPracticeCompletionTitle", () => {
   it("shows daily target reached when session is capped", () => {
     expect(
@@ -87,6 +95,7 @@ describe("getPracticeCompletionTitle", () => {
         sessionCapped: true,
         cardsCompleted: 50,
         sessionTargetCards: 50,
+        t: mockT,
       }),
     ).toBe("Daily target reached");
   });
@@ -97,6 +106,7 @@ describe("getPracticeCompletionTitle", () => {
         sessionCapped: false,
         cardsCompleted: 50,
         sessionTargetCards: 50,
+        t: mockT,
       }),
     ).toBe("Daily target reached");
   });
@@ -107,6 +117,7 @@ describe("getPracticeCompletionTitle", () => {
         sessionCapped: false,
         cardsCompleted: 12,
         sessionTargetCards: 50,
+        t: mockT,
       }),
     ).toBe("Session Complete");
   });
