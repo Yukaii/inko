@@ -56,6 +56,11 @@
     "decks": "Decks",
     "shortcuts_help": "Keyboard Shortcuts"
   },
+  "pwa": {
+    "update_available": "A new version is ready. Hard refresh to load the latest app.",
+    "refresh_now": "Refresh now",
+    "refreshing": "Refreshing..."
+  },
   "landing": {
     "nav": {
       "how_it_works": "How It Works",
