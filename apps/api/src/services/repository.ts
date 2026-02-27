@@ -61,6 +61,7 @@ type WordStatsRow = {
     shapeDueAt: number;
     typingDueAt: number;
     listeningDueAt: number;
+    lastPracticedAt?: number;
   };
 };
 
@@ -83,9 +84,20 @@ type ConvexPracticeSession = {
   attemptedWordIds?: string[];
 };
 
+type PracticeSessionCacheEntry = {
+  userId: string;
+  deckId: string;
+  rows: WordStatsRow[];
+  attemptedWordIds: Set<string>;
+  updatedAt: number;
+};
+
 const CONVEX_ARRAY_ARG_LIMIT = 8192;
 const BATCH_WORDS_CHUNK_SIZE = 200;
 const DECK_DELETE_PAGE_SIZE = 500;
+const SESSION_CACHE_TTL_MS = 10 * 60 * 1000;
+
+const practiceSessionCache = new Map<string, PracticeSessionCacheEntry>();
 
 function chunkArray<T>(items: T[], chunkSize: number): T[][] {
   if (chunkSize <= 0) return [items];
@@ -182,12 +194,12 @@ function selectNextPracticeCard(rows: WordStatsRow[], deckId: string, excludedWo
   };
 }
 
-async function listPracticeCandidateRows(userId: string, deckId: string, maxRows = 40): Promise<WordStatsRow[]> {
+async function listPracticeCandidateRows(userId: string, deckId: string, maxRows = 20): Promise<WordStatsRow[]> {
   const rows: WordStatsRow[] = [];
   let cursor: string | null = null;
 
   while (rows.length < maxRows) {
-    const pageLimit = Math.min(20, maxRows - rows.length);
+    const pageLimit = Math.min(10, maxRows - rows.length);
     const result = (await convex.query("practice:listDeckWordsWithStatsPage", {
       userId,
       deckId,
@@ -205,6 +217,16 @@ async function listPracticeCandidateRows(userId: string, deckId: string, maxRows
   }
 
   return rows;
+}
+
+function getSessionCache(sessionId: string): PracticeSessionCacheEntry | null {
+  const cached = practiceSessionCache.get(sessionId);
+  if (!cached) return null;
+  if (Date.now() - cached.updatedAt > SESSION_CACHE_TTL_MS) {
+    practiceSessionCache.delete(sessionId);
+    return null;
+  }
+  return cached;
 }
 
 export const repository = {
@@ -425,6 +447,15 @@ export const repository = {
 
     const card = selectNextPracticeCard(rows, input.deckId, new Set());
     if (!card) throw new RepositoryError("No words available in deck", 409);
+
+    practiceSessionCache.set(session._id, {
+      userId,
+      deckId: input.deckId,
+      rows,
+      attemptedWordIds: new Set(),
+      updatedAt: Date.now(),
+    });
+
     const user = (await convex.query("users:getById", { userId })) as ConvexUser | null;
 
     return {
@@ -556,11 +587,47 @@ export const repository = {
       };
     }
 
-    const rows = await listPracticeCandidateRows(userId, session.deckId);
-
     const attemptedWordIds = new Set(session.attemptedWordIds ?? []);
     attemptedWordIds.add(wordId);
-    const nextCard = selectNextPracticeCard(rows, session.deckId, attemptedWordIds);
+
+    const cached = getSessionCache(sessionId);
+    let candidateRows: WordStatsRow[];
+
+    if (cached && cached.userId === userId && cached.deckId === session.deckId) {
+      cached.attemptedWordIds = new Set([...cached.attemptedWordIds, ...attemptedWordIds]);
+
+      const row = cached.rows.find((candidate) => candidate.word._id === wordId);
+      if (row) {
+        row.stat = {
+          shapeStrength: next.shape.strength,
+          typingStrength: next.typing.strength,
+          listeningStrength: next.listening.strength,
+          shapeDueAt: next.shape.dueAt,
+          typingDueAt: next.typing.dueAt,
+          listeningDueAt: next.listening.dueAt,
+          lastPracticedAt: now,
+        };
+      }
+
+      cached.updatedAt = Date.now();
+      attemptedWordIds.clear();
+      for (const attemptedWordId of cached.attemptedWordIds) attemptedWordIds.add(attemptedWordId);
+      candidateRows = cached.rows;
+    } else {
+      candidateRows = await listPracticeCandidateRows(userId, session.deckId);
+      practiceSessionCache.set(sessionId, {
+        userId,
+        deckId: session.deckId,
+        rows: candidateRows,
+        attemptedWordIds,
+        updatedAt: Date.now(),
+      });
+    }
+
+    const nextCard = selectNextPracticeCard(candidateRows, session.deckId, attemptedWordIds);
+    if (!nextCard) {
+      practiceSessionCache.delete(sessionId);
+    }
 
     return {
       accepted: true,
@@ -608,6 +675,8 @@ export const repository = {
       secondsSpentDelta: durationSeconds,
       now: Date.now(),
     });
+
+    practiceSessionCache.delete(sessionId);
 
     return {
       sessionId,
