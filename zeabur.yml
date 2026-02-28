@@ -76,6 +76,10 @@ spec:
             default: "inko-prod"
           INSTANCE_SECRET:
             default: "${CONVEX_INSTANCE_SECRET}"
+          CONVEX_CLOUD_ORIGIN:
+            default: "https://${BACKEND_DOMAIN}.zeabur.app"
+          CONVEX_SITE_ORIGIN:
+            default: "https://${BACKEND_DOMAIN}.zeabur.app"
       domainKey: BACKEND_DOMAIN
 
     - name: Convex Dashboard

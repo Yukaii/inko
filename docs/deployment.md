@@ -76,6 +76,9 @@ This workflow is `workflow_dispatch` (manual trigger) to avoid accidental produc
 Convex backend service requirements:
 - persistent volume mounted to `/convex/data`
 - secure hex `INSTANCE_SECRET` value
+- explicit public origin envs for self-hosted runtime:
+  - `CONVEX_CLOUD_ORIGIN=https://<BACKEND_DOMAIN>.zeabur.app`
+  - `CONVEX_SITE_ORIGIN=https://<BACKEND_DOMAIN>.zeabur.app`
 
 If backend logs show `Couldn't hexdecode key`, fix by replacing `INSTANCE_SECRET` with a valid hex secret and redeploying/restarting the service.
 
@@ -87,6 +90,8 @@ After first boot, generate admin key in Convex backend service terminal:
 
 `CONVEX_URL` for API should point to Convex backend public URL:
 - `https://<BACKEND_DOMAIN>.zeabur.app`
+
+If Node actions fail on the first `ctx.runQuery(...)` with `Invalid URL`, verify the Convex Backend service itself has `CONVEX_CLOUD_ORIGIN` and `CONVEX_SITE_ORIGIN` set to absolute `https://` URLs. The upstream self-hosted backend defaults these to localhost values, which are not valid for a public Zeabur deployment.
 
 ## 5. Frontend on Zeabur (recommended when GitHub Actions quota is limited)
 
