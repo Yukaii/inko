@@ -947,6 +947,65 @@ export const repository = {
     };
   },
 
+  async getPracticeSessionDetails(userId: string, sessionId: string) {
+    const session = (await convex.query("practice:getSessionById", { sessionId })) as ConvexPracticeSession | null;
+    if (!session) throw new RepositoryError("Session not found", 404);
+    if (session.userId !== userId) throw new RepositoryError("Forbidden", 403);
+
+    const [deck, attempts] = await Promise.all([
+      convex.query("decks:getDeckById", { deckId: session.deckId }),
+      convex.query("practice:listAttemptsBySession", { sessionId }),
+    ]) as [
+      ConvexDeck | null,
+      Array<{
+        _id: string;
+        wordId: string;
+        shapeScore: number;
+        typingScore: number;
+        listeningScore: number;
+        typingMs: number;
+        submittedAt: number;
+      }>,
+    ];
+
+    const words = await Promise.all(attempts.map((attempt) => convex.query("practice:getWordById", { wordId: attempt.wordId }))) as Array<ConvexWord | null>;
+
+    const durationSeconds = Math.max(
+      0,
+      Math.round(((session.finishedAt ?? Date.now()) - session.startedAt) / 1000),
+    );
+    const count = attempts.length;
+    const avg = (key: "shapeScore" | "typingScore" | "listeningScore") =>
+      count === 0 ? 0 : Math.round(attempts.reduce((acc, item) => acc + item[key], 0) / count);
+
+    return {
+      sessionId: session._id,
+      deckId: session.deckId,
+      deckName: deck?.name ?? null,
+      language: deck?.language ?? null,
+      startedAt: session.startedAt,
+      finishedAt: session.finishedAt ?? null,
+      cardsCompleted: session.cardsCompleted,
+      durationSeconds,
+      avgShapeScore: avg("shapeScore"),
+      avgTypingScore: avg("typingScore"),
+      avgListeningScore: avg("listeningScore"),
+      attempts: attempts.map((attempt, index) => ({
+        attemptId: attempt._id,
+        wordId: attempt.wordId,
+        target: words[index]?.target ?? "",
+        meaning: words[index]?.meaning ?? "",
+        reading: words[index]?.reading,
+        romanization: words[index]?.romanization,
+        shapeScore: attempt.shapeScore,
+        typingScore: attempt.typingScore,
+        listeningScore: attempt.listeningScore,
+        typingMs: attempt.typingMs,
+        submittedAt: attempt.submittedAt,
+      })),
+    };
+  },
+
   async dashboardSummary(userId: string) {
     return await convex.query("dashboard:summary", { userId });
   },

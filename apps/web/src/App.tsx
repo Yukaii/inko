@@ -9,6 +9,7 @@ const LoginPage = lazy(() => import("./pages/LoginPage").then((m) => ({ default:
 const DashboardPage = lazy(() => import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })));
 const WordBankPage = lazy(() => import("./pages/WordBankPage").then((m) => ({ default: m.WordBankPage })));
 const PracticePage = lazy(() => import("./pages/PracticePage").then((m) => ({ default: m.PracticePage })));
+const SessionDetailsPage = lazy(() => import("./pages/SessionDetailsPage").then((m) => ({ default: m.SessionDetailsPage })));
 const SettingsPage = lazy(() => import("./pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
 const LandingPage = lazy(() => import("./pages/LandingPage").then((m) => ({ default: m.LandingPage })));
 
@@ -70,6 +71,14 @@ export function App() {
             element={
               <ProtectedLayout>
                 <PracticePage />
+              </ProtectedLayout>
+            }
+          />
+          <Route
+            path="/sessions/:sessionId"
+            element={
+              <ProtectedLayout>
+                <SessionDetailsPage />
               </ProtectedLayout>
             }
           />

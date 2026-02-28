@@ -176,6 +176,18 @@
     "cards_count": "{{count}} cards",
     "no_sessions": "No completed sessions yet."
   },
+  "session_details": {
+    "back": "Back",
+    "duration": "Duration",
+    "avg_typing": "Avg Typing",
+    "avg_recall": "Avg Recall",
+    "attempt_breakdown": "Attempt Breakdown",
+    "shape": "Shape",
+    "typing": "Typing",
+    "listen": "Listen",
+    "no_attempts": "No attempt data recorded for this session.",
+    "load_failed": "Unable to load this session."
+  },
   "word_bank": {
     "title": "Word Bank",
     "subtitle": "Manage your decks and vocabulary",

@@ -42,6 +42,33 @@ type DashboardRecentSessions = {
   recentSessions: DashboardSummary["recentSessions"];
 };
 
+type PracticeSessionDetails = {
+  sessionId: string;
+  deckId: string;
+  deckName: string | null;
+  language: string | null;
+  startedAt: number;
+  finishedAt: number | null;
+  cardsCompleted: number;
+  durationSeconds: number;
+  avgShapeScore: number;
+  avgTypingScore: number;
+  avgListeningScore: number;
+  attempts: Array<{
+    attemptId: string;
+    wordId: string;
+    target: string;
+    meaning: string;
+    reading?: string;
+    romanization?: string;
+    shapeScore: number;
+    typingScore: number;
+    listeningScore: number;
+    typingMs: number;
+    submittedAt: number;
+  }>;
+};
+
 type AuthVerifyResponse = { accessToken: string; user: UserDTO };
 type StartPracticeResponse = {
   sessionId: string;
@@ -218,6 +245,8 @@ export const api = {
 
   finishPractice: (token: string, sessionId: string) =>
     request<SessionSummaryDTO>(`/api/practice/session/${sessionId}/finish`, { method: "POST" }, token),
+  getPracticeSessionDetails: (token: string, sessionId: string) =>
+    request<PracticeSessionDetails>(`/api/practice/session/${sessionId}`, {}, token),
 
   fetchWordTts: (token: string, wordId: string, deckId: string, voice: string, rate: "-20%" | "default" | "+20%") =>
     requestBlob(

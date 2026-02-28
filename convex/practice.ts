@@ -111,6 +111,15 @@ export const getSessionById = query({
   },
 });
 
+export const getWordById = query({
+  args: {
+    wordId: v.id("words"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.wordId);
+  },
+});
+
 export const getDeckPracticeProgress = query({
   args: {
     userId: v.id("users"),

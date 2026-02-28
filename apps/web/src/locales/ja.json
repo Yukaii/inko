@@ -176,6 +176,18 @@
     "cards_count": "{{count}} 枚のカード",
     "no_sessions": "完了したセッションはまだありません。"
   },
+  "session_details": {
+    "back": "戻る",
+    "duration": "所要時間",
+    "avg_typing": "平均タイピング",
+    "avg_recall": "平均想起",
+    "attempt_breakdown": "回答の内訳",
+    "shape": "形",
+    "typing": "入力",
+    "listen": "聞き取り",
+    "no_attempts": "このセッションの回答データはありません。",
+    "load_failed": "このセッションを読み込めませんでした。"
+  },
   "word_bank": {
     "title": "ワードバンク",
     "subtitle": "デッキと語彙を管理します",
