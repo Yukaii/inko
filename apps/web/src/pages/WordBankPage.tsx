@@ -334,7 +334,7 @@ export function WordBankPage() {
   const modalRef = useRef<HTMLDialogElement>(null);
 
   return (
-    <div className="flex h-screen overflow-hidden -m-5 md:-m-10 bg-bg-page relative">
+    <div className="relative -m-5 flex min-h-full overflow-visible bg-bg-page md:-m-10 md:h-screen md:overflow-hidden">
       {/* Deck Sidebar Panel */}
       <aside 
         ref={sidebarRef}
@@ -602,7 +602,7 @@ export function WordBankPage() {
       </aside>
 
       {/* Main Words Content Area */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden bg-bg-page relative">
+      <main className="relative flex flex-1 flex-col overflow-visible bg-bg-page md:h-full md:overflow-hidden">
         {isPanelCollapsed && (
           <button 
             type="button"
@@ -613,7 +613,7 @@ export function WordBankPage() {
           </button>
         )}
 
-        <div className="flex flex-col h-full p-5 md:p-10 gap-8 overflow-y-auto pb-0">
+        <div className="flex h-full flex-col gap-8 overflow-y-visible p-5 pb-16 md:overflow-y-auto md:p-10 md:pb-10">
           <header className="flex flex-col gap-1">
             {selectedDeckId ? (
               <button
