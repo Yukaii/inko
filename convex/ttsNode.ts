@@ -25,6 +25,22 @@ const SPEECH_CONFIG_BY_LANGUAGE = {
   th: { voice: "th-TH-PremwadeeNeural", lang: "th-TH" },
 } as const;
 
+function getProxyDiagnostics() {
+  const proxyKeys = ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"] as const;
+  return proxyKeys
+    .map((key) => {
+      const value = process.env[key];
+      if (!value) return null;
+      try {
+        const parsed = new URL(value);
+        return `${key}=${parsed.protocol}//${parsed.host}`;
+      } catch {
+        return `${key}=INVALID`;
+      }
+    })
+    .filter((value): value is string => value !== null);
+}
+
 export const ensureWordAudio = action({
   args: {
     userId: v.id("users"),
@@ -89,13 +105,39 @@ export const ensureWordAudio = action({
     const audioPath = join(tempDir, `${randomUUID()}.mp3`);
 
     try {
-      await tts.ttsPromise(word.target, audioPath);
+      try {
+        await tts.ttsPromise(word.target, audioPath);
+      } catch (error) {
+        console.error("ttsNode.ensureWordAudio synthesis failed", {
+          wordId: args.wordId,
+          deckId: args.deckId,
+          language: word.language,
+          voice,
+          rate,
+          proxies: getProxyDiagnostics(),
+          error: error instanceof Error ? { message: error.message, stack: error.stack } : String(error),
+        });
+        throw error;
+      }
+
       const audio = await readFile(audioPath);
       const blob = new Blob([audio], { type: "audio/mpeg" });
       const audioStorageId = await ctx.storage.store(blob);
       const audioUrl = await ctx.storage.getUrl(audioStorageId);
       if (!audioUrl) {
         throw new Error("Failed to resolve stored audio URL");
+      }
+      try {
+        new URL(audioUrl);
+      } catch (error) {
+        console.error("ttsNode.ensureWordAudio invalid storage URL", {
+          wordId: args.wordId,
+          deckId: args.deckId,
+          audioStorageId,
+          audioUrl,
+          error: error instanceof Error ? { message: error.message, stack: error.stack } : String(error),
+        });
+        throw new Error(`Invalid storage URL returned by Convex: ${audioUrl}`);
       }
 
       await ctx.runMutation((internal as any).tts.persistDeckWordAudio, {
