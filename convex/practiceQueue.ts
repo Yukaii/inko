@@ -536,6 +536,47 @@ export const rebuildDeckQueue = mutation({
   },
 });
 
+export const rebuildDeckQueuePage = mutation({
+  args: {
+    deckId: v.id("decks"),
+    cursor: v.union(v.string(), v.null()),
+    limit: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const deck = await ctx.db.get(args.deckId);
+    if (!deck) return { ok: false, reason: "deck_not_found", processed: 0, created: 0, updated: 0 };
+
+    const result = await ctx.db
+      .query("deck_words")
+      .withIndex("by_deck_position", (q) => q.eq("deckId", args.deckId))
+      .paginate({
+        cursor: args.cursor,
+        numItems: args.limit,
+      });
+
+    let created = 0;
+    let updated = 0;
+    for (const link of result.page) {
+      const entry = await buildQueueEntryFromDeckWord(ctx, link);
+      if (!entry) continue;
+      const upserted = await upsertQueueEntry(ctx, entry);
+      if (upserted.created) created += 1;
+      else updated += 1;
+    }
+
+    await ensureQueueProgress(ctx, deck.userId, deck._id);
+
+    return {
+      ok: true,
+      processed: result.page.length,
+      created,
+      updated,
+      continueCursor: result.continueCursor,
+      isDone: result.isDone,
+    };
+  },
+});
+
 export const rebuildAllQueuesPage = mutation({
   args: {
     cursor: v.union(v.string(), v.null()),

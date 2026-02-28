@@ -98,6 +98,7 @@ const BATCH_WORDS_CHUNK_SIZE = 200;
 const DECK_DELETE_PAGE_SIZE = 500;
 const SESSION_CACHE_TTL_MS = 10 * 60 * 1000;
 const PRACTICE_SESSION_BUFFER_SIZE = Math.max(0, PRACTICE_SESSION_CARD_CAP_DEFAULT - 1);
+const PRACTICE_QUEUE_RECOVERY_REBUILD_LIMIT = 256;
 
 const practiceSessionCache = new Map<string, PracticeSessionCacheEntry>();
 
@@ -198,9 +199,11 @@ async function getNextQueuedCard(userId: string, deckId: string, coverageCursorP
 }
 
 async function rebuildPracticeQueueForDeck(deckId: string) {
-  return (await convex.mutation("practiceQueue:rebuildDeckQueue", {
+  return (await convex.mutation("practiceQueue:rebuildDeckQueuePage", {
     deckId,
-  })) as { ok: boolean; created?: number; updated?: number; reason?: string };
+    cursor: null,
+    limit: PRACTICE_QUEUE_RECOVERY_REBUILD_LIMIT,
+  })) as { ok: boolean; processed?: number; created?: number; updated?: number; reason?: string };
 }
 
 async function listQueuedPracticeCards(
