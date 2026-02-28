@@ -101,6 +101,12 @@ export const seedStarterData = mutation({
         deckId: deck._id,
         wordId,
         position,
+        language: deck.language,
+        target: word.target,
+        reading: word.reading,
+        romanization: word.romanization,
+        meaning: word.meaning,
+        example: word.example,
       });
 
       position += 1;

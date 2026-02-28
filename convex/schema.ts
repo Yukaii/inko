@@ -77,6 +77,13 @@ export default defineSchema({
     deckId: v.id("decks"),
     wordId: v.id("words"),
     position: v.number(),
+    language: v.optional(languageValidator),
+    target: v.optional(v.string()),
+    reading: v.optional(v.string()),
+    romanization: v.optional(v.string()),
+    meaning: v.optional(v.string()),
+    example: v.optional(v.string()),
+    audioUrl: v.optional(v.string()),
   })
     .index("by_deck", ["deckId"])
     .index("by_deck_position", ["deckId", "position"])

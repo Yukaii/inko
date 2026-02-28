@@ -113,6 +113,13 @@ export const createWord = mutation({
       deckId: args.deckId,
       wordId,
       position: Date.now() * 1000,
+      language: deck.language,
+      target: args.target,
+      reading: args.reading,
+      romanization: args.romanization,
+      meaning: args.meaning,
+      example: args.example,
+      audioUrl: args.audioUrl,
     });
 
     if (deck.wordCount !== undefined) {
@@ -157,6 +164,13 @@ export const createWordsBatch = mutation({
         deckId: args.deckId,
         wordId,
         position: basePosition + index,
+        language: deck.language,
+        target: input.target,
+        reading: input.reading,
+        romanization: input.romanization,
+        meaning: input.meaning,
+        example: input.example,
+        audioUrl: input.audioUrl,
       });
 
       createdWords.push({
@@ -269,6 +283,64 @@ export const setDeckWordCount = mutation({
   },
 });
 
+export const listDeckWordLinksPage = query({
+  args: {
+    cursor: v.union(v.string(), v.null()),
+    limit: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const result = await ctx.db
+      .query("deck_words")
+      .order("asc")
+      .paginate({
+        cursor: args.cursor,
+        numItems: args.limit,
+      });
+
+    return {
+      page: result.page.map((link) => ({
+        linkId: link._id,
+        wordId: link.wordId,
+        hasSnapshot:
+          link.language !== undefined &&
+          link.target !== undefined &&
+          link.meaning !== undefined,
+      })),
+      continueCursor: result.continueCursor,
+      isDone: result.isDone,
+    };
+  },
+});
+
+export const backfillDeckWordSnapshot = mutation({
+  args: {
+    linkId: v.id("deck_words"),
+  },
+  handler: async (ctx, args) => {
+    const link = await ctx.db.get(args.linkId);
+    if (!link) return { ok: false, reason: "link_not_found" };
+
+    if (link.language !== undefined && link.target !== undefined && link.meaning !== undefined) {
+      return { ok: true, skipped: true };
+    }
+
+    const word = await ctx.db.get(link.wordId);
+    if (!word) return { ok: false, reason: "word_not_found" };
+
+    await ctx.db.patch(args.linkId, {
+      language: word.language,
+      target: word.target,
+      reading: word.reading,
+      romanization: word.romanization,
+      meaning: word.meaning,
+      example: word.example,
+      audioUrl: word.audioUrl,
+    });
+
+    return { ok: true, skipped: false };
+  },
+});
+
 export const isWordInDeck = query({
   args: {
     deckId: v.id("decks"),
@@ -298,7 +370,7 @@ export const updateWord = mutation({
     const word = await ctx.db.get(args.wordId);
     if (!word) return null;
 
-    await ctx.db.patch(args.wordId, {
+    const updates = {
       ...(args.target !== undefined ? { target: args.target } : {}),
       ...(args.reading !== undefined ? { reading: args.reading } : {}),
       ...(args.romanization !== undefined ? { romanization: args.romanization } : {}),
@@ -306,7 +378,27 @@ export const updateWord = mutation({
       ...(args.example !== undefined ? { example: args.example } : {}),
       ...(args.audioUrl !== undefined ? { audioUrl: args.audioUrl } : {}),
       ...(args.tags !== undefined ? { tags: args.tags } : {}),
-    });
+    };
+
+    await ctx.db.patch(args.wordId, updates);
+
+    const links = await ctx.db
+      .query("deck_words")
+      .withIndex("by_word", (q) => q.eq("wordId", args.wordId))
+      .collect();
+
+    await Promise.all(
+      links.map((link) =>
+        ctx.db.patch(link._id, {
+          ...(args.target !== undefined ? { target: args.target } : {}),
+          ...(args.reading !== undefined ? { reading: args.reading } : {}),
+          ...(args.romanization !== undefined ? { romanization: args.romanization } : {}),
+          ...(args.meaning !== undefined ? { meaning: args.meaning } : {}),
+          ...(args.example !== undefined ? { example: args.example } : {}),
+          ...(args.audioUrl !== undefined ? { audioUrl: args.audioUrl } : {}),
+        }),
+      ),
+    );
 
     return await ctx.db.get(args.wordId);
   },
