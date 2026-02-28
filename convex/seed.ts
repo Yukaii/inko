@@ -116,6 +116,29 @@ export const seedStarterData = mutation({
         listeningDueAt: Date.now(),
       });
 
+      await ctx.db.insert("practice_queue_entries", {
+        deckId: deck._id,
+        userId: user._id,
+        wordId,
+        position,
+        language: deck.language,
+        target: word.target,
+        reading: word.reading,
+        romanization: word.romanization,
+        meaning: word.meaning,
+        example: word.example,
+        audioUrl: undefined,
+        shapeStrength: 50,
+        typingStrength: 50,
+        listeningStrength: 50,
+        shapeDueAt: Date.now(),
+        typingDueAt: Date.now(),
+        listeningDueAt: Date.now(),
+        weakestStrength: 50,
+        nextDueAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
       position += 1;
       inserted += 1;
     }

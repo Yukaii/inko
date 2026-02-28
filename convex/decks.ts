@@ -12,6 +12,20 @@ function defaultLinkStats(now: number) {
   };
 }
 
+function deriveQueueFields(stats: {
+  shapeStrength: number;
+  typingStrength: number;
+  listeningStrength: number;
+  shapeDueAt: number;
+  typingDueAt: number;
+  listeningDueAt: number;
+}) {
+  return {
+    weakestStrength: Math.min(stats.shapeStrength, stats.typingStrength, stats.listeningStrength),
+    nextDueAt: Math.min(stats.shapeDueAt, stats.typingDueAt, stats.listeningDueAt),
+  };
+}
+
 async function getDeckWordSnapshotPatch(ctx: any, link: any) {
   const patch: Record<string, unknown> = {};
 
@@ -154,6 +168,8 @@ export const createWord = mutation({
       throw new Error("Deck not found");
     }
     const now = Date.now();
+    const initialStats = defaultLinkStats(now);
+    const queueFields = deriveQueueFields(initialStats);
 
     const wordId = await ctx.db.insert("words", {
       userId: args.userId,
@@ -180,7 +196,24 @@ export const createWord = mutation({
       meaning: args.meaning,
       example: args.example,
       audioUrl: args.audioUrl,
-      ...defaultLinkStats(now),
+      ...initialStats,
+    });
+
+    await ctx.db.insert("practice_queue_entries", {
+      deckId: args.deckId,
+      userId: args.userId,
+      wordId,
+      position: now * 1000,
+      language: deck.language,
+      target: args.target,
+      reading: args.reading,
+      romanization: args.romanization,
+      meaning: args.meaning,
+      example: args.example,
+      audioUrl: args.audioUrl,
+      ...initialStats,
+      ...queueFields,
+      updatedAt: now,
     });
 
     if (deck.wordCount !== undefined) {
@@ -209,6 +242,8 @@ export const createWordsBatch = mutation({
     const createdWords: unknown[] = [];
     for (const [index, input] of args.words.entries()) {
       const createdAt = baseTime + index;
+      const initialStats = defaultLinkStats(createdAt);
+      const queueFields = deriveQueueFields(initialStats);
       const wordId = await ctx.db.insert("words", {
         userId: args.userId,
         language: deck.language,
@@ -234,7 +269,24 @@ export const createWordsBatch = mutation({
         meaning: input.meaning,
         example: input.example,
         audioUrl: input.audioUrl,
-        ...defaultLinkStats(createdAt),
+        ...initialStats,
+      });
+
+      await ctx.db.insert("practice_queue_entries", {
+        deckId: args.deckId,
+        userId: args.userId,
+        wordId,
+        position: basePosition + index,
+        language: deck.language,
+        target: input.target,
+        reading: input.reading,
+        romanization: input.romanization,
+        meaning: input.meaning,
+        example: input.example,
+        audioUrl: input.audioUrl,
+        ...initialStats,
+        ...queueFields,
+        updatedAt: createdAt,
       });
 
       createdWords.push({
@@ -490,6 +542,25 @@ export const updateWord = mutation({
       ),
     );
 
+    const queueEntries = await ctx.db
+      .query("practice_queue_entries")
+      .withIndex("by_word", (q) => q.eq("wordId", args.wordId))
+      .collect();
+
+    await Promise.all(
+      queueEntries.map((entry) =>
+        ctx.db.patch(entry._id, {
+          ...(args.target !== undefined ? { target: args.target } : {}),
+          ...(args.reading !== undefined ? { reading: args.reading } : {}),
+          ...(args.romanization !== undefined ? { romanization: args.romanization } : {}),
+          ...(args.meaning !== undefined ? { meaning: args.meaning } : {}),
+          ...(args.example !== undefined ? { example: args.example } : {}),
+          ...(args.audioUrl !== undefined ? { audioUrl: args.audioUrl } : {}),
+          updatedAt: Date.now(),
+        }),
+      ),
+    );
+
     return await ctx.db.get(args.wordId);
   },
 });
@@ -503,10 +574,15 @@ export const deleteWord = mutation({
       .query("deck_words")
       .withIndex("by_word", (q) => q.eq("wordId", args.wordId))
       .collect();
+    const queueEntries = await ctx.db
+      .query("practice_queue_entries")
+      .withIndex("by_word", (q) => q.eq("wordId", args.wordId))
+      .collect();
 
     const deckIds = [...new Set(links.map((link) => link.deckId))];
 
     await Promise.all(links.map((link) => ctx.db.delete(link._id)));
+    await Promise.all(queueEntries.map((entry) => ctx.db.delete(entry._id)));
 
     for (const deckId of deckIds) {
       const deck = await ctx.db.get(deckId);
@@ -551,7 +627,12 @@ export const deleteWordsBatch = mutation({
         .query("deck_words")
         .withIndex("by_word", (q) => q.eq("wordId", wordId))
         .collect();
+      const queueEntries = await ctx.db
+        .query("practice_queue_entries")
+        .withIndex("by_word", (q) => q.eq("wordId", wordId))
+        .collect();
       await Promise.all(links.map((link) => ctx.db.delete(link._id)));
+      await Promise.all(queueEntries.map((entry) => ctx.db.delete(entry._id)));
 
       const deckIds = [...new Set(links.map((link) => link.deckId))];
       for (const linkedDeckId of deckIds) {
@@ -593,6 +674,13 @@ export const deleteDeck = mutation({
     }
 
     // Delete the deck itself
+    const queueProgress = await ctx.db
+      .query("practice_queue_progress")
+      .withIndex("by_user_deck", (q) => q.eq("userId", deck.userId).eq("deckId", args.deckId))
+      .first();
+    if (queueProgress) {
+      await ctx.db.delete(queueProgress._id);
+    }
     await ctx.db.delete(args.deckId);
     return { ok: true };
   },
@@ -616,6 +704,13 @@ export const deleteDeckWordsPage = mutation({
 
     for (const link of result.page) {
       await ctx.db.delete(link._id);
+      const queueEntry = await ctx.db
+        .query("practice_queue_entries")
+        .withIndex("by_deck_word", (q) => q.eq("deckId", link.deckId).eq("wordId", link.wordId))
+        .first();
+      if (queueEntry) {
+        await ctx.db.delete(queueEntry._id);
+      }
     }
 
     return {
