@@ -56,56 +56,75 @@ export const ensureWordAudio = action({
       throw new Error(`TTS debug marker reached: ${TTS_NODE_DEPLOY_MARKER}`);
     }
 
-    const word = await ctx.runQuery(api.words.getById, { wordId: args.wordId }) as {
-      _id: string;
-      userId: string;
-      language: LanguageCode;
-      target: string;
-      audioUrl?: string;
-    } | null;
-    const deck = await ctx.runQuery(api.decks.getDeckById, { deckId: args.deckId }) as {
-      _id: string;
-      userId: string;
-      language: LanguageCode;
-      ttsEnabled?: boolean;
-      ttsVoice?: string;
-      ttsRate?: EdgeTtsRate;
-    } | null;
+    const withStep = async <T,>(step: string, fn: () => Promise<T>): Promise<T> => {
+      try {
+        return await fn();
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        throw new Error(`[ttsNode step=${step}] ${errorMessage}`);
+      }
+    };
+
+    const word = await withStep("load-word", async () =>
+      await ctx.runQuery(api.words.getById, { wordId: args.wordId }) as {
+        _id: string;
+        userId: string;
+        language: LanguageCode;
+        target: string;
+        audioUrl?: string;
+      } | null,
+    );
+    const deck = await withStep("load-deck", async () =>
+      await ctx.runQuery(api.decks.getDeckById, { deckId: args.deckId }) as {
+        _id: string;
+        userId: string;
+        language: LanguageCode;
+        ttsEnabled?: boolean;
+        ttsVoice?: string;
+        ttsRate?: EdgeTtsRate;
+      } | null,
+    );
 
     if (!word) throw new Error("Word not found");
     if (!deck) throw new Error("Deck not found");
     if (`${word.userId}` !== `${args.userId}` || `${deck.userId}` !== `${args.userId}`) {
       throw new Error("Forbidden");
     }
-    const inDeck = await ctx.runQuery(api.decks.isWordInDeck, {
-      deckId: args.deckId,
-      wordId: args.wordId,
-    }) as boolean;
+    const inDeck = await withStep("check-word-in-deck", async () =>
+      await ctx.runQuery(api.decks.isWordInDeck, {
+        deckId: args.deckId,
+        wordId: args.wordId,
+      }) as boolean,
+    );
     if (!inDeck) {
       throw new Error("Word not found in deck");
     }
 
     const voice = args.voice ?? deck.ttsVoice ?? getDefaultEdgeTtsVoice(deck.language);
     const rate = args.rate ?? deck.ttsRate ?? "default";
-    const cachedAudio = await ctx.runQuery(api.tts.getDeckWordAudio, {
-      deckId: args.deckId,
-      wordId: args.wordId,
-      voice,
-      rate,
-    }) as { audioUrl: string } | null;
+    const cachedAudio = await withStep("lookup-cached-audio", async () =>
+      await ctx.runQuery(api.tts.getDeckWordAudio, {
+        deckId: args.deckId,
+        wordId: args.wordId,
+        voice,
+        rate,
+      }) as { audioUrl: string } | null,
+    );
 
     if (cachedAudio?.audioUrl) {
       return { audioUrl: cachedAudio.audioUrl };
     }
 
     const speechConfig = SPEECH_CONFIG_BY_LANGUAGE[word.language] ?? { voice: "en-US-EmmaNeural", lang: "en-US" };
-    const tts = new EdgeTTS({
-      voice,
-      lang: speechConfig.lang,
-      outputFormat: "audio-24khz-48kbitrate-mono-mp3",
-      rate,
-      saveSubtitles: false,
-    });
+    const tts = await withStep("create-edge-tts", async () =>
+      new EdgeTTS({
+        voice,
+        lang: speechConfig.lang,
+        outputFormat: "audio-24khz-48kbitrate-mono-mp3",
+        rate,
+        saveSubtitles: false,
+      }),
+    );
 
     const tempDir = await mkdtemp(join(tmpdir(), "inko-convex-tts-"));
     const audioPath = join(tempDir, `${randomUUID()}.mp3`);
@@ -129,10 +148,10 @@ export const ensureWordAudio = action({
         );
       }
 
-      const audio = await readFile(audioPath);
+      const audio = await withStep("read-audio-file", async () => await readFile(audioPath));
       const blob = new Blob([audio], { type: "audio/mpeg" });
-      const audioStorageId = await ctx.storage.store(blob);
-      const audioUrl = await ctx.storage.getUrl(audioStorageId);
+      const audioStorageId = await withStep("store-audio-blob", async () => await ctx.storage.store(blob));
+      const audioUrl = await withStep("resolve-storage-url", async () => await ctx.storage.getUrl(audioStorageId));
       if (!audioUrl) {
         throw new Error("Failed to resolve stored audio URL");
       }
@@ -149,14 +168,16 @@ export const ensureWordAudio = action({
         throw new Error(`Invalid storage URL returned by Convex: ${audioUrl}; storageId=${audioStorageId}`);
       }
 
-      await ctx.runMutation((internal as any).tts.persistDeckWordAudio, {
-        deckId: args.deckId,
-        wordId: args.wordId,
-        voice,
-        rate,
-        audioStorageId,
-        audioUrl,
-      });
+      await withStep("persist-audio-cache", async () =>
+        await ctx.runMutation((internal as any).tts.persistDeckWordAudio, {
+          deckId: args.deckId,
+          wordId: args.wordId,
+          voice,
+          rate,
+          audioStorageId,
+          audioUrl,
+        }),
+      );
 
       return { audioUrl };
     } finally {
