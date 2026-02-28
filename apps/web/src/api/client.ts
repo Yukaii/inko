@@ -43,6 +43,7 @@ type AuthVerifyResponse = { accessToken: string; user: UserDTO };
 type StartPracticeResponse = {
   sessionId: string;
   card: PracticeCardDTO;
+  upcomingCards?: PracticeCardDTO[];
   typingMode?: TypingMode;
   sessionTargetCards?: number;
   cardsCompleted?: number;
@@ -54,6 +55,7 @@ type SubmitPracticeResponse = {
   scores: { shape: number; typing: number; listening: number };
   nextDueAt: string;
   nextCard?: PracticeCardDTO | null;
+  upcomingCards?: PracticeCardDTO[];
   sessionTargetCards?: number;
   cardsCompleted?: number;
   remainingCards?: number;
@@ -89,6 +91,34 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string):
   }
 
   return (await res.json()) as T;
+}
+
+async function requestBlob(path: string, init: RequestInit = {}, token?: string): Promise<Blob> {
+  const headers = new Headers(init.headers);
+  if (token && !headers.has("authorization")) {
+    headers.set("authorization", `Bearer ${token}`);
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers,
+  });
+
+  if (!res.ok) {
+    let errorMessage = res.statusText;
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.message || errorMessage;
+    } catch {
+      errorMessage = await res.text() || errorMessage;
+    }
+
+    const error = new Error(errorMessage) as Error & { statusCode?: number };
+    error.statusCode = res.status;
+    throw error;
+  }
+
+  return await res.blob();
 }
 
 export const api = {
@@ -180,4 +210,7 @@ export const api = {
 
   finishPractice: (token: string, sessionId: string) =>
     request<SessionSummaryDTO>(`/api/practice/session/${sessionId}/finish`, { method: "POST" }, token),
+
+  fetchWordTts: (token: string, wordId: string) =>
+    requestBlob(`/api/words/${wordId}/tts`, {}, token),
 };

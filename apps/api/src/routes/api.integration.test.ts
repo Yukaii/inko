@@ -4,6 +4,7 @@ import { RepositoryError } from "../services/repository";
 import { buildServer } from "../server";
 import { createMagicToken, issueAccessToken } from "../lib/auth";
 import type { Mailer } from "../lib/mailer";
+import type { TtsService } from "../lib/tts";
 import { DefaultThemes, PRACTICE_SESSION_CARD_CAP_DEFAULT } from "@inko/shared";
 
 function makeRepositoryMock(): Repository {
@@ -96,6 +97,18 @@ function makeRepositoryMock(): Repository {
       audioUrl: undefined,
       tags: ["n5"],
     })),
+    getWordById: vi.fn(async () => ({
+      id: "word_1",
+      userId: "user_1",
+      language: "ja",
+      target: "勉強",
+      reading: "べんきょう",
+      romanization: "benkyou",
+      meaning: "study",
+      example: "毎日勉強します。",
+      audioUrl: undefined,
+      tags: ["n5"],
+    })),
     deleteWord: vi.fn(async () => ({ ok: true })),
     deleteWordsBatch: vi.fn(async (_userId: string, _deckId: string, input: { wordIds: string[] }) => ({
       deleted: input.wordIds.length,
@@ -157,10 +170,20 @@ describe("API integration", () => {
   let repo: Repository;
   let mailer: Mailer;
   let sendMagicLink: ReturnType<typeof vi.fn>;
+  let tts: TtsService;
+  let synthesizeWordAudio: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     repo = makeRepositoryMock();
     sendMagicLink = vi.fn(async () => {});
+    synthesizeWordAudio = vi.fn(async () => ({
+      audio: Buffer.from("fake-mp3"),
+      contentType: "audio/mpeg",
+      fileName: "word.mp3",
+    }));
+    tts = {
+      synthesizeWordAudio,
+    };
     mailer = {
       kind: "log",
       sendMagicLink,
@@ -227,7 +250,7 @@ describe("API integration", () => {
   });
 
   it("supports deck-word-practice flow via authenticated API", async () => {
-    const app = await buildServer({ repository: repo, mailer });
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
     const accessToken = await issueAccessToken("user_1", "user@example.com");
     const auth = { authorization: `Bearer ${accessToken}` };
 
@@ -317,6 +340,22 @@ describe("API integration", () => {
     expect(startRes.json().sessionTargetCards).toBe(PRACTICE_SESSION_CARD_CAP_DEFAULT);
     expect(startRes.json().cardsCompleted).toBe(0);
 
+    const ttsRes = await app.inject({
+      method: "GET",
+      url: "/api/words/word_1/tts",
+      headers: auth,
+    });
+    expect(ttsRes.statusCode).toBe(200);
+    expect(ttsRes.headers["content-type"]).toContain("audio/mpeg");
+    expect(ttsRes.body).toBe("fake-mp3");
+    expect(synthesizeWordAudio).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: "勉強",
+        reading: "べんきょう",
+        language: "ja",
+      }),
+    );
+
     const submitRes = await app.inject({
       method: "POST",
       url: "/api/practice/session/session_1/card/submit?wordId=word_1",
@@ -364,7 +403,7 @@ describe("API integration", () => {
   });
 
   it("rejects access to protected endpoints without bearer token", async () => {
-    const app = await buildServer({ repository: repo, mailer });
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
 
     const protectedRequests = [
       app.inject({ method: "GET", url: "/api/me" }),
@@ -373,6 +412,7 @@ describe("API integration", () => {
       app.inject({ method: "GET", url: "/api/dashboard/summary" }),
       app.inject({ method: "GET", url: "/api/dashboard/stats" }),
       app.inject({ method: "GET", url: "/api/dashboard/recent-sessions" }),
+      app.inject({ method: "GET", url: "/api/words/word_1/tts" }),
     ];
 
     const responses = await Promise.all(protectedRequests);
@@ -385,7 +425,7 @@ describe("API integration", () => {
   });
 
   it("rejects protected endpoints with invalid bearer token", async () => {
-    const app = await buildServer({ repository: repo, mailer });
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
 
     const res = await app.inject({
       method: "GET",
@@ -400,7 +440,7 @@ describe("API integration", () => {
   });
 
   it("returns bad request when practice submit is missing wordId query param", async () => {
-    const app = await buildServer({ repository: repo, mailer });
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
     const accessToken = await issueAccessToken("user_1", "user@example.com");
 
     const res = await app.inject({
@@ -427,7 +467,7 @@ describe("API integration", () => {
       throw new RepositoryError("Forbidden", 403);
     });
 
-    const app = await buildServer({ repository: repo, mailer });
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
     const accessToken = await issueAccessToken("user_1", "user@example.com");
 
     const res = await app.inject({
@@ -442,7 +482,7 @@ describe("API integration", () => {
   });
 
   it("sends magic link email and returns devToken with log mailer", async () => {
-    const app = await buildServer({ repository: repo, mailer });
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
 
     const res = await app.inject({
       method: "POST",

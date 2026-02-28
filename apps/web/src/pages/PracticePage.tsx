@@ -123,6 +123,7 @@ export function PracticePage() {
   const [sessionDone, setSessionDone] = useState(false);
   const [sessionSummary, setSessionSummary] = useState<{ cardsCompleted: number; avgTypingScore: number } | null>(null);
   const [typingMode, setTypingMode] = useState<TypingMode>("language_specific");
+  const [upcomingCards, setUpcomingCards] = useState<PracticeCard[]>([]);
   const [cardTransition, setCardTransition] = useState(false);
   const [finishError, setFinishError] = useState("");
   const [sessionTargetCards, setSessionTargetCards] = useState(PRACTICE_SESSION_CARD_CAP_DEFAULT);
@@ -137,8 +138,9 @@ export function PracticePage() {
   const autoSubmitKeyRef = useRef<string>("");
   const hiddenInputRef = useRef<HTMLInputElement | null>(null);
   const zoneRef = useRef<HTMLDivElement | null>(null);
-
-
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ttsUrlCacheRef = useRef<Map<string, string>>(new Map());
+  const ttsPromiseCacheRef = useRef<Map<string, Promise<string>>>(new Map());
 
   useEffect(() => {
     if (!deckId || !token) return;
@@ -150,6 +152,7 @@ export function PracticePage() {
         if (cancelled) return;
         setSessionId(res.sessionId);
         setCard(res.card as PracticeCard);
+        setUpcomingCards((res.upcomingCards as PracticeCard[] | undefined) ?? []);
         setTypingMode((res.typingMode as TypingMode | undefined) ?? "language_specific");
         setSessionTargetCards(res.sessionTargetCards ?? PRACTICE_SESSION_CARD_CAP_DEFAULT);
         setCardsCompleted(res.cardsCompleted ?? 0);
@@ -219,6 +222,7 @@ export function PracticePage() {
       if (res.sessionTargetCards !== undefined) {
         setSessionTargetCards(res.sessionTargetCards);
       }
+      setUpcomingCards((res.upcomingCards as PracticeCard[] | undefined) ?? []);
       const nextCompleted =
         res.cardsCompleted ??
         (res.remainingCards !== undefined
@@ -249,6 +253,7 @@ export function PracticePage() {
           if (res.nextCard) {
             setCard(res.nextCard as PracticeCard);
           } else {
+            setUpcomingCards([]);
             requestFinish();
           }
           startedAtRef.current = Date.now();
@@ -370,6 +375,84 @@ export function PracticePage() {
     if (!focusKey) return;
     focusInput();
   }, [focusKey, focusInput]);
+
+  const getOrPrefetchAudioUrl = useCallback(async (practiceCard: PracticeCard) => {
+    if (practiceCard.audioUrl) return practiceCard.audioUrl;
+
+    const cachedUrl = ttsUrlCacheRef.current.get(practiceCard.wordId);
+    if (cachedUrl) return cachedUrl;
+
+    const cachedPromise = ttsPromiseCacheRef.current.get(practiceCard.wordId);
+    if (cachedPromise) return await cachedPromise;
+
+    const promise = api.fetchWordTts(token ?? "", practiceCard.wordId).then((blob) => {
+      const objectUrl = URL.createObjectURL(blob);
+      ttsUrlCacheRef.current.set(practiceCard.wordId, objectUrl);
+      ttsPromiseCacheRef.current.delete(practiceCard.wordId);
+      return objectUrl;
+    }).catch((error) => {
+      ttsPromiseCacheRef.current.delete(practiceCard.wordId);
+      throw error;
+    });
+
+    ttsPromiseCacheRef.current.set(practiceCard.wordId, promise);
+    return await promise;
+  }, [token]);
+
+  useEffect(() => {
+    for (const upcomingCard of upcomingCards.slice(0, 7)) {
+      void getOrPrefetchAudioUrl(upcomingCard).catch(() => {
+        // Ignore prefetch failures; playback will retry on demand.
+      });
+    }
+  }, [getOrPrefetchAudioUrl, upcomingCards]);
+
+  useEffect(() => {
+    if (!card) return;
+
+    let cancelled = false;
+
+    const resetAudio = () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+
+    const playAudio = async () => {
+      resetAudio();
+
+      try {
+        const source = await getOrPrefetchAudioUrl(card);
+
+        if (cancelled) {
+          return;
+        }
+
+        const audio = new Audio(source);
+        audioRef.current = audio;
+        await audio.play();
+      } catch {
+        // Ignore autoplay and synthesis failures so practice can continue.
+      }
+    };
+
+    void playAudio();
+
+    return () => {
+      cancelled = true;
+      resetAudio();
+    };
+  }, [card, getOrPrefetchAudioUrl]);
+
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      for (const objectUrl of ttsUrlCacheRef.current.values()) {
+        URL.revokeObjectURL(objectUrl);
+      }
+      ttsUrlCacheRef.current.clear();
+      ttsPromiseCacheRef.current.clear();
+    };
+  }, []);
 
   // Auto-submit on match
   useEffect(() => {
