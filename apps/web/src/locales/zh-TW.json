@@ -283,6 +283,10 @@
   "settings": {
     "title": "設定",
     "subtitle": "自訂你的使用體驗",
+    "messages": {
+      "saved": "設定已儲存。",
+      "save_failed": "無法儲存設定。"
+    },
     "nav": {
       "profile": "個人資料",
       "preferences": "偏好設定",
