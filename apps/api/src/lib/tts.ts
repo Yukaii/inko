@@ -53,9 +53,22 @@ export const ttsService: TtsService = {
       rate: input.rate,
     }) as { audioUrl: string };
 
-    const response = await fetch(result.audioUrl);
+    try {
+      new URL(result.audioUrl);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Invalid audioUrl returned from Convex action: ${result.audioUrl}; cause=${errorMessage}`);
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(result.audioUrl);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to fetch Convex audio URL: ${result.audioUrl}; cause=${errorMessage}`);
+    }
     if (!response.ok) {
-      throw new Error(`Failed to fetch stored audio (${response.status})`);
+      throw new Error(`Failed to fetch stored audio (${response.status}) from ${result.audioUrl}`);
     }
 
     return {

@@ -117,7 +117,10 @@ export const ensureWordAudio = action({
           proxies: getProxyDiagnostics(),
           error: error instanceof Error ? { message: error.message, stack: error.stack } : String(error),
         });
-        throw error;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `TTS synthesis failed: ${errorMessage}; language=${word.language}; voice=${voice}; rate=${rate}; proxies=${getProxyDiagnostics().join(",") || "none"}`,
+        );
       }
 
       const audio = await readFile(audioPath);
@@ -137,7 +140,7 @@ export const ensureWordAudio = action({
           audioUrl,
           error: error instanceof Error ? { message: error.message, stack: error.stack } : String(error),
         });
-        throw new Error(`Invalid storage URL returned by Convex: ${audioUrl}`);
+        throw new Error(`Invalid storage URL returned by Convex: ${audioUrl}; storageId=${audioStorageId}`);
       }
 
       await ctx.runMutation((internal as any).tts.persistDeckWordAudio, {
