@@ -180,6 +180,7 @@ describe("API integration", () => {
       audio: Buffer.from("fake-mp3"),
       contentType: "audio/mpeg",
       fileName: "word.mp3",
+      audioUrl: "https://convex.example/word.mp3",
     }));
     tts = {
       synthesizeWordAudio,
@@ -350,9 +351,8 @@ describe("API integration", () => {
     expect(ttsRes.body).toBe("fake-mp3");
     expect(synthesizeWordAudio).toHaveBeenCalledWith(
       expect.objectContaining({
-        target: "勉強",
-        reading: "べんきょう",
-        language: "ja",
+        userId: "user_1",
+        wordId: "word_1",
       }),
     );
 

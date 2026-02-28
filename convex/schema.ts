@@ -68,6 +68,7 @@ export default defineSchema({
     romanization: v.optional(v.string()),
     meaning: v.string(),
     example: v.optional(v.string()),
+    audioStorageId: v.optional(v.id("_storage")),
     audioUrl: v.optional(v.string()),
     tags: v.array(v.string()),
     createdAt: v.number(),
