@@ -466,11 +466,16 @@ export function DashboardPage() {
               const deck = decksById.get(session.deckId);
               const sessionDeckName = deck?.name ?? session.deckName ?? t("dashboard.session_label");
               const sessionDeckLanguage = deck?.language?.toUpperCase();
+              const handleSessionClick = () => {
+                navigate(`/sessions/${session.sessionId}`);
+              };
 
               return (
-                <div
+                <button
                   key={session.sessionId}
-                  className="flex flex-col gap-3 border-b border-[var(--border-subtle)] px-4 py-4 last:border-b-0 md:flex-row md:items-center md:justify-between"
+                  type="button"
+                  onClick={handleSessionClick}
+                  className="flex w-full flex-col gap-3 rounded-none border-b border-[var(--border-subtle)] bg-transparent px-5 py-3 text-left font-normal text-inherit focus:outline-none last:border-b-0 md:flex-row md:items-center md:justify-between"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-bg-elevated text-text-secondary">
@@ -502,7 +507,7 @@ export function DashboardPage() {
                     </span>
                     <ChevronRight size={16} className="text-text-secondary" aria-hidden="true" />
                   </div>
-                </div>
+                </button>
               );
             })}
 

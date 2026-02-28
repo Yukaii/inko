@@ -8,6 +8,19 @@ import { requireAuth } from "../plugins/auth";
 import { rethrowAsHttp } from "../lib/http";
 
 export async function practiceRoutes(app: FastifyInstance, repo: Repository = repository) {
+  app.get(
+    "/api/practice/session/:sessionId",
+    { preHandler: requireAuth },
+    async (request) => {
+      try {
+        const { sessionId } = request.params as { sessionId: string };
+        return await repo.getPracticeSessionDetails(request.auth!.userId, sessionId);
+      } catch (error) {
+        rethrowAsHttp(app, error);
+      }
+    },
+  );
+
   app.post("/api/practice/session/start", { preHandler: requireAuth }, async (request) => {
     try {
       const body = StartPracticeSessionSchema.parse(request.body);

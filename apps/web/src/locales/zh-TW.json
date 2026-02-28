@@ -176,6 +176,18 @@
     "cards_count": "{{count}} 張字卡",
     "no_sessions": "尚未有完成的學習階段。"
   },
+  "session_details": {
+    "back": "返回",
+    "duration": "時長",
+    "avg_typing": "平均輸入",
+    "avg_recall": "平均回想",
+    "attempt_breakdown": "作答明細",
+    "shape": "字形",
+    "typing": "輸入",
+    "listen": "聽力",
+    "no_attempts": "這個學習階段沒有作答資料。",
+    "load_failed": "無法載入這個學習階段。"
+  },
   "word_bank": {
     "title": "單字庫",
     "subtitle": "管理你的牌組與詞彙",
