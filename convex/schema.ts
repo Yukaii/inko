@@ -79,6 +79,7 @@ export default defineSchema({
     position: v.number(),
   })
     .index("by_deck", ["deckId"])
+    .index("by_deck_position", ["deckId", "position"])
     .index("by_word", ["wordId"])
     .index("by_deck_word", ["deckId", "wordId"]),
 
@@ -120,6 +121,13 @@ export default defineSchema({
     typingMs: v.number(),
     submittedAt: v.number(),
   }).index("by_session", ["sessionId"]),
+
+  deck_practice_progress: defineTable({
+    userId: v.id("users"),
+    deckId: v.id("decks"),
+    nextPosition: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user_deck", ["userId", "deckId"]),
 
   daily_stats: defineTable({
     userId: v.id("users"),
