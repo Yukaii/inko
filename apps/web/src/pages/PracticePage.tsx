@@ -115,6 +115,10 @@ function getTtsCacheKey(deckId: string, wordId: string, voice: string, rate: Edg
   return `${deckId}:${wordId}:${voice}:${rate}`;
 }
 
+function getInitialTtsAudioWarmupCards(card: PracticeCard | null, upcomingCards: PracticeCard[] | undefined) {
+  return [card, ...(upcomingCards ?? [])].filter((value): value is PracticeCard => value !== null).slice(0, 8);
+}
+
 export function PracticePage() {
   const { t } = useTranslation();
   const { deckId } = useParams<{ deckId: string }>();
@@ -160,13 +164,40 @@ export function PracticePage() {
     api.startPractice(token, deckId)
       .then((res) => {
         if (cancelled) return;
+        const initialCard = res.card as PracticeCard;
+        const initialUpcomingCards = (res.upcomingCards as PracticeCard[] | undefined) ?? [];
+        const initialVoice = res.ttsVoice ?? EDGE_TTS_VOICE_OPTIONS_BY_LANGUAGE[(initialCard.language ?? "ja") as LanguageCode][0].value;
+        const initialRate = res.ttsRate ?? "default";
+
+        for (const practiceCard of getInitialTtsAudioWarmupCards(initialCard, initialUpcomingCards)) {
+          const cacheKey = getTtsCacheKey(deckId, practiceCard.wordId, initialVoice, initialRate);
+          if (ttsUrlCacheRef.current.has(cacheKey) || ttsPromiseCacheRef.current.has(cacheKey)) {
+            continue;
+          }
+
+          const promise = api.fetchWordTts(token, practiceCard.wordId, deckId, initialVoice, initialRate).then((blob) => {
+            const objectUrl = URL.createObjectURL(blob);
+            ttsUrlCacheRef.current.set(cacheKey, objectUrl);
+            ttsPromiseCacheRef.current.delete(cacheKey);
+            return objectUrl;
+          }).catch((error) => {
+            ttsPromiseCacheRef.current.delete(cacheKey);
+            throw error;
+          });
+
+          ttsPromiseCacheRef.current.set(cacheKey, promise);
+          void promise.catch(() => {
+            // Ignore warmup failures; playback will retry on demand.
+          });
+        }
+
         setSessionId(res.sessionId);
-        setCard(res.card as PracticeCard);
-        setUpcomingCards((res.upcomingCards as PracticeCard[] | undefined) ?? []);
+        setCard(initialCard);
+        setUpcomingCards(initialUpcomingCards);
         setTypingMode((res.typingMode as TypingMode | undefined) ?? "language_specific");
         setTtsEnabled(res.ttsEnabled ?? true);
-        setTtsVoice(res.ttsVoice ?? EDGE_TTS_VOICE_OPTIONS_BY_LANGUAGE[(res.card.language ?? "ja") as LanguageCode][0].value);
-        setTtsRate(res.ttsRate ?? "default");
+        setTtsVoice(initialVoice);
+        setTtsRate(initialRate);
         setSessionTargetCards(res.sessionTargetCards ?? PRACTICE_SESSION_CARD_CAP_DEFAULT);
         setCardsCompleted(res.cardsCompleted ?? 0);
         setSessionCapped(false);
@@ -447,12 +478,12 @@ export function PracticePage() {
 
   useEffect(() => {
     if (!ttsEnabled) return;
-    for (const upcomingCard of upcomingCards.slice(0, 7)) {
-      void getOrPrefetchAudioUrl(upcomingCard).catch(() => {
+    for (const practiceCard of [card, ...upcomingCards].filter((value): value is PracticeCard => value !== null).slice(0, 8)) {
+      void getOrPrefetchAudioUrl(practiceCard).catch(() => {
         // Ignore prefetch failures; playback will retry on demand.
       });
     }
-  }, [getOrPrefetchAudioUrl, upcomingCards, ttsEnabled]);
+  }, [card, getOrPrefetchAudioUrl, upcomingCards, ttsEnabled]);
 
   useEffect(() => {
     if (!card) return;
