@@ -12,6 +12,7 @@ const EnvSchema = z.object({
   MAIL_PROVIDER: z.enum(["log", "resend"]).default("log"),
   RESEND_API_KEY: z.string().min(1).optional(),
   MAIL_FROM: z.string().min(1).default("Inkō <no-reply@localhost>"),
+  PRACTICE_TRACE_SLOW_MS: z.coerce.number().int().nonnegative().default(1000),
 });
 
 const parsedEnv = EnvSchema.parse(process.env);
