@@ -25,6 +25,8 @@ type DashboardSummary = {
   sessionTimeSeconds: number;
   recentSessions: Array<{
     sessionId: string;
+    deckId: string;
+    deckName?: string;
     cardsCompleted: number;
     startedAt: number;
     finishedAt?: number;
