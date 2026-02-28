@@ -1,6 +1,26 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+async function hydrateDeckRowsWithStats(
+  ctx: any,
+  userId: any,
+  links: Array<{ wordId: any; position: number }>,
+) {
+  const rows = await Promise.all(
+    links.map(async (link) => {
+      const word = await ctx.db.get(link.wordId);
+      if (!word) return null;
+      const stat = await ctx.db
+        .query("word_channel_stats")
+        .withIndex("by_user_word", (q) => q.eq("userId", userId).eq("wordId", link.wordId))
+        .first();
+      return { word, stat, position: link.position };
+    }),
+  );
+
+  return rows.filter((row): row is NonNullable<typeof row> => !!row);
+}
+
 export const startSession = mutation({
   args: {
     userId: v.id("users"),
@@ -41,6 +61,51 @@ export const getSessionById = query({
   },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.sessionId);
+  },
+});
+
+export const getDeckPracticeProgress = query({
+  args: {
+    userId: v.id("users"),
+    deckId: v.id("decks"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("deck_practice_progress")
+      .withIndex("by_user_deck", (q) => q.eq("userId", args.userId).eq("deckId", args.deckId))
+      .first();
+  },
+});
+
+export const upsertDeckPracticeProgress = mutation({
+  args: {
+    userId: v.id("users"),
+    deckId: v.id("decks"),
+    nextPosition: v.number(),
+    updatedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("deck_practice_progress")
+      .withIndex("by_user_deck", (q) => q.eq("userId", args.userId).eq("deckId", args.deckId))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        nextPosition: args.nextPosition,
+        updatedAt: args.updatedAt,
+      });
+      return await ctx.db.get(existing._id);
+    }
+
+    const id = await ctx.db.insert("deck_practice_progress", {
+      userId: args.userId,
+      deckId: args.deckId,
+      nextPosition: args.nextPosition,
+      updatedAt: args.updatedAt,
+    });
+
+    return await ctx.db.get(id);
   },
 });
 
@@ -176,22 +241,44 @@ export const listDeckWordsWithStatsPage = query({
         numItems: args.limit,
       });
 
-    const rows = await Promise.all(
-      result.page.map(async (link) => {
-        const word = await ctx.db.get(link.wordId);
-        if (!word) return null;
-        const stat = await ctx.db
-          .query("word_channel_stats")
-          .withIndex("by_user_word", (q) => q.eq("userId", args.userId).eq("wordId", link.wordId))
-          .first();
-        return { word, stat };
-      }),
-    );
-
     return {
-      page: rows.filter((row): row is NonNullable<typeof row> => !!row),
+      page: await hydrateDeckRowsWithStats(ctx, args.userId, result.page),
       continueCursor: result.continueCursor,
       isDone: result.isDone,
+    };
+  },
+});
+
+export const listDeckWordsWithStatsFromPosition = query({
+  args: {
+    userId: v.id("users"),
+    deckId: v.id("decks"),
+    startPosition: v.number(),
+    limit: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const forward = await ctx.db
+      .query("deck_words")
+      .withIndex("by_deck_position", (q) => q.eq("deckId", args.deckId).gte("position", args.startPosition))
+      .order("asc")
+      .take(args.limit);
+
+    let links = forward;
+    if (links.length < args.limit) {
+      const wrapped = await ctx.db
+        .query("deck_words")
+        .withIndex("by_deck_position", (q) => q.eq("deckId", args.deckId).lt("position", args.startPosition))
+        .order("asc")
+        .take(args.limit - links.length);
+      links = [...links, ...wrapped];
+    }
+
+    const page = await hydrateDeckRowsWithStats(ctx, args.userId, links);
+    const lastPosition = links[links.length - 1]?.position;
+
+    return {
+      page,
+      nextStartPosition: lastPosition === undefined ? args.startPosition : lastPosition + 1,
     };
   },
 });

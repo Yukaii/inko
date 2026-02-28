@@ -54,6 +54,7 @@ type ConvexWord = {
 };
 
 type WordStatsRow = {
+  position: number;
   word: ConvexWord;
   stat?: {
     shapeStrength: number;
@@ -64,6 +65,14 @@ type WordStatsRow = {
     listeningDueAt: number;
     lastPracticedAt?: number;
   };
+};
+
+type ConvexDeckPracticeProgress = {
+  _id: string;
+  userId: string;
+  deckId: string;
+  nextPosition: number;
+  updatedAt: number;
 };
 
 type WordChannelStats = {
@@ -90,6 +99,7 @@ type PracticeSessionCacheEntry = {
   deckId: string;
   rows: WordStatsRow[];
   attemptedWordIds: Set<string>;
+  nextWindowStartPosition: number;
   updatedAt: number;
 };
 
@@ -195,29 +205,34 @@ function selectNextPracticeCard(rows: WordStatsRow[], deckId: string, excludedWo
   };
 }
 
-async function listPracticeCandidateRows(userId: string, deckId: string, maxRows = 20): Promise<WordStatsRow[]> {
-  const rows: WordStatsRow[] = [];
-  let cursor: string | null = null;
+async function getDeckPracticeProgress(userId: string, deckId: string) {
+  return (await convex.query("practice:getDeckPracticeProgress", {
+    userId,
+    deckId,
+  })) as ConvexDeckPracticeProgress | null;
+}
 
-  while (rows.length < maxRows) {
-    const pageLimit = Math.min(10, maxRows - rows.length);
-    const result = (await convex.query("practice:listDeckWordsWithStatsPage", {
+async function advanceDeckPracticeWindow(userId: string, deckId: string, startPosition: number, maxRows = 20) {
+  const result = (await convex.query("practice:listDeckWordsWithStatsFromPosition", {
+    userId,
+    deckId,
+    startPosition,
+    limit: maxRows,
+  })) as { page: WordStatsRow[]; nextStartPosition: number };
+
+  if (result.page.length > 0) {
+    await convex.mutation("practice:upsertDeckPracticeProgress", {
       userId,
       deckId,
-      cursor,
-      limit: pageLimit,
-    })) as { page: WordStatsRow[]; continueCursor: string; isDone: boolean };
-
-    rows.push(...result.page);
-
-    if (result.isDone) {
-      break;
-    }
-
-    cursor = result.continueCursor;
+      nextPosition: result.nextStartPosition,
+      updatedAt: Date.now(),
+    });
   }
 
-  return rows;
+  return {
+    rows: result.page,
+    nextStartPosition: result.nextStartPosition,
+  };
 }
 
 function getSessionCache(sessionId: string): PracticeSessionCacheEntry | null {
@@ -417,7 +432,13 @@ export const repository = {
 
     if (!session) throw new RepositoryError("Failed to start session", 500);
 
-    const rows = await listPracticeCandidateRows(userId, input.deckId, 10);
+    const progress = await getDeckPracticeProgress(userId, input.deckId);
+    const { rows, nextStartPosition } = await advanceDeckPracticeWindow(
+      userId,
+      input.deckId,
+      progress?.nextPosition ?? 0,
+      10,
+    );
 
     if (rows.length === 0) {
       throw new RepositoryError("No words available in deck", 409);
@@ -431,6 +452,7 @@ export const repository = {
       deckId: input.deckId,
       rows,
       attemptedWordIds: new Set(),
+      nextWindowStartPosition: nextStartPosition,
       updatedAt: Date.now(),
     });
 
@@ -570,6 +592,7 @@ export const repository = {
 
     const cached = getSessionCache(sessionId);
     let candidateRows: WordStatsRow[];
+    let nextWindowStartPosition = 0;
 
     if (cached && cached.userId === userId && cached.deckId === session.deckId) {
       cached.attemptedWordIds = new Set([...cached.attemptedWordIds, ...attemptedWordIds]);
@@ -591,27 +614,41 @@ export const repository = {
       attemptedWordIds.clear();
       for (const attemptedWordId of cached.attemptedWordIds) attemptedWordIds.add(attemptedWordId);
       candidateRows = cached.rows;
+      nextWindowStartPosition = cached.nextWindowStartPosition;
     } else {
-      candidateRows = await listPracticeCandidateRows(userId, session.deckId);
+      const progress = await getDeckPracticeProgress(userId, session.deckId);
+      const nextWindow = await advanceDeckPracticeWindow(
+        userId,
+        session.deckId,
+        progress?.nextPosition ?? 0,
+      );
+      candidateRows = nextWindow.rows;
+      nextWindowStartPosition = nextWindow.nextStartPosition;
       practiceSessionCache.set(sessionId, {
         userId,
         deckId: session.deckId,
         rows: candidateRows,
         attemptedWordIds,
+        nextWindowStartPosition,
         updatedAt: Date.now(),
       });
     }
 
     let nextCard = selectNextPracticeCard(candidateRows, session.deckId, attemptedWordIds);
     if (!nextCard) {
-      const refreshedRows = await listPracticeCandidateRows(userId, session.deckId, 20);
-      nextCard = selectNextPracticeCard(refreshedRows, session.deckId, attemptedWordIds);
+      const refreshedWindow = await advanceDeckPracticeWindow(
+        userId,
+        session.deckId,
+        nextWindowStartPosition,
+      );
+      nextCard = selectNextPracticeCard(refreshedWindow.rows, session.deckId, attemptedWordIds);
       if (nextCard) {
         practiceSessionCache.set(sessionId, {
           userId,
           deckId: session.deckId,
-          rows: refreshedRows,
+          rows: refreshedWindow.rows,
           attemptedWordIds,
+          nextWindowStartPosition: refreshedWindow.nextStartPosition,
           updatedAt: Date.now(),
         });
       } else {
