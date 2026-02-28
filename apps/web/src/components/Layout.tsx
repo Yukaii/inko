@@ -82,7 +82,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [showLangSubMenu, setShowLangSubMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   
-  const currentLangLabel = SUPPORTED_UI_LANGUAGES.find((l) => i18n.language.startsWith(l.code))?.label || "English";
+  const currentLangLabel = SUPPORTED_UI_LANGUAGES.find((l) => i18n.language.startsWith(l.code))?.label || t("common.language_english");
 
   const meQuery = useQuery({
     queryKey: ["me"],
@@ -142,7 +142,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           };
           window.addEventListener("keydown", handler, { capture: true, once: true });
         },
-        description: "Go to page (g then d/w/s)",
+        description: t("shortcuts.go_to_page_sequence"),
       }),
     );
 
@@ -162,7 +162,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       registerShortcut({
         key: "s",
         handler: () => navigate("/settings"),
-        description: "Go to Settings",
+        description: t("shortcuts.go_settings_direct"),
       })
     );
 
@@ -172,7 +172,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         key: "?",
         shift: true,
         handler: () => setShowHelp((prev) => !prev),
-        description: "Toggle keyboard shortcuts help",
+        description: t("shortcuts.toggle_help"),
       })
     );
 
@@ -184,7 +184,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           setShowHelp(false);
           setShowProfileMenu(false);
         },
-        description: "Close dialogs",
+        description: t("shortcuts.close_dialogs"),
       })
     );
 
@@ -211,7 +211,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="mb-4 text-[22px] text-accent-orange [font-family:var(--font-display)]" role="banner">
           <span lang="ja">inkō</span>
         </div>
-        <nav className="flex flex-col gap-1" aria-label="Main navigation">
+        <nav className="flex flex-col gap-1" aria-label={t("common.main_navigation")}>
           {NAV_LINKS.map((link, index) => (
             <NavLink
               key={link.to}
@@ -344,7 +344,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Mobile Bottom Nav */}
-      <nav className={`fixed inset-x-0 bottom-0 z-[9999] h-16 items-center justify-around border-t border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] bg-bg-page px-2 shadow-[0_-2px_10px_color-mix(in_oklab,var(--text-primary)_18%,transparent)] md:hidden ${showMobileNav ? "flex" : "hidden"}`} aria-label="Mobile navigation">
+      <nav className={`fixed inset-x-0 bottom-0 z-[9999] h-16 items-center justify-around border-t border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] bg-bg-page px-2 shadow-[0_-2px_10px_color-mix(in_oklab,var(--text-primary)_18%,transparent)] md:hidden ${showMobileNav ? "flex" : "hidden"}`} aria-label={t("common.mobile_navigation")}>
         {NAV_LINKS.map((link) => {
           const isActive = location.pathname === link.to;
           return (
@@ -447,7 +447,7 @@ function KeyboardHelpModal({
       className="fixed inset-0 z-[1000] flex w-full cursor-default items-center justify-center border-0 bg-[var(--overlay-bg-strong)] p-5"
       onClick={onClose}
       onKeyDown={handleOverlayKeyDown}
-      aria-label="Close keyboard shortcuts help"
+      aria-label={t("nav.close_shortcuts_help")}
     >
       <section
         ref={modalRef}
@@ -455,17 +455,17 @@ function KeyboardHelpModal({
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } }}
         aria-modal="true"
-        aria-label="Keyboard shortcuts"
+        aria-label={t("nav.shortcuts_help")}
       >
         <header className="flex items-center justify-between border-b border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] px-6 py-5">
           <h2 className="[font-family:var(--font-display)] text-2xl text-text-primary">{t("nav.shortcuts_help")}</h2>
-          <button type="button" className="border-0 bg-transparent p-1 text-2xl leading-none text-text-secondary transition-colors hover:text-text-primary focus:text-text-primary" onClick={onClose} aria-label="Close">
+          <button type="button" className="border-0 bg-transparent p-1 text-2xl leading-none text-text-secondary transition-colors hover:text-text-primary focus:text-text-primary" onClick={onClose} aria-label={t("common.close")}>
             ×
           </button>
         </header>
         <div className="flex flex-col gap-6 p-6">
           <section>
-            <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">{t("common.navigation", "Navigation")}</h3>
+            <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">{t("common.navigation")}</h3>
             <dl className="flex flex-col gap-2">
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-[100px] items-center gap-1">
@@ -478,7 +478,7 @@ function KeyboardHelpModal({
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-[100px] items-center gap-1">
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">g</kbd>
-                  <span className="text-xs text-text-secondary">then</span>
+                  <span className="text-xs text-text-secondary">{t("common.then")}</span>
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">d</kbd>
                 </dt>
                 <dd className="m-0 text-text-secondary">{t("shortcuts.go_dashboard", "Go to Dashboard")}</dd>
@@ -486,7 +486,7 @@ function KeyboardHelpModal({
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-[100px] items-center gap-1">
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">g</kbd>
-                  <span className="text-xs text-text-secondary">then</span>
+                  <span className="text-xs text-text-secondary">{t("common.then")}</span>
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">w</kbd>
                 </dt>
                 <dd className="m-0 text-text-secondary">{t("shortcuts.go_word_bank", "Go to Word Bank")}</dd>
@@ -494,7 +494,7 @@ function KeyboardHelpModal({
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-[100px] items-center gap-1">
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">g</kbd>
-                  <span className="text-xs text-text-secondary">then</span>
+                  <span className="text-xs text-text-secondary">{t("common.then")}</span>
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">s</kbd>
                 </dt>
                 <dd className="m-0 text-text-secondary">{t("shortcuts.go_settings", "Go to Settings")}</dd>
@@ -508,7 +508,7 @@ function KeyboardHelpModal({
             </dl>
           </section>
           <section>
-            <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">{t("common.global", "Global")}</h3>
+            <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">{t("common.global")}</h3>
             <dl className="flex flex-col gap-2">
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-[100px] items-center gap-1">
@@ -528,7 +528,7 @@ function KeyboardHelpModal({
           </section>
           {shortcuts.length > 0 && (
             <section>
-              <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">{t("common.page_specific", "Page Specific")}</h3>
+              <h3 className="mb-3 [font-family:var(--font-display)] text-sm uppercase tracking-[0.06em] text-text-secondary">{t("common.page_specific")}</h3>
               <dl className="flex flex-col gap-2">
                 {shortcuts.map((s) => (
                   <div key={s.key} className="flex items-center gap-4 text-sm">

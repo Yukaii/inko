@@ -1,6 +1,14 @@
 {
   "common": {
     "loading": "Loading...",
+    "close": "Close",
+    "then": "then",
+    "navigation": "Navigation",
+    "global": "Global",
+    "page_specific": "Page Specific",
+    "main_navigation": "Main navigation",
+    "mobile_navigation": "Mobile navigation",
+    "language_english": "English",
     "save": "Save",
     "cancel": "Cancel",
     "on": "On",
@@ -57,7 +65,8 @@
     "shortcuts": "Shortcuts",
     "home": "Home",
     "decks": "Decks",
-    "shortcuts_help": "Keyboard Shortcuts"
+    "shortcuts_help": "Keyboard Shortcuts",
+    "close_shortcuts_help": "Close keyboard shortcuts help"
   },
   "pwa": {
     "update_available": "A new version is ready. Hard refresh to load the latest app.",
@@ -167,6 +176,7 @@
     "focus_decks_shortcut": "Focus practice decks",
     "session_label": "Practice Session",
     "cards_and_time": "{{count}} cards · {{duration}}",
+    "statistics_aria": "Statistics",
     "to_focus": "to focus",
     "start_practice": "Start Practice",
     "no_decks": "No decks yet.",
@@ -191,6 +201,11 @@
   "word_bank": {
     "title": "Word Bank",
     "subtitle": "Manage your decks and vocabulary",
+    "aria": {
+      "expand_panel": "Expand panel",
+      "collapse_panel": "Collapse panel",
+      "add_word": "Add Word"
+    },
     "decks": {
       "title": "Decks",
       "to_focus": "to focus",
@@ -285,7 +300,14 @@
     "subtitle": "Customize your experience",
     "messages": {
       "saved": "Settings saved.",
-      "save_failed": "Failed to save settings."
+      "save_failed": "Failed to save settings.",
+      "load_failed": "Failed to load settings.",
+      "preset_applied": "Applied preset: {{name}}",
+      "clipboard_denied": "Clipboard permission denied. Copy manually from export file.",
+      "theme_exported": "Theme exported as JSON.",
+      "theme_json_copied": "Theme JSON copied.",
+      "css_vars_copied": "CSS variables copied.",
+      "palette_hex_copied": "{{mode}} palette hex values copied."
     },
     "nav": {
       "profile": "Profile",
@@ -321,10 +343,22 @@
       "copy_json": "Copy JSON",
       "copy_css": "Copy CSS Vars",
       "copy_hex": "Copy {{mode}} Hex",
-      "export_json_btn": "Export JSON"
+      "export_json_btn": "Export JSON",
+      "palette_fields": {
+        "accent_orange": "Accent Orange",
+        "accent_teal": "Accent Teal",
+        "page_background": "Page Background",
+        "card_background": "Card Background",
+        "elevated_background": "Elevated Background",
+        "primary_text": "Primary Text",
+        "secondary_text": "Secondary Text",
+        "text_on_accent": "Text On Accent"
+      }
     },
     "about": {
-      "desc": "A minimal, focused language typing practice app inspired by monkeytype."
+      "desc": "A minimal, focused language typing practice app inspired by monkeytype.",
+      "version": "Version {{version}}",
+      "release_label": "MVP Release"
     }
   },
   "practice": {
@@ -333,6 +367,9 @@
     "cards": "cards",
     "avg_typing": "avg typing",
     "best_streak": "best streak",
+    "finish_failed": "Failed to finish session",
+    "session_starting": "Session is still starting. Try again.",
+    "not_authenticated": "You are not authenticated.",
     "back_to_dashboard": "Back to Dashboard",
     "end_session": "end session",
     "esc_hint": "Press Esc again within 1 second to exit",
@@ -352,5 +389,8 @@
     "tts_speed_fast": "Fast",
     "not_quite": "not quite — try again",
     "off_track": "off track"
+  },
+  "shortcuts": {
+    "go_to_page_sequence": "Go to page (g then d/w/s)"
   }
 }

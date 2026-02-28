@@ -1,6 +1,14 @@
 {
   "common": {
     "loading": "読み込み中...",
+    "close": "閉じる",
+    "then": "次に",
+    "navigation": "ナビゲーション",
+    "global": "全体",
+    "page_specific": "ページ固有",
+    "main_navigation": "メインナビゲーション",
+    "mobile_navigation": "モバイルナビゲーション",
+    "language_english": "英語",
     "save": "保存",
     "cancel": "キャンセル",
     "on": "オン",
@@ -57,7 +65,8 @@
     "shortcuts": "ショートカット",
     "home": "ホーム",
     "decks": "デッキ",
-    "shortcuts_help": "キーボードショートカット"
+    "shortcuts_help": "キーボードショートカット",
+    "close_shortcuts_help": "キーボードショートカットを閉じる"
   },
   "pwa": {
     "update_available": "新しいバージョンを利用できます。最新のアプリを読み込むには再読み込みしてください。",
@@ -167,6 +176,7 @@
     "focus_decks_shortcut": "練習デッキにフォーカス",
     "session_label": "練習セッション",
     "cards_and_time": "{{count}} 枚 · {{duration}}",
+    "statistics_aria": "統計",
     "to_focus": "フォーカスする",
     "start_practice": "練習を開始",
     "no_decks": "デッキがありません。",
@@ -191,6 +201,11 @@
   "word_bank": {
     "title": "ワードバンク",
     "subtitle": "デッキと語彙を管理します",
+    "aria": {
+      "expand_panel": "パネルを開く",
+      "collapse_panel": "パネルを閉じる",
+      "add_word": "単語を追加"
+    },
     "decks": {
       "title": "デッキ",
       "to_focus": "フォーカスする",
@@ -285,7 +300,14 @@
     "subtitle": "体験をカスタマイズする",
     "messages": {
       "saved": "設定を保存しました。",
-      "save_failed": "設定を保存できませんでした。"
+      "save_failed": "設定を保存できませんでした。",
+      "load_failed": "設定を読み込めませんでした。",
+      "preset_applied": "プリセットを適用しました: {{name}}",
+      "clipboard_denied": "クリップボードへのアクセスが拒否されました。エクスポートしたファイルから手動でコピーしてください。",
+      "theme_exported": "テーマを JSON としてエクスポートしました。",
+      "theme_json_copied": "テーマ JSON をコピーしました。",
+      "css_vars_copied": "CSS 変数をコピーしました。",
+      "palette_hex_copied": "{{mode}} の Hex 値をコピーしました。"
     },
     "nav": {
       "profile": "プロフィール",
@@ -321,10 +343,22 @@
       "copy_json": "JSONをコピー",
       "copy_css": "CSS変数をコピー",
       "copy_hex": "{{mode}} Hexをコピー",
-      "export_json_btn": "JSONでエクスポート"
+      "export_json_btn": "JSONでエクスポート",
+      "palette_fields": {
+        "accent_orange": "アクセントオレンジ",
+        "accent_teal": "アクセントティール",
+        "page_background": "ページ背景",
+        "card_background": "カード背景",
+        "elevated_background": "浮き上がり背景",
+        "primary_text": "主要テキスト",
+        "secondary_text": "補助テキスト",
+        "text_on_accent": "アクセント上の文字色"
+      }
     },
     "about": {
-      "desc": "monkeytypeにインスパイアされた、シンプルで集中できる言語タイピング練習アプリです。"
+      "desc": "monkeytypeにインスパイアされた、シンプルで集中できる言語タイピング練習アプリです。",
+      "version": "バージョン {{version}}",
+      "release_label": "MVP リリース"
     }
   },
   "practice": {
@@ -333,6 +367,9 @@
     "cards": "カード",
     "avg_typing": "平均タイピング",
     "best_streak": "最高連続正解数",
+    "finish_failed": "セッションを終了できませんでした",
+    "session_starting": "セッションの開始中です。もう一度お試しください。",
+    "not_authenticated": "認証されていません。",
     "back_to_dashboard": "ダッシュボードに戻る",
     "end_session": "セッションを終了",
     "esc_hint": "終了するには、1秒以内にもう一度Escを押してください",
@@ -352,5 +389,8 @@
     "tts_speed_fast": "速い",
     "not_quite": "惜しい — もう一度試してください",
     "off_track": "少し違います"
+  },
+  "shortcuts": {
+    "go_to_page_sequence": "ページ移動 (g の後に d/w/s)"
   }
 }

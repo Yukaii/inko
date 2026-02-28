@@ -264,7 +264,7 @@ export function DashboardPage() {
       {statsQuery.isLoading ? (
         <StatsSkeleton />
       ) : (
-        <section className="grid grid-cols-1 gap-4 xl:grid-cols-4" aria-label="Statistics">
+        <section className="grid grid-cols-1 gap-4 xl:grid-cols-4" aria-label={t("dashboard.statistics_aria")}>
           <article className="rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-6">
             <div className="mb-4 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.08em] text-text-secondary">
               <BookOpen size={14} />

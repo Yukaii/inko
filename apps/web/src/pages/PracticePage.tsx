@@ -321,18 +321,18 @@ export function PracticePage() {
       setSessionSummary(summary);
     },
     onError: (error) => {
-      setFinishError(error instanceof Error ? error.message : "Failed to finish session");
+      setFinishError(error instanceof Error ? error.message : t("practice.finish_failed"));
       finishRequestedRef.current = false;
     },
   });
 
   const requestFinish = useCallback(() => {
     if (!sessionId) {
-      setFinishError("Session is still starting. Try again.");
+      setFinishError(t("practice.session_starting"));
       return;
     }
     if (!token) {
-      setFinishError("You are not authenticated.");
+      setFinishError(t("practice.not_authenticated"));
       return;
     }
     if (finishRequestedRef.current || finishMutation.isPending || sessionDone) return;

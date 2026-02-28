@@ -592,7 +592,7 @@ export function WordBankPage() {
           type="button"
           onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
           className="absolute right-0 top-1/2 z-40 flex h-6 w-6 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-bg-card p-0 text-text-secondary shadow-md hover:text-text-primary cursor-pointer transition-transform duration-300"
-          aria-label={isPanelCollapsed ? "Expand panel" : "Collapse panel"}
+          aria-label={isPanelCollapsed ? t("word_bank.aria.expand_panel") : t("word_bank.aria.collapse_panel")}
         >
           <ChevronLeft 
             size={14} 
@@ -826,7 +826,7 @@ export function WordBankPage() {
           type="button"
           className="md:hidden fixed right-6 bottom-24 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent-orange text-text-on-accent shadow-lg shadow-accent-orange/30 border-0 cursor-pointer"
           onClick={() => setShowMobileAddModal(true)}
-          aria-label="Add Word"
+          aria-label={t("word_bank.aria.add_word")}
         >
           <span className="text-3xl font-light">+</span>
         </button>
