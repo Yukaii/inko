@@ -181,7 +181,7 @@ describe("repository practice queue start", () => {
             cardsCompleted: 0,
             attemptedWordIds: [],
           };
-        case "practiceQueue:rebuildDeckQueue":
+        case "practiceQueue:rebuildDeckQueuePage":
           return { ok: true, created: 12, updated: 0 };
         case "practiceQueue:upsertProgress":
           return null;
@@ -196,9 +196,9 @@ describe("repository practice queue start", () => {
 
     expect(session.card.wordId).toBe("word_recovered");
 
-    const rebuildCalls = mutationMock.mock.calls.filter(([name]) => name === "practiceQueue:rebuildDeckQueue");
+    const rebuildCalls = mutationMock.mock.calls.filter(([name]) => name === "practiceQueue:rebuildDeckQueuePage");
     expect(rebuildCalls).toHaveLength(1);
-    expect(rebuildCalls[0]?.[1]).toMatchObject({ deckId: "deck_1" });
+    expect(rebuildCalls[0]?.[1]).toMatchObject({ deckId: "deck_1", cursor: null, limit: 256 });
 
     const firstCardCalls = queryMock.mock.calls.filter(([name]) => name === "practiceQueue:getNextCard");
     expect(firstCardCalls).toHaveLength(2);
