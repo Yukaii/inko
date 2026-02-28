@@ -1,6 +1,64 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+function defaultLinkStats(now: number) {
+  return {
+    shapeStrength: 50,
+    typingStrength: 50,
+    listeningStrength: 50,
+    shapeDueAt: now,
+    typingDueAt: now,
+    listeningDueAt: now,
+  };
+}
+
+async function getDeckWordSnapshotPatch(ctx: any, link: any) {
+  const patch: Record<string, unknown> = {};
+
+  if (link.language === undefined || link.target === undefined || link.meaning === undefined) {
+    const word = await ctx.db.get(link.wordId);
+    if (!word) return null;
+    patch.language = word.language;
+    patch.target = word.target;
+    patch.reading = word.reading;
+    patch.romanization = word.romanization;
+    patch.meaning = word.meaning;
+    patch.example = word.example;
+    patch.audioUrl = word.audioUrl;
+  }
+
+  if (
+    link.shapeStrength === undefined ||
+    link.typingStrength === undefined ||
+    link.listeningStrength === undefined ||
+    link.shapeDueAt === undefined ||
+    link.typingDueAt === undefined ||
+    link.listeningDueAt === undefined
+  ) {
+    const deck = await ctx.db.get(link.deckId);
+    if (!deck) return null;
+    const stat = await ctx.db
+      .query("word_channel_stats")
+      .withIndex("by_user_word", (q: any) => q.eq("userId", deck.userId).eq("wordId", link.wordId))
+      .first();
+
+    if (stat) {
+      patch.shapeStrength = stat.shapeStrength;
+      patch.typingStrength = stat.typingStrength;
+      patch.listeningStrength = stat.listeningStrength;
+      patch.shapeDueAt = stat.shapeDueAt;
+      patch.typingDueAt = stat.typingDueAt;
+      patch.listeningDueAt = stat.listeningDueAt;
+      patch.lastPracticedAt = stat.lastPracticedAt;
+    } else {
+      Object.assign(patch, defaultLinkStats(Date.now()));
+    }
+  }
+
+  patch.snapshotReady = true;
+  return patch;
+}
+
 const languageValidator = v.union(
   v.literal("ja"),
   v.literal("ko"),
@@ -95,6 +153,7 @@ export const createWord = mutation({
     if (!deck) {
       throw new Error("Deck not found");
     }
+    const now = Date.now();
 
     const wordId = await ctx.db.insert("words", {
       userId: args.userId,
@@ -106,13 +165,14 @@ export const createWord = mutation({
       example: args.example,
       audioUrl: args.audioUrl,
       tags: args.tags,
-      createdAt: Date.now(),
+      createdAt: now,
     });
 
     await ctx.db.insert("deck_words", {
       deckId: args.deckId,
       wordId,
-      position: Date.now() * 1000,
+      position: now * 1000,
+      snapshotReady: true,
       language: deck.language,
       target: args.target,
       reading: args.reading,
@@ -120,6 +180,7 @@ export const createWord = mutation({
       meaning: args.meaning,
       example: args.example,
       audioUrl: args.audioUrl,
+      ...defaultLinkStats(now),
     });
 
     if (deck.wordCount !== undefined) {
@@ -142,11 +203,12 @@ export const createWordsBatch = mutation({
       throw new Error("Deck not found");
     }
 
-    const basePosition = Date.now() * 1000;
+    const baseTime = Date.now();
+    const basePosition = baseTime * 1000;
 
     const createdWords: unknown[] = [];
     for (const [index, input] of args.words.entries()) {
-      const createdAt = Date.now();
+      const createdAt = baseTime + index;
       const wordId = await ctx.db.insert("words", {
         userId: args.userId,
         language: deck.language,
@@ -164,6 +226,7 @@ export const createWordsBatch = mutation({
         deckId: args.deckId,
         wordId,
         position: basePosition + index,
+        snapshotReady: true,
         language: deck.language,
         target: input.target,
         reading: input.reading,
@@ -171,6 +234,7 @@ export const createWordsBatch = mutation({
         meaning: input.meaning,
         example: input.example,
         audioUrl: input.audioUrl,
+        ...defaultLinkStats(createdAt),
       });
 
       createdWords.push({
@@ -304,7 +368,39 @@ export const listDeckWordLinksPage = query({
         hasSnapshot:
           link.language !== undefined &&
           link.target !== undefined &&
-          link.meaning !== undefined,
+          link.meaning !== undefined &&
+          link.shapeStrength !== undefined &&
+          link.typingStrength !== undefined &&
+          link.listeningStrength !== undefined &&
+          link.shapeDueAt !== undefined &&
+          link.typingDueAt !== undefined &&
+          link.listeningDueAt !== undefined,
+      })),
+      continueCursor: result.continueCursor,
+      isDone: result.isDone,
+    };
+  },
+});
+
+export const listDeckWordLinksMissingSnapshotPage = query({
+  args: {
+    cursor: v.union(v.string(), v.null()),
+    limit: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const result = await ctx.db
+      .query("deck_words")
+      .withIndex("by_snapshot_ready", (q) => q.eq("snapshotReady", false))
+      .order("asc")
+      .paginate({
+        cursor: args.cursor,
+        numItems: args.limit,
+      });
+
+    return {
+      page: result.page.map((link) => ({
+        linkId: link._id,
+        wordId: link.wordId,
       })),
       continueCursor: result.continueCursor,
       isDone: result.isDone,
@@ -320,22 +416,15 @@ export const backfillDeckWordSnapshot = mutation({
     const link = await ctx.db.get(args.linkId);
     if (!link) return { ok: false, reason: "link_not_found" };
 
-    if (link.language !== undefined && link.target !== undefined && link.meaning !== undefined) {
+    const patch = await getDeckWordSnapshotPatch(ctx, link);
+    if (!patch) return { ok: false, reason: "source_not_found" };
+
+    if (Object.keys(patch).length === 1 && patch.snapshotReady === true) {
+      await ctx.db.patch(args.linkId, patch);
       return { ok: true, skipped: true };
     }
 
-    const word = await ctx.db.get(link.wordId);
-    if (!word) return { ok: false, reason: "word_not_found" };
-
-    await ctx.db.patch(args.linkId, {
-      language: word.language,
-      target: word.target,
-      reading: word.reading,
-      romanization: word.romanization,
-      meaning: word.meaning,
-      example: word.example,
-      audioUrl: word.audioUrl,
-    });
+    await ctx.db.patch(args.linkId, patch);
 
     return { ok: true, skipped: false };
   },
@@ -390,6 +479,7 @@ export const updateWord = mutation({
     await Promise.all(
       links.map((link) =>
         ctx.db.patch(link._id, {
+          snapshotReady: true,
           ...(args.target !== undefined ? { target: args.target } : {}),
           ...(args.reading !== undefined ? { reading: args.reading } : {}),
           ...(args.romanization !== undefined ? { romanization: args.romanization } : {}),

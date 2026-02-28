@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 
 type DeckWordLinkPage = {
-  page: Array<{ linkId: string; wordId: string; hasSnapshot: boolean }>;
+  page: Array<{ linkId: string; wordId: string; hasSnapshot?: boolean }>;
   continueCursor: string;
   isDone: boolean;
 };
@@ -34,9 +34,12 @@ function formatDuration(ms: number): string {
 
 async function main() {
   const passthrough = process.argv.slice(2);
+  const includeLegacy = passthrough.includes("--include-legacy");
+  const filteredPassthrough = passthrough.filter((arg) => arg !== "--include-legacy");
   if (passthrough.includes("--help") || passthrough.includes("-h")) {
     console.log("Usage: bun run backfill:deck-word-snapshots -- [convex-run-flags]");
     console.log("Example: bun run backfill:deck-word-snapshots -- --prod");
+    console.log("Legacy full scan: bun run backfill:deck-word-snapshots -- --prod --include-legacy");
     return;
   }
 
@@ -50,9 +53,9 @@ async function main() {
 
   for (;;) {
     const page = runConvex<DeckWordLinkPage>(
-      "decks:listDeckWordLinksPage",
+      includeLegacy ? "decks:listDeckWordLinksPage" : "decks:listDeckWordLinksMissingSnapshotPage",
       { cursor, limit: pageSize },
-      passthrough,
+      filteredPassthrough,
     );
     pageCount += 1;
 
@@ -66,7 +69,7 @@ async function main() {
         continue;
       }
 
-      runConvex("decks:backfillDeckWordSnapshot", { linkId: link.linkId }, passthrough);
+      runConvex("decks:backfillDeckWordSnapshot", { linkId: link.linkId }, filteredPassthrough);
       updated += 1;
     }
 
@@ -81,6 +84,7 @@ async function main() {
     console.log(
       [
         `page=${pageCount}`,
+        `mode=${includeLegacy ? "legacy_scan" : "indexed_missing_only"}`,
         `page_size=${page.page.length}`,
         `missing=${snapshotsMissing}`,
         `scanned=${scanned}`,

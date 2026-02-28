@@ -572,6 +572,16 @@ export const repository = {
       listeningDueAt: next.listening.dueAt,
       lastPracticedAt: now,
     });
+    await convex.mutation("practice:syncDeckWordStatsSnapshot", {
+      wordId,
+      shapeStrength: next.shape.strength,
+      typingStrength: next.typing.strength,
+      listeningStrength: next.listening.strength,
+      shapeDueAt: next.shape.dueAt,
+      typingDueAt: next.typing.dueAt,
+      listeningDueAt: next.listening.dueAt,
+      lastPracticedAt: now,
+    });
 
     const cardsCompleted = attemptResult.cardsCompleted;
     const remainingCards = Math.max(0, PRACTICE_SESSION_CARD_CAP_DEFAULT - cardsCompleted);

@@ -77,6 +77,7 @@ export default defineSchema({
     deckId: v.id("decks"),
     wordId: v.id("words"),
     position: v.number(),
+    snapshotReady: v.optional(v.boolean()),
     language: v.optional(languageValidator),
     target: v.optional(v.string()),
     reading: v.optional(v.string()),
@@ -84,9 +85,17 @@ export default defineSchema({
     meaning: v.optional(v.string()),
     example: v.optional(v.string()),
     audioUrl: v.optional(v.string()),
+    shapeStrength: v.optional(v.number()),
+    typingStrength: v.optional(v.number()),
+    listeningStrength: v.optional(v.number()),
+    shapeDueAt: v.optional(v.number()),
+    typingDueAt: v.optional(v.number()),
+    listeningDueAt: v.optional(v.number()),
+    lastPracticedAt: v.optional(v.number()),
   })
     .index("by_deck", ["deckId"])
     .index("by_deck_position", ["deckId", "position"])
+    .index("by_snapshot_ready", ["snapshotReady"])
     .index("by_word", ["wordId"])
     .index("by_deck_word", ["deckId", "wordId"]),
 
