@@ -25,6 +25,8 @@ const SPEECH_CONFIG_BY_LANGUAGE = {
   th: { voice: "th-TH-PremwadeeNeural", lang: "th-TH" },
 } as const;
 
+const TTS_NODE_DEPLOY_MARKER = "ttsNode-debug-2026-02-28-v3";
+
 function getProxyDiagnostics() {
   const proxyKeys = ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"] as const;
   return proxyKeys
@@ -50,6 +52,10 @@ export const ensureWordAudio = action({
     rate: v.optional(v.union(v.literal("-20%"), v.literal("default"), v.literal("+20%"))),
   },
   handler: async (ctx, args): Promise<{ audioUrl: string }> => {
+    if (process.env.INKO_TTS_DEBUG_MARKER === "1") {
+      throw new Error(`TTS debug marker reached: ${TTS_NODE_DEPLOY_MARKER}`);
+    }
+
     const word = await ctx.runQuery(api.words.getById, { wordId: args.wordId }) as {
       _id: string;
       userId: string;
