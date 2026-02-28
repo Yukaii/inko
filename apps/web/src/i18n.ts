@@ -6,6 +6,12 @@ import en from './locales/en.json';
 import ja from './locales/ja.json';
 import zhTW from './locales/zh-TW.json';
 
+export const SUPPORTED_UI_LANGUAGES = [
+  { code: 'en', label: 'English', short: 'EN' },
+  { code: 'ja', label: '日本語', short: 'JA' },
+  { code: 'zh-TW', label: '繁體中文', short: 'ZH' },
+] as const;
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)

@@ -264,6 +264,8 @@
       "joined": "Joined"
     },
     "preferences": {
+      "interface_language": "Interface Language",
+      "interface_language_desc": "Choose the app language here on mobile or desktop. Your selection is stored on this device.",
       "theme_mode": "Theme Mode",
       "dark": "Dark",
       "light": "Light",

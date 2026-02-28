@@ -7,6 +7,7 @@ import { registerShortcut, getShortcutsList } from "../hooks/useKeyboard";
 import { useAuth } from "../hooks/useAuth";
 import { api } from "../api/client";
 import { applyThemePreferences, saveThemePreferences } from "../theme/theme";
+import { SUPPORTED_UI_LANGUAGES } from "../i18n";
 
 // Simple icon components
 function HomeIcon({ className }: { className?: string }) {
@@ -81,13 +82,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [showLangSubMenu, setShowLangSubMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   
-  const languages = [
-    { code: "en", label: "English" },
-    { code: "ja", label: "日本語" },
-    { code: "zh-TW", label: "繁體中文" },
-  ];
-
-  const currentLangLabel = languages.find(l => i18n.language.startsWith(l.code))?.label || "English";
+  const currentLangLabel = SUPPORTED_UI_LANGUAGES.find((l) => i18n.language.startsWith(l.code))?.label || "English";
 
   const meQuery = useQuery({
     queryKey: ["me"],
@@ -298,7 +293,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   
                   {showLangSubMenu && (
                     <div className="flex flex-col gap-0.5 py-1 pl-6">
-                      {languages.map((lang) => (
+                      {SUPPORTED_UI_LANGUAGES.map((lang) => (
                         <button
                           key={lang.code}
                           type="button"

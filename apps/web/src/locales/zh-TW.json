@@ -264,6 +264,8 @@
       "joined": "加入時間"
     },
     "preferences": {
+      "interface_language": "介面語言",
+      "interface_language_desc": "在手機或桌面版都可以在這裡切換 App 語言。你的選擇會儲存在這台裝置上。",
       "theme_mode": "主題模式",
       "dark": "深色",
       "light": "淺色",

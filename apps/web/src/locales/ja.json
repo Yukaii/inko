@@ -264,6 +264,8 @@
       "joined": "登録日"
     },
     "preferences": {
+      "interface_language": "表示言語",
+      "interface_language_desc": "モバイルでもデスクトップでも、ここでアプリの表示言語を切り替えられます。選択内容はこの端末に保存されます。",
       "theme_mode": "テーマモード",
       "dark": "ダーク",
       "light": "ライト",

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { PracticeSimulator } from "../components/PracticeSimulator";
+import { SUPPORTED_UI_LANGUAGES } from "../i18n";
 import {
   Keyboard,
   Repeat,
@@ -32,13 +33,7 @@ export function LandingPage() {
   const [showLangMenu, setShowLangMenu] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
 
-  const languages = [
-    { code: "en", label: "English", short: "EN" },
-    { code: "ja", label: "日本語", short: "JA" },
-    { code: "zh-TW", label: "繁體中文", short: "ZH" },
-  ];
-
-  const currentLang = languages.find(l => i18n.language.startsWith(l.code)) || languages[0];
+  const currentLang = SUPPORTED_UI_LANGUAGES.find((l) => i18n.language.startsWith(l.code)) || SUPPORTED_UI_LANGUAGES[0];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -92,7 +87,7 @@ export function LandingPage() {
                   transition={{ duration: 0.1 }}
                   className="absolute right-0 mt-2 flex w-40 flex-col gap-1 overflow-hidden rounded-xl border border-white/10 bg-[#1A1A1A] p-1.5 shadow-2xl ring-1 ring-black/50"
                 >
-                  {languages.map((lang) => {
+                  {SUPPORTED_UI_LANGUAGES.map((lang) => {
                     const isActive = i18n.language.startsWith(lang.code);
                     return (
                       <button
