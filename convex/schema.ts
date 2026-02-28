@@ -138,6 +138,47 @@ export default defineSchema({
     submittedAt: v.number(),
   }).index("by_session", ["sessionId"]),
 
+  practice_queue_entries: defineTable({
+    deckId: v.id("decks"),
+    userId: v.id("users"),
+    wordId: v.id("words"),
+    position: v.number(),
+    language: languageValidator,
+    target: v.string(),
+    reading: v.optional(v.string()),
+    romanization: v.optional(v.string()),
+    meaning: v.string(),
+    example: v.optional(v.string()),
+    audioUrl: v.optional(v.string()),
+    shapeStrength: v.number(),
+    typingStrength: v.number(),
+    listeningStrength: v.number(),
+    shapeDueAt: v.number(),
+    typingDueAt: v.number(),
+    listeningDueAt: v.number(),
+    weakestStrength: v.number(),
+    nextDueAt: v.number(),
+    lastPracticedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_deck_word", ["deckId", "wordId"])
+    .index("by_word", ["wordId"])
+    .index("by_user_deck_due_strength_position", [
+      "userId",
+      "deckId",
+      "nextDueAt",
+      "weakestStrength",
+      "position",
+    ])
+    .index("by_user_deck_position", ["userId", "deckId", "position"]),
+
+  practice_queue_progress: defineTable({
+    userId: v.id("users"),
+    deckId: v.id("decks"),
+    coverageCursorPosition: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user_deck", ["userId", "deckId"]),
+
   deck_practice_progress: defineTable({
     userId: v.id("users"),
     deckId: v.id("decks"),

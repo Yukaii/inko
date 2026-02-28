@@ -5,6 +5,10 @@ Backend is split between:
 - `apps/api` - Fastify HTTP API
 - `convex` - data schema + queries/mutations/actions
 
+Design docs:
+
+- `docs/practice-queue-design.md` - queue-backed practice selection architecture, migration, and observability
+
 Common commands:
 
 - `bun run --filter @inko/api dev`

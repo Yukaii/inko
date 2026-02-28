@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const queryMock = vi.fn();
-const mutationMock = vi.fn();
+const { queryMock, mutationMock } = vi.hoisted(() => ({
+  queryMock: vi.fn(),
+  mutationMock: vi.fn(),
+}));
 
 vi.mock("../lib/convex", () => ({
   convex: {
@@ -31,54 +33,53 @@ function makeUser() {
   };
 }
 
-function makeRow(wordId: string, position: number, strength: number, dueAt: number) {
+function makeCard(wordId: string) {
   return {
-    position,
-    word: {
-      _id: wordId,
-      userId: "user_1",
-      language: "ja" as const,
-      target: wordId,
-      meaning: wordId,
-      tags: [],
-    },
-    stat: {
-      shapeStrength: strength,
-      typingStrength: strength,
-      listeningStrength: strength,
-      shapeDueAt: dueAt,
-      typingDueAt: dueAt,
-      listeningDueAt: dueAt,
-    },
+    wordId,
+    deckId: "deck_1",
+    language: "ja" as const,
+    target: wordId,
+    meaning: wordId,
   };
 }
 
-describe("repository practice candidate rotation", () => {
+describe("repository practice queue start", () => {
   beforeEach(() => {
     queryMock.mockReset();
     mutationMock.mockReset();
   });
 
-  it("advances the deck window across sessions instead of always restarting from the front", async () => {
+  it("starts sessions from the queue and warms the remaining buffer", async () => {
     const progressResponses = [
       null,
       {
         _id: "progress_1",
         userId: "user_1",
         deckId: "deck_1",
-        nextPosition: 201,
+        coverageCursorPosition: 201,
         updatedAt: 10,
       },
     ];
 
-    const candidateWindows = [
+    const firstCardResponses = [
       {
-        page: [makeRow("word_1", 101, 10, 1000), makeRow("word_2", 102, 20, 2000)],
-        nextStartPosition: 201,
+        card: makeCard("word_1"),
+        nextCoverageCursorPosition: 101,
       },
       {
-        page: [makeRow("word_3", 201, 5, 500), makeRow("word_4", 202, 15, 1500)],
-        nextStartPosition: 301,
+        card: makeCard("word_3"),
+        nextCoverageCursorPosition: 301,
+      },
+    ];
+
+    const bufferResponses = [
+      {
+        cards: [makeCard("word_2"), makeCard("word_4")],
+        nextCoverageCursorPosition: 201,
+      },
+      {
+        cards: [makeCard("word_5")],
+        nextCoverageCursorPosition: 351,
       },
     ];
 
@@ -86,10 +87,12 @@ describe("repository practice candidate rotation", () => {
       switch (name) {
         case "decks:getDeckById":
           return makeDeck();
-        case "practice:getDeckPracticeProgress":
+        case "practiceQueue:getProgress":
           return progressResponses.shift() ?? null;
-        case "practice:listDeckWordsWithStatsFromPosition":
-          return candidateWindows.shift();
+        case "practiceQueue:getNextCard":
+          return firstCardResponses.shift();
+        case "practiceQueue:listSessionBuffer":
+          return bufferResponses.shift();
         case "users:getById":
           return makeUser();
         default:
@@ -108,7 +111,7 @@ describe("repository practice candidate rotation", () => {
             cardsCompleted: 0,
             attemptedWordIds: [],
           };
-        case "practice:upsertDeckPracticeProgress":
+        case "practiceQueue:upsertProgress":
           return null;
         default:
           throw new Error(`Unexpected mutation ${name}`);
@@ -116,23 +119,30 @@ describe("repository practice candidate rotation", () => {
     });
 
     const first = await repository.startPracticeSession("user_1", { deckId: "deck_1" });
+    await Promise.resolve();
+    await Promise.resolve();
     const second = await repository.startPracticeSession("user_1", { deckId: "deck_1" });
+    await Promise.resolve();
+    await Promise.resolve();
 
     expect(first.card.wordId).toBe("word_1");
     expect(second.card.wordId).toBe("word_3");
 
-    const candidateCalls = queryMock.mock.calls.filter(
-      ([name]) => name === "practice:listDeckWordsWithStatsFromPosition",
+    const firstCardCalls = queryMock.mock.calls.filter(
+      ([name]) => name === "practiceQueue:getNextCard",
     );
-    expect(candidateCalls).toHaveLength(2);
-    expect(candidateCalls[0]?.[1]).toMatchObject({ startPosition: 0, limit: 50 });
-    expect(candidateCalls[1]?.[1]).toMatchObject({ startPosition: 201, limit: 50 });
+    expect(firstCardCalls).toHaveLength(2);
+    expect(firstCardCalls[0]?.[1]).toMatchObject({ coverageCursorPosition: 0 });
+    expect(firstCardCalls[1]?.[1]).toMatchObject({ coverageCursorPosition: 201 });
 
-    const progressUpdates = mutationMock.mock.calls.filter(
-      ([name]) => name === "practice:upsertDeckPracticeProgress",
+    const bufferCalls = queryMock.mock.calls.filter(
+      ([name]) => name === "practiceQueue:listSessionBuffer",
     );
-    expect(progressUpdates).toHaveLength(2);
-    expect(progressUpdates[0]?.[1]).toMatchObject({ nextPosition: 201 });
-    expect(progressUpdates[1]?.[1]).toMatchObject({ nextPosition: 301 });
+    expect(bufferCalls).toHaveLength(2);
+    expect(bufferCalls[0]?.[1]).toMatchObject({ limit: 49, excludeWordIds: ["word_1"] });
+
+    const progressUpdates = mutationMock.mock.calls.filter(([name]) => name === "practiceQueue:upsertProgress");
+    expect(progressUpdates.length).toBeGreaterThanOrEqual(2);
+    expect(progressUpdates[0]?.[1]).toMatchObject({ coverageCursorPosition: 101 });
   });
 });

@@ -16,7 +16,8 @@
     "convex:codegen": "bunx convex codegen",
     "seed:starter": "bunx convex run seed:seedStarterData '{\"email\":\"user@example.com\"}'",
     "backfill:deck-word-counts": "bun run scripts/backfill-deck-word-counts.ts",
-    "backfill:deck-word-snapshots": "bun run scripts/backfill-deck-word-snapshots.ts"
+    "backfill:deck-word-snapshots": "bun run scripts/backfill-deck-word-snapshots.ts",
+    "backfill:practice-queue": "bun run scripts/backfill-practice-queue.ts"
   },
   "workspaces": [
     "apps/*",

@@ -385,3 +385,7 @@ It is designed to turn passive learners into active producers of language — st
 3. Improve visual fidelity against `inko.pen` for dashboard and practice screens.
 4. Expand API integration coverage for all authorization edge cases and large-deck regression paths.
 5. Add operational docs for cloud deployment + environment matrix.
+
+Implementation reference:
+
+- See `docs/practice-queue-design.md` for the queue-backed practice selection redesign used to address large-deck latency.
