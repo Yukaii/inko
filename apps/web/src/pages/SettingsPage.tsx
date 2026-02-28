@@ -6,6 +6,7 @@ import { DefaultThemes, type ThemeConfig, type ThemeMode, type ThemePalette, typ
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { applyThemePreferences, saveThemePreferences } from "../theme/theme";
+import { SUPPORTED_UI_LANGUAGES } from "../i18n";
 
 type MeResponse = {
   id: string;
@@ -294,7 +295,7 @@ function parseThemePayload(text: string, currentMode: ThemeMode, currentThemes: 
 }
 
 export function SettingsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token, setToken } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -477,12 +478,12 @@ export function SettingsPage() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[200px_1fr]">
         {/* Settings Navigation */}
-        <nav className="flex flex-row flex-wrap gap-1 lg:flex-col">
+        <nav className="-mx-1 flex flex-row gap-1 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
           {navItems.map((item) => (
             <button
               key={item.id}
               type="button"
-              className={`rounded-[10px] px-4 py-3 text-left text-sm transition-all ${activeSection === item.id ? "bg-bg-card font-medium text-text-primary" : "bg-transparent text-text-secondary hover:bg-bg-card hover:text-text-primary"}`}
+              className={`shrink-0 whitespace-nowrap rounded-[10px] px-4 py-3 text-left text-sm transition-all lg:w-full ${activeSection === item.id ? "bg-bg-card font-medium text-text-primary" : "bg-transparent text-text-secondary hover:bg-bg-card hover:text-text-primary"}`}
               onClick={() => setActiveSection(item.id)}
             >
               {t(item.label)}
@@ -544,6 +545,30 @@ export function SettingsPage() {
                   <h2 className="m-0 text-[22px] font-semibold [font-family:var(--font-display)]">{t("settings.nav.preferences")}</h2>
                   
                   <div className="flex flex-col gap-0">
+                    <div className="flex flex-col gap-2 border-b border-[var(--border-subtle)] py-4">
+                      <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">{t("settings.preferences.interface_language")}</span>
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        {SUPPORTED_UI_LANGUAGES.map((language) => {
+                          const isActive = i18n.language.startsWith(language.code);
+                          return (
+                            <button
+                              key={language.code}
+                              type="button"
+                              className={isActive ? "" : "bg-bg-elevated text-text-primary hover:bg-bg-elevated"}
+                              onClick={() => {
+                                void i18n.changeLanguage(language.code);
+                              }}
+                            >
+                              {language.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="m-0 text-[12px] text-text-secondary">
+                        {t("settings.preferences.interface_language_desc")}
+                      </p>
+                    </div>
+
                     <div className="flex flex-col gap-2 border-b border-[var(--border-subtle)] py-4">
                       <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">{t("settings.preferences.theme_mode")}</span>
                       <div className="flex gap-2">
