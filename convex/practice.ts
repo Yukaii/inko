@@ -14,6 +14,13 @@ async function hydrateDeckRowsWithStats(
     meaning?: string;
     example?: string;
     audioUrl?: string;
+    shapeStrength?: number;
+    typingStrength?: number;
+    listeningStrength?: number;
+    shapeDueAt?: number;
+    typingDueAt?: number;
+    listeningDueAt?: number;
+    lastPracticedAt?: number;
   }>,
 ) {
   const rows = await Promise.all(
@@ -34,10 +41,26 @@ async function hydrateDeckRowsWithStats(
             }
           : await ctx.db.get(link.wordId);
       if (!word) return null;
-      const stat = await ctx.db
-        .query("word_channel_stats")
-        .withIndex("by_user_word", (q) => q.eq("userId", userId).eq("wordId", link.wordId))
-        .first();
+      const stat =
+        link.shapeStrength !== undefined &&
+        link.typingStrength !== undefined &&
+        link.listeningStrength !== undefined &&
+        link.shapeDueAt !== undefined &&
+        link.typingDueAt !== undefined &&
+        link.listeningDueAt !== undefined
+          ? {
+              shapeStrength: link.shapeStrength,
+              typingStrength: link.typingStrength,
+              listeningStrength: link.listeningStrength,
+              shapeDueAt: link.shapeDueAt,
+              typingDueAt: link.typingDueAt,
+              listeningDueAt: link.listeningDueAt,
+              lastPracticedAt: link.lastPracticedAt,
+            }
+          : await ctx.db
+              .query("word_channel_stats")
+              .withIndex("by_user_word", (q) => q.eq("userId", userId).eq("wordId", link.wordId))
+              .first();
       return { word, stat, position: link.position };
     }),
   );
@@ -245,6 +268,41 @@ export const upsertWordStats = mutation({
     });
 
     return await ctx.db.get(id);
+  },
+});
+
+export const syncDeckWordStatsSnapshot = mutation({
+  args: {
+    wordId: v.id("words"),
+    shapeStrength: v.number(),
+    typingStrength: v.number(),
+    listeningStrength: v.number(),
+    shapeDueAt: v.number(),
+    typingDueAt: v.number(),
+    listeningDueAt: v.number(),
+    lastPracticedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const links = await ctx.db
+      .query("deck_words")
+      .withIndex("by_word", (q) => q.eq("wordId", args.wordId))
+      .collect();
+
+    await Promise.all(
+      links.map((link) =>
+        ctx.db.patch(link._id, {
+          shapeStrength: args.shapeStrength,
+          typingStrength: args.typingStrength,
+          listeningStrength: args.listeningStrength,
+          shapeDueAt: args.shapeDueAt,
+          typingDueAt: args.typingDueAt,
+          listeningDueAt: args.listeningDueAt,
+          lastPracticedAt: args.lastPracticedAt,
+        }),
+      ),
+    );
+
+    return { updated: links.length };
   },
 });
 
