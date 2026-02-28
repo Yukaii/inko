@@ -4,11 +4,35 @@ import { v } from "convex/values";
 async function hydrateDeckRowsWithStats(
   ctx: any,
   userId: any,
-  links: Array<{ wordId: any; position: number }>,
+  links: Array<{
+    wordId: any;
+    position: number;
+    language?: string;
+    target?: string;
+    reading?: string;
+    romanization?: string;
+    meaning?: string;
+    example?: string;
+    audioUrl?: string;
+  }>,
 ) {
   const rows = await Promise.all(
     links.map(async (link) => {
-      const word = await ctx.db.get(link.wordId);
+      const word =
+        link.target !== undefined && link.meaning !== undefined && link.language !== undefined
+          ? {
+              _id: link.wordId,
+              userId,
+              language: link.language,
+              target: link.target,
+              reading: link.reading,
+              romanization: link.romanization,
+              meaning: link.meaning,
+              example: link.example,
+              audioUrl: link.audioUrl,
+              tags: [],
+            }
+          : await ctx.db.get(link.wordId);
       if (!word) return null;
       const stat = await ctx.db
         .query("word_channel_stats")
