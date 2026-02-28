@@ -56,7 +56,7 @@ export async function buildServer(options?: { repository?: Repository; mailer?: 
   await app.register(async (instance) => deckRoutes(instance, repo));
   await app.register(async (instance) => practiceRoutes(instance, repo));
   await app.register(async (instance) => dashboardRoutes(instance, repo));
-  await app.register(async (instance) => ttsRoutes(instance, repo, tts));
+  await app.register(async (instance) => ttsRoutes(instance, tts));
 
   app.get("/health", async () => ({ ok: true }));
 

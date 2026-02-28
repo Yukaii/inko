@@ -13,6 +13,8 @@ import type * as decks from "../decks.js";
 import type * as practice from "../practice.js";
 import type * as practiceQueue from "../practiceQueue.js";
 import type * as seed from "../seed.js";
+import type * as tts from "../tts.js";
+import type * as ttsNode from "../ttsNode.js";
 import type * as users from "../users.js";
 import type * as words from "../words.js";
 
@@ -28,6 +30,8 @@ declare const fullApi: ApiFromModules<{
   practice: typeof practice;
   practiceQueue: typeof practiceQueue;
   seed: typeof seed;
+  tts: typeof tts;
+  ttsNode: typeof ttsNode;
   users: typeof users;
   words: typeof words;
 }>;

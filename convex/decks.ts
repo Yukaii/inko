@@ -510,6 +510,7 @@ export const updateWord = mutation({
   handler: async (ctx, args) => {
     const word = await ctx.db.get(args.wordId);
     if (!word) return null;
+    const shouldInvalidateGeneratedAudio = args.target !== undefined && args.target !== word.target;
 
     const updates = {
       ...(args.target !== undefined ? { target: args.target } : {}),
@@ -518,6 +519,8 @@ export const updateWord = mutation({
       ...(args.meaning !== undefined ? { meaning: args.meaning } : {}),
       ...(args.example !== undefined ? { example: args.example } : {}),
       ...(args.audioUrl !== undefined ? { audioUrl: args.audioUrl } : {}),
+      ...(args.audioUrl !== undefined ? { audioStorageId: undefined } : {}),
+      ...(shouldInvalidateGeneratedAudio ? { audioUrl: undefined, audioStorageId: undefined } : {}),
       ...(args.tags !== undefined ? { tags: args.tags } : {}),
     };
 
@@ -538,6 +541,7 @@ export const updateWord = mutation({
           ...(args.meaning !== undefined ? { meaning: args.meaning } : {}),
           ...(args.example !== undefined ? { example: args.example } : {}),
           ...(args.audioUrl !== undefined ? { audioUrl: args.audioUrl } : {}),
+          ...(shouldInvalidateGeneratedAudio ? { audioUrl: undefined } : {}),
         }),
       ),
     );
@@ -556,6 +560,7 @@ export const updateWord = mutation({
           ...(args.meaning !== undefined ? { meaning: args.meaning } : {}),
           ...(args.example !== undefined ? { example: args.example } : {}),
           ...(args.audioUrl !== undefined ? { audioUrl: args.audioUrl } : {}),
+          ...(shouldInvalidateGeneratedAudio ? { audioUrl: undefined } : {}),
           updatedAt: Date.now(),
         }),
       ),
