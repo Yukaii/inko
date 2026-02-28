@@ -4,6 +4,7 @@ import sensible from "@fastify/sensible";
 import { ErrorCode } from "@inko/shared";
 import { env } from "./lib/env";
 import { createMailer, type Mailer } from "./lib/mailer";
+import { setPracticeTraceSink } from "./lib/diagnostics";
 import { authRoutes } from "./routes/auth";
 import { deckRoutes } from "./routes/decks";
 import { practiceRoutes } from "./routes/practice";
@@ -12,6 +13,9 @@ import { repository, type Repository } from "./services/repository";
 
 export async function buildServer(options?: { repository?: Repository; mailer?: Mailer }) {
   const app = Fastify({ logger: true });
+  setPracticeTraceSink((payload, message) => {
+    app.log.info(payload, message);
+  });
   const repo = options?.repository ?? repository;
   const mailer = options?.mailer ?? createMailer();
 

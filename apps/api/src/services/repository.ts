@@ -21,6 +21,7 @@ import {
   applyAttempt,
 } from "@inko/shared";
 import { convex } from "../lib/convex";
+import { tracePractice } from "../lib/diagnostics";
 
 type ConvexUser = {
   _id: string;
@@ -118,6 +119,12 @@ function chunkArray<T>(items: T[], chunkSize: number): T[][] {
     chunks.push(items.slice(i, i + chunkSize));
   }
   return chunks;
+}
+
+async function measureAsync<T>(fn: () => Promise<T>) {
+  const startedAt = Date.now();
+  const value = await fn();
+  return { value, durationMs: Date.now() - startedAt };
 }
 
 export const PERFORMANCE_CONSTANTS = {
@@ -423,24 +430,35 @@ export const repository = {
   },
 
   async startPracticeSession(userId: string, input: StartPracticeSessionInput) {
-    const deck = (await convex.query("decks:getDeckById", { deckId: input.deckId })) as ConvexDeck | null;
+    const overallStartedAt = Date.now();
+    const deckLookup = await measureAsync(
+      async () => (await convex.query("decks:getDeckById", { deckId: input.deckId })) as ConvexDeck | null,
+    );
+    const deck = deckLookup.value;
     if (!deck) throw new RepositoryError("Deck not found", 404);
     if (deck.userId !== userId) throw new RepositoryError("Forbidden", 403);
 
-    const session = (await convex.mutation("practice:startSession", {
-      userId,
-      deckId: input.deckId,
-    })) as ConvexPracticeSession | null;
+    const sessionCreation = await measureAsync(
+      async () =>
+        (await convex.mutation("practice:startSession", {
+          userId,
+          deckId: input.deckId,
+        })) as ConvexPracticeSession | null,
+    );
+    const session = sessionCreation.value;
 
     if (!session) throw new RepositoryError("Failed to start session", 500);
 
-    const progress = await getDeckPracticeProgress(userId, input.deckId);
-    const { rows, nextStartPosition } = await advanceDeckPracticeWindow(
-      userId,
-      input.deckId,
-      progress?.nextPosition ?? 0,
-      PRACTICE_CANDIDATE_WINDOW_SIZE,
+    const progressLookup = await measureAsync(async () => await getDeckPracticeProgress(userId, input.deckId));
+    const candidateFetch = await measureAsync(async () =>
+      await advanceDeckPracticeWindow(
+        userId,
+        input.deckId,
+        progressLookup.value?.nextPosition ?? 0,
+        PRACTICE_CANDIDATE_WINDOW_SIZE,
+      ),
     );
+    const { rows, nextStartPosition } = candidateFetch.value;
 
     if (rows.length === 0) {
       throw new RepositoryError("No words available in deck", 409);
@@ -458,7 +476,26 @@ export const repository = {
       updatedAt: Date.now(),
     });
 
-    const user = (await convex.query("users:getById", { userId })) as ConvexUser | null;
+    const userLookup = await measureAsync(
+      async () => (await convex.query("users:getById", { userId })) as ConvexUser | null,
+    );
+    const user = userLookup.value;
+
+    tracePractice({
+      event: "session_start",
+      userId,
+      deckId: input.deckId,
+      totalMs: Date.now() - overallStartedAt,
+      durationMs: Date.now() - overallStartedAt,
+      deckLookupMs: deckLookup.durationMs,
+      sessionCreationMs: sessionCreation.durationMs,
+      progressLookupMs: progressLookup.durationMs,
+      candidateFetchMs: candidateFetch.durationMs,
+      userLookupMs: userLookup.durationMs,
+      candidateRows: rows.length,
+      candidateWindowSize: PRACTICE_CANDIDATE_WINDOW_SIZE,
+      nextStartPosition,
+    });
 
     return {
       sessionId: session._id,
@@ -471,6 +508,7 @@ export const repository = {
   },
 
   async submitPracticeCard(userId: string, sessionId: string, wordId: string, input: SubmitPracticeCardInput) {
+    const overallStartedAt = Date.now();
     if (!input.handwritingCompleted || !input.audioPlayed) {
       return {
         accepted: false,
@@ -480,24 +518,37 @@ export const repository = {
       };
     }
 
-    const session = (await convex.query("practice:getSessionById", { sessionId })) as ConvexPracticeSession | null;
+    const sessionLookup = await measureAsync(
+      async () => (await convex.query("practice:getSessionById", { sessionId })) as ConvexPracticeSession | null,
+    );
+    const session = sessionLookup.value;
     if (!session) {
       throw new RepositoryError("Session not found", 404);
     }
     if (session.userId !== userId) throw new RepositoryError("Forbidden", 403);
 
-    const word = (await convex.query("words:getById", { wordId })) as ConvexWord | null;
+    const wordLookup = await measureAsync(
+      async () => (await convex.query("words:getById", { wordId })) as ConvexWord | null,
+    );
+    const word = wordLookup.value;
     if (!word) {
       throw new RepositoryError("Word not found for submission", 404);
     }
     if (word.userId !== userId) throw new RepositoryError("Forbidden", 403);
 
-    const inDeck = (await convex.query("decks:isWordInDeck", {
-      deckId: session.deckId,
-      wordId,
-    })) as boolean;
+    const inDeckCheck = await measureAsync(
+      async () =>
+        (await convex.query("decks:isWordInDeck", {
+          deckId: session.deckId,
+          wordId,
+        })) as boolean,
+    );
+    const inDeck = inDeckCheck.value;
     if (!inDeck) throw new RepositoryError("Word not in session deck", 403);
-    const user = (await convex.query("users:getById", { userId })) as ConvexUser | null;
+    const userLookup = await measureAsync(
+      async () => (await convex.query("users:getById", { userId })) as ConvexUser | null,
+    );
+    const user = userLookup.value;
 
     const shape = scoreShape(input.handwritingCompleted);
     const typing = scoreTyping(
@@ -522,10 +573,14 @@ export const repository = {
       };
     }
 
-    const existing = (await convex.query("practice:getWordStats", {
-      userId,
-      wordId,
-    })) as WordChannelStats | null;
+    const statsLookup = await measureAsync(
+      async () =>
+        (await convex.query("practice:getWordStats", {
+          userId,
+          wordId,
+        })) as WordChannelStats | null,
+    );
+    const existing = statsLookup.value;
 
     const now = Date.now();
     const current = existing
@@ -538,15 +593,19 @@ export const repository = {
 
     const next = applyAttempt(current, { shape, typing, listening }, now);
 
-    const attemptResult = (await convex.mutation("practice:addAttempt", {
-      sessionId,
-      wordId,
-      shapeScore: shape,
-      typingScore: typing,
-      listeningScore: listening,
-      typingMs: input.typingMs,
-      maxCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
-    })) as { ok: boolean; capped: boolean; cardsCompleted: number };
+    const attemptMutation = await measureAsync(
+      async () =>
+        (await convex.mutation("practice:addAttempt", {
+          sessionId,
+          wordId,
+          shapeScore: shape,
+          typingScore: typing,
+          listeningScore: listening,
+          typingMs: input.typingMs,
+          maxCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
+        })) as { ok: boolean; capped: boolean; cardsCompleted: number },
+    );
+    const attemptResult = attemptMutation.value;
 
     if (attemptResult.capped) {
       return {
@@ -561,26 +620,30 @@ export const repository = {
       };
     }
 
-    await convex.mutation("practice:upsertWordStats", {
-      userId,
-      wordId,
-      shapeStrength: next.shape.strength,
-      typingStrength: next.typing.strength,
-      listeningStrength: next.listening.strength,
-      shapeDueAt: next.shape.dueAt,
-      typingDueAt: next.typing.dueAt,
-      listeningDueAt: next.listening.dueAt,
-      lastPracticedAt: now,
+    const upsertStatsMutation = await measureAsync(async () => {
+      await convex.mutation("practice:upsertWordStats", {
+        userId,
+        wordId,
+        shapeStrength: next.shape.strength,
+        typingStrength: next.typing.strength,
+        listeningStrength: next.listening.strength,
+        shapeDueAt: next.shape.dueAt,
+        typingDueAt: next.typing.dueAt,
+        listeningDueAt: next.listening.dueAt,
+        lastPracticedAt: now,
+      });
     });
-    await convex.mutation("practice:syncDeckWordStatsSnapshot", {
-      wordId,
-      shapeStrength: next.shape.strength,
-      typingStrength: next.typing.strength,
-      listeningStrength: next.listening.strength,
-      shapeDueAt: next.shape.dueAt,
-      typingDueAt: next.typing.dueAt,
-      listeningDueAt: next.listening.dueAt,
-      lastPracticedAt: now,
+    const syncLinkStatsMutation = await measureAsync(async () => {
+      await convex.mutation("practice:syncDeckWordStatsSnapshot", {
+        wordId,
+        shapeStrength: next.shape.strength,
+        typingStrength: next.typing.strength,
+        listeningStrength: next.listening.strength,
+        shapeDueAt: next.shape.dueAt,
+        typingDueAt: next.typing.dueAt,
+        listeningDueAt: next.listening.dueAt,
+        lastPracticedAt: now,
+      });
     });
 
     const cardsCompleted = attemptResult.cardsCompleted;
@@ -605,8 +668,13 @@ export const repository = {
     const cached = getSessionCache(sessionId);
     let candidateRows: WordStatsRow[];
     let nextWindowStartPosition = 0;
+    let cacheHit = false;
+    let progressLookupMs = 0;
+    let candidateFetchMs = 0;
+    let refillFetchMs = 0;
 
     if (cached && cached.userId === userId && cached.deckId === session.deckId) {
+      cacheHit = true;
       cached.attemptedWordIds = new Set([...cached.attemptedWordIds, ...attemptedWordIds]);
 
       const row = cached.rows.find((candidate) => candidate.word._id === wordId);
@@ -628,15 +696,19 @@ export const repository = {
       candidateRows = cached.rows;
       nextWindowStartPosition = cached.nextWindowStartPosition;
     } else {
-      const progress = await getDeckPracticeProgress(userId, session.deckId);
-      const nextWindow = await advanceDeckPracticeWindow(
-        userId,
-        session.deckId,
-        progress?.nextPosition ?? 0,
-        PRACTICE_CANDIDATE_WINDOW_SIZE,
+      const progressLookup = await measureAsync(async () => await getDeckPracticeProgress(userId, session.deckId));
+      progressLookupMs = progressLookup.durationMs;
+      const nextWindow = await measureAsync(async () =>
+        await advanceDeckPracticeWindow(
+          userId,
+          session.deckId,
+          progressLookup.value?.nextPosition ?? 0,
+          PRACTICE_CANDIDATE_WINDOW_SIZE,
+        ),
       );
-      candidateRows = nextWindow.rows;
-      nextWindowStartPosition = nextWindow.nextStartPosition;
+      candidateFetchMs = nextWindow.durationMs;
+      candidateRows = nextWindow.value.rows;
+      nextWindowStartPosition = nextWindow.value.nextStartPosition;
       practiceSessionCache.set(sessionId, {
         userId,
         deckId: session.deckId,
@@ -649,26 +721,55 @@ export const repository = {
 
     let nextCard = selectNextPracticeCard(candidateRows, session.deckId, attemptedWordIds);
     if (!nextCard) {
-      const refreshedWindow = await advanceDeckPracticeWindow(
-        userId,
-        session.deckId,
-        nextWindowStartPosition,
-        PRACTICE_CANDIDATE_WINDOW_SIZE,
+      const refreshedWindow = await measureAsync(async () =>
+        await advanceDeckPracticeWindow(
+          userId,
+          session.deckId,
+          nextWindowStartPosition,
+          PRACTICE_CANDIDATE_WINDOW_SIZE,
+        ),
       );
-      nextCard = selectNextPracticeCard(refreshedWindow.rows, session.deckId, attemptedWordIds);
+      refillFetchMs = refreshedWindow.durationMs;
+      nextCard = selectNextPracticeCard(refreshedWindow.value.rows, session.deckId, attemptedWordIds);
       if (nextCard) {
         practiceSessionCache.set(sessionId, {
           userId,
           deckId: session.deckId,
-          rows: refreshedWindow.rows,
+          rows: refreshedWindow.value.rows,
           attemptedWordIds,
-          nextWindowStartPosition: refreshedWindow.nextStartPosition,
+          nextWindowStartPosition: refreshedWindow.value.nextStartPosition,
           updatedAt: Date.now(),
         });
       } else {
         practiceSessionCache.delete(sessionId);
       }
     }
+
+    tracePractice({
+      event: "submit_practice_card",
+      userId,
+      sessionId,
+      deckId: session.deckId,
+      wordId,
+      totalMs: Date.now() - overallStartedAt,
+      durationMs: Date.now() - overallStartedAt,
+      sessionLookupMs: sessionLookup.durationMs,
+      wordLookupMs: wordLookup.durationMs,
+      inDeckCheckMs: inDeckCheck.durationMs,
+      userLookupMs: userLookup.durationMs,
+      statsLookupMs: statsLookup.durationMs,
+      attemptMutationMs: attemptMutation.durationMs,
+      upsertStatsMutationMs: upsertStatsMutation.durationMs,
+      syncLinkStatsMutationMs: syncLinkStatsMutation.durationMs,
+      progressLookupMs,
+      candidateFetchMs,
+      refillFetchMs,
+      cacheHit,
+      candidateRows: candidateRows.length,
+      attemptedWordIds: attemptedWordIds.size,
+      sessionCapped,
+      returnedNextCard: nextCard?.wordId ?? null,
+    });
 
     return {
       accepted: true,
