@@ -283,6 +283,10 @@
   "settings": {
     "title": "設定",
     "subtitle": "体験をカスタマイズする",
+    "messages": {
+      "saved": "設定を保存しました。",
+      "save_failed": "設定を保存できませんでした。"
+    },
     "nav": {
       "profile": "プロフィール",
       "preferences": "環境設定",

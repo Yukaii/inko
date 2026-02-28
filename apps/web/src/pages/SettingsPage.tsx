@@ -346,10 +346,10 @@ export function SettingsPage() {
       queryClient.setQueryData(["me"], nextUser);
       applyThemePreferences({ themeMode: nextUser.themeMode, themes: nextUser.themes });
       saveThemePreferences({ themeMode: nextUser.themeMode, themes: nextUser.themes });
-      setMessage("Settings saved.");
+      setMessage(t("settings.messages.saved"));
     },
     onError: (error) => {
-      setMessage(error instanceof Error ? error.message : "Failed to save settings.");
+      setMessage(error instanceof Error ? error.message : t("settings.messages.save_failed"));
     },
   });
 
