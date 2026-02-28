@@ -25,15 +25,15 @@ type ThemePreset = {
   themes: ThemeConfig;
 };
 
-const PALETTE_FIELDS: Array<{ key: keyof ThemePalette; label: string }> = [
-  { key: "accentOrange", label: "Accent Orange" },
-  { key: "accentTeal", label: "Accent Teal" },
-  { key: "bgPage", label: "Page Background" },
-  { key: "bgCard", label: "Card Background" },
-  { key: "bgElevated", label: "Elevated Background" },
-  { key: "textPrimary", label: "Primary Text" },
-  { key: "textSecondary", label: "Secondary Text" },
-  { key: "textOnAccent", label: "Text On Accent" },
+const PALETTE_FIELDS: Array<{ key: keyof ThemePalette; labelKey: string }> = [
+  { key: "accentOrange", labelKey: "settings.appearance.palette_fields.accent_orange" },
+  { key: "accentTeal", labelKey: "settings.appearance.palette_fields.accent_teal" },
+  { key: "bgPage", labelKey: "settings.appearance.palette_fields.page_background" },
+  { key: "bgCard", labelKey: "settings.appearance.palette_fields.card_background" },
+  { key: "bgElevated", labelKey: "settings.appearance.palette_fields.elevated_background" },
+  { key: "textPrimary", labelKey: "settings.appearance.palette_fields.primary_text" },
+  { key: "textSecondary", labelKey: "settings.appearance.palette_fields.secondary_text" },
+  { key: "textOnAccent", labelKey: "settings.appearance.palette_fields.text_on_accent" },
 ];
 
 const CSS_VAR_TO_PALETTE_KEY: Record<string, keyof ThemePalette> = {
@@ -405,7 +405,7 @@ export function SettingsPage() {
     const nextThemes = preset.themes;
     setThemes(nextThemes);
     applyThemePreferences({ themeMode, themes: nextThemes });
-    setMessage(`Applied preset: ${preset.name}`);
+    setMessage(t("settings.messages.preset_applied", { name: preset.name }));
   };
 
   const copyToClipboard = async (value: string, successMessage: string) => {
@@ -413,7 +413,7 @@ export function SettingsPage() {
       await navigator.clipboard.writeText(value);
       setMessage(successMessage);
     } catch {
-      setMessage("Clipboard permission denied. Copy manually from export file.");
+      setMessage(t("settings.messages.clipboard_denied"));
     }
   };
 
@@ -426,7 +426,7 @@ export function SettingsPage() {
     anchor.download = "inko-theme.json";
     anchor.click();
     URL.revokeObjectURL(url);
-    setMessage("Theme exported as JSON.");
+    setMessage(t("settings.messages.theme_exported"));
   };
 
   const buildCurrentPaletteText = () => {
@@ -563,7 +563,7 @@ export function SettingsPage() {
           {profileQuery.isLoading ? (
             <p className="m-0 text-sm text-text-secondary">{t("common.loading")}</p>
           ) : profileQuery.isError ? (
-            <p className="m-0 text-sm text-[var(--danger-text)]">Failed to load settings.</p>
+            <p className="m-0 text-sm text-[var(--danger-text)]">{t("settings.messages.load_failed")}</p>
           ) : (
             <>
               {activeSection === "profile" && (
@@ -741,7 +741,7 @@ export function SettingsPage() {
                           className="h-9 w-9 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0"
                         />
                         <label className="flex min-w-0 flex-1 items-center gap-2">
-                          <span className="shrink-0 text-sm text-text-secondary">{field.label}</span>
+                          <span className="shrink-0 text-sm text-text-secondary">{t(field.labelKey)}</span>
                           <input
                             type="text"
                             value={hexDrafts[draftKey(activeThemeEditor, field.key)] ?? themes[activeThemeEditor][field.key]}
@@ -779,21 +779,21 @@ export function SettingsPage() {
                       <button
                         type="button"
                         className="bg-bg-elevated text-text-primary hover:bg-bg-elevated"
-                        onClick={() => copyToClipboard(JSON.stringify({ themeMode, themes }, null, 2), "Theme JSON copied.")}
+                        onClick={() => copyToClipboard(JSON.stringify({ themeMode, themes }, null, 2), t("settings.messages.theme_json_copied"))}
                       >
                         {t("settings.appearance.copy_json")}
                       </button>
                       <button
                         type="button"
                         className="bg-bg-elevated text-text-primary hover:bg-bg-elevated"
-                        onClick={() => copyToClipboard(buildCssVarsText(), "CSS variables copied.")}
+                        onClick={() => copyToClipboard(buildCssVarsText(), t("settings.messages.css_vars_copied"))}
                       >
                         {t("settings.appearance.copy_css")}
                       </button>
                       <button
                         type="button"
                         className="bg-bg-elevated text-text-primary hover:bg-bg-elevated"
-                        onClick={() => copyToClipboard(buildCurrentPaletteText(), `${activeThemeEditor} palette hex values copied.`)}
+                        onClick={() => copyToClipboard(buildCurrentPaletteText(), t("settings.messages.palette_hex_copied", { mode: activeThemeEditor }))}
                       >
                         {t("settings.appearance.copy_hex", { mode: activeThemeEditor })}
                       </button>
@@ -817,9 +817,9 @@ export function SettingsPage() {
                       {t("settings.about.desc")}
                     </p>
                     <div className="flex justify-center gap-3 font-mono text-xs text-text-secondary">
-                      <span>Version 0.1.0</span>
+                      <span>{t("settings.about.version", { version: "0.1.0" })}</span>
                       <span>·</span>
-                      <span>MVP Release</span>
+                      <span>{t("settings.about.release_label")}</span>
                     </div>
                   </div>
                 </section>

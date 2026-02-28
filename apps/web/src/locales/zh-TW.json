@@ -1,6 +1,14 @@
 {
   "common": {
     "loading": "載入中...",
+    "close": "關閉",
+    "then": "接著",
+    "navigation": "導覽",
+    "global": "全域",
+    "page_specific": "頁面專屬",
+    "main_navigation": "主要導覽",
+    "mobile_navigation": "手機導覽",
+    "language_english": "英文",
     "save": "儲存",
     "cancel": "取消",
     "on": "開啟",
@@ -57,7 +65,8 @@
     "shortcuts": "快速鍵",
     "home": "首頁",
     "decks": "牌組",
-    "shortcuts_help": "鍵盤快速鍵"
+    "shortcuts_help": "鍵盤快速鍵",
+    "close_shortcuts_help": "關閉鍵盤快速鍵說明"
   },
   "pwa": {
     "update_available": "已有新版本可用。請重新整理以載入最新版本的應用程式。",
@@ -167,6 +176,7 @@
     "focus_decks_shortcut": "聚焦練習牌組",
     "session_label": "練習階段",
     "cards_and_time": "{{count}} 張字卡 · {{duration}}",
+    "statistics_aria": "統計資料",
     "to_focus": "聚焦",
     "start_practice": "開始練習",
     "no_decks": "還沒有牌組。",
@@ -191,6 +201,11 @@
   "word_bank": {
     "title": "單字庫",
     "subtitle": "管理你的牌組與詞彙",
+    "aria": {
+      "expand_panel": "展開面板",
+      "collapse_panel": "收合面板",
+      "add_word": "新增單字"
+    },
     "decks": {
       "title": "牌組",
       "to_focus": "聚焦",
@@ -285,7 +300,14 @@
     "subtitle": "自訂你的使用體驗",
     "messages": {
       "saved": "設定已儲存。",
-      "save_failed": "無法儲存設定。"
+      "save_failed": "無法儲存設定。",
+      "load_failed": "無法載入設定。",
+      "preset_applied": "已套用主題預設：{{name}}",
+      "clipboard_denied": "沒有剪貼簿權限。請從匯出檔案手動複製。",
+      "theme_exported": "主題已匯出為 JSON。",
+      "theme_json_copied": "已複製主題 JSON。",
+      "css_vars_copied": "已複製 CSS 變數。",
+      "palette_hex_copied": "已複製 {{mode}} 調色盤的 Hex 值。"
     },
     "nav": {
       "profile": "個人資料",
@@ -321,10 +343,22 @@
       "copy_json": "複製 JSON",
       "copy_css": "複製 CSS 變數",
       "copy_hex": "複製 {{mode}} 16進位碼",
-      "export_json_btn": "匯出 JSON"
+      "export_json_btn": "匯出 JSON",
+      "palette_fields": {
+        "accent_orange": "橘色強調",
+        "accent_teal": "藍綠強調",
+        "page_background": "頁面背景",
+        "card_background": "卡片背景",
+        "elevated_background": "浮層背景",
+        "primary_text": "主要文字",
+        "secondary_text": "次要文字",
+        "text_on_accent": "強調色上的文字"
+      }
     },
     "about": {
-      "desc": "一款受到 monkeytype 啟發、極簡且專注的語言打字練習 App。"
+      "desc": "一款受到 monkeytype 啟發、極簡且專注的語言打字練習 App。",
+      "version": "版本 {{version}}",
+      "release_label": "MVP 版本"
     }
   },
   "practice": {
@@ -333,6 +367,9 @@
     "cards": "字卡",
     "avg_typing": "平均打字",
     "best_streak": "最佳連續紀錄",
+    "finish_failed": "無法結束這個學習階段",
+    "session_starting": "學習階段仍在啟動中，請再試一次。",
+    "not_authenticated": "你尚未登入。",
     "back_to_dashboard": "返回控制台",
     "end_session": "結束階段",
     "esc_hint": "在1秒內再次按下 Esc 鍵以退出",
@@ -352,5 +389,8 @@
     "tts_speed_fast": "快速",
     "not_quite": "差一點 — 再試一次",
     "off_track": "偏離軌道"
+  },
+  "shortcuts": {
+    "go_to_page_sequence": "前往頁面（先按 g 再按 d/w/s）"
   }
 }
