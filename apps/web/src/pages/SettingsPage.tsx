@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -302,6 +302,9 @@ export function SettingsPage() {
   const [message, setMessage] = useState("");
   const [activeSection, setActiveSection] = useState<"profile" | "preferences" | "appearance" | "about">("profile");
   const [activeThemeEditor, setActiveThemeEditor] = useState<ThemeMode>("dark");
+  const [canScrollSettingsNavLeft, setCanScrollSettingsNavLeft] = useState(false);
+  const [canScrollSettingsNavRight, setCanScrollSettingsNavRight] = useState(false);
+  const settingsNavRef = useRef<HTMLElement | null>(null);
 
   const profileQuery = useQuery({
     queryKey: ["me"],
@@ -469,6 +472,38 @@ export function SettingsPage() {
     { id: "about" as const, label: "settings.nav.about" },
   ];
 
+  useEffect(() => {
+    const updateSettingsNavScrollState = () => {
+      const node = settingsNavRef.current;
+      if (!node) return;
+      const maxScrollLeft = node.scrollWidth - node.clientWidth;
+      const hasOverflow = maxScrollLeft > 1;
+      setCanScrollSettingsNavLeft(hasOverflow && node.scrollLeft > 1);
+      setCanScrollSettingsNavRight(hasOverflow && node.scrollLeft < maxScrollLeft - 1);
+    };
+
+    const node = settingsNavRef.current;
+    updateSettingsNavScrollState();
+    if (!node) return;
+
+    node.addEventListener("scroll", updateSettingsNavScrollState, { passive: true });
+    window.addEventListener("resize", updateSettingsNavScrollState);
+
+    return () => {
+      node.removeEventListener("scroll", updateSettingsNavScrollState);
+      window.removeEventListener("resize", updateSettingsNavScrollState);
+    };
+  }, [activeSection, i18n.language]);
+
+  const scrollSettingsNavBy = (direction: "left" | "right") => {
+    const node = settingsNavRef.current;
+    if (!node) return;
+    node.scrollBy({
+      left: direction === "left" ? -160 : 160,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <header className="mb-2">
@@ -478,18 +513,46 @@ export function SettingsPage() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[200px_1fr]">
         {/* Settings Navigation */}
-        <nav className="-mx-1 flex flex-row gap-1 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
-          {navItems.map((item) => (
+        <div className="relative">
+          {canScrollSettingsNavLeft ? (
             <button
-              key={item.id}
               type="button"
-              className={`shrink-0 whitespace-nowrap rounded-[10px] px-4 py-3 text-left text-sm transition-all lg:w-full ${activeSection === item.id ? "bg-bg-card font-medium text-text-primary" : "bg-transparent text-text-secondary hover:bg-bg-card hover:text-text-primary"}`}
-              onClick={() => setActiveSection(item.id)}
+              className="absolute left-0 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-bg-card text-text-primary shadow-md lg:hidden"
+              onClick={() => scrollSettingsNavBy("left")}
+              aria-label={t("common.previous", { defaultValue: "Previous" })}
             >
-              {t(item.label)}
+              &lt;
             </button>
-          ))}
-        </nav>
+          ) : null}
+
+          {canScrollSettingsNavRight ? (
+            <button
+              type="button"
+              className="absolute right-0 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-bg-card text-text-primary shadow-md lg:hidden"
+              onClick={() => scrollSettingsNavBy("right")}
+              aria-label={t("common.next", { defaultValue: "Next" })}
+            >
+              &gt;
+            </button>
+          ) : null}
+
+          <nav
+            ref={settingsNavRef}
+            className="-mx-1 flex flex-row gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [-ms-overflow-style:none] lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0"
+            style={{ scrollbarWidth: "none" }}
+          >
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`shrink-0 whitespace-nowrap rounded-[10px] px-4 py-3 text-left text-sm transition-all lg:w-full ${activeSection === item.id ? "bg-bg-card font-medium text-text-primary" : "bg-transparent text-text-secondary hover:bg-bg-card hover:text-text-primary"}`}
+                onClick={() => setActiveSection(item.id)}
+              >
+                {t(item.label)}
+              </button>
+            ))}
+          </nav>
+        </div>
 
         {/* Settings Content */}
         <div className="rounded-base bg-bg-card p-7">
