@@ -107,6 +107,7 @@ const CONVEX_ARRAY_ARG_LIMIT = 8192;
 const BATCH_WORDS_CHUNK_SIZE = 200;
 const DECK_DELETE_PAGE_SIZE = 500;
 const SESSION_CACHE_TTL_MS = 10 * 60 * 1000;
+const PRACTICE_CANDIDATE_WINDOW_SIZE = PRACTICE_SESSION_CARD_CAP_DEFAULT;
 
 const practiceSessionCache = new Map<string, PracticeSessionCacheEntry>();
 
@@ -122,6 +123,7 @@ function chunkArray<T>(items: T[], chunkSize: number): T[][] {
 export const PERFORMANCE_CONSTANTS = {
   CONVEX_ARRAY_ARG_LIMIT,
   BATCH_WORDS_CHUNK_SIZE,
+  PRACTICE_CANDIDATE_WINDOW_SIZE,
 };
 
 export const testChunkArray = chunkArray;
@@ -437,7 +439,7 @@ export const repository = {
       userId,
       input.deckId,
       progress?.nextPosition ?? 0,
-      10,
+      PRACTICE_CANDIDATE_WINDOW_SIZE,
     );
 
     if (rows.length === 0) {
@@ -621,6 +623,7 @@ export const repository = {
         userId,
         session.deckId,
         progress?.nextPosition ?? 0,
+        PRACTICE_CANDIDATE_WINDOW_SIZE,
       );
       candidateRows = nextWindow.rows;
       nextWindowStartPosition = nextWindow.nextStartPosition;
@@ -640,6 +643,7 @@ export const repository = {
         userId,
         session.deckId,
         nextWindowStartPosition,
+        PRACTICE_CANDIDATE_WINDOW_SIZE,
       );
       nextCard = selectNextPracticeCard(refreshedWindow.rows, session.deckId, attemptedWordIds);
       if (nextCard) {

@@ -125,8 +125,8 @@ describe("repository practice candidate rotation", () => {
       ([name]) => name === "practice:listDeckWordsWithStatsFromPosition",
     );
     expect(candidateCalls).toHaveLength(2);
-    expect(candidateCalls[0]?.[1]).toMatchObject({ startPosition: 0, limit: 10 });
-    expect(candidateCalls[1]?.[1]).toMatchObject({ startPosition: 201, limit: 10 });
+    expect(candidateCalls[0]?.[1]).toMatchObject({ startPosition: 0, limit: 50 });
+    expect(candidateCalls[1]?.[1]).toMatchObject({ startPosition: 201, limit: 50 });
 
     const progressUpdates = mutationMock.mock.calls.filter(
       ([name]) => name === "practice:upsertDeckPracticeProgress",
