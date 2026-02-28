@@ -197,6 +197,12 @@ async function getNextQueuedCard(userId: string, deckId: string, coverageCursorP
   })) as { card: PracticeCardDTO | null; nextCoverageCursorPosition: number };
 }
 
+async function rebuildPracticeQueueForDeck(deckId: string) {
+  return (await convex.mutation("practiceQueue:rebuildDeckQueue", {
+    deckId,
+  })) as { ok: boolean; created?: number; updated?: number; reason?: string };
+}
+
 async function listQueuedPracticeCards(
   userId: string,
   deckId: string,
@@ -479,7 +485,33 @@ export const repository = {
         progressLookup.value?.coverageCursorPosition ?? 0,
       ),
     );
-    const { card, nextCoverageCursorPosition } = firstCardFetch.value;
+    let queueRebuildMs = 0;
+    let queueRebuildTriggered = false;
+    let queueRebuildCreated = 0;
+    let queueRebuildUpdated = 0;
+    let firstCardResult = firstCardFetch.value;
+
+    if (!firstCardResult.card && (deck.wordCount ?? 1) > 0) {
+      queueRebuildTriggered = true;
+      const rebuild = await measureAsync(async () => await rebuildPracticeQueueForDeck(input.deckId));
+      queueRebuildMs = rebuild.durationMs;
+      queueRebuildCreated = rebuild.value.created ?? 0;
+      queueRebuildUpdated = rebuild.value.updated ?? 0;
+
+      if (rebuild.value.ok) {
+        const retriedFirstCardFetch = await measureAsync(async () =>
+          await getNextQueuedCard(
+            userId,
+            input.deckId,
+            progressLookup.value?.coverageCursorPosition ?? 0,
+          ),
+        );
+        firstCardResult = retriedFirstCardFetch.value;
+        firstCardFetch.durationMs += retriedFirstCardFetch.durationMs;
+      }
+    }
+
+    const { card, nextCoverageCursorPosition } = firstCardResult;
 
     if (!card) {
       throw new RepositoryError("No words available in deck", 409);
@@ -530,6 +562,10 @@ export const repository = {
       queueProgressLookupMs: progressLookup.durationMs,
       queueFirstCardMs: firstCardFetch.durationMs,
       queueProgressUpdateMs: progressUpdate.durationMs,
+      queueRebuildTriggered,
+      queueRebuildMs,
+      queueRebuildCreated,
+      queueRebuildUpdated,
       userLookupMs: userLookup.durationMs,
       bufferWarmStarted: true,
       nextCoverageCursorPosition,
