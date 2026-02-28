@@ -73,12 +73,17 @@ async function loadRecentSessions(ctx: QueryCtx, userId: Id<"users">) {
     .order("desc")
     .take(50);
 
-  return sessions
+  const recentSessions = sessions
     .filter((s) => !!s.finishedAt)
     .sort((a, b) => (b.finishedAt ?? 0) - (a.finishedAt ?? 0))
-    .slice(0, 7)
-    .map((s) => ({
+    .slice(0, 7);
+
+  const decks = await Promise.all(recentSessions.map((session) => ctx.db.get(session.deckId)));
+
+  return recentSessions.map((s, index) => ({
       sessionId: s._id,
+      deckId: s.deckId,
+      deckName: decks[index]?.name,
       cardsCompleted: s.cardsCompleted,
       startedAt: s.startedAt,
       finishedAt: s.finishedAt,
