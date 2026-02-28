@@ -98,6 +98,7 @@ const BATCH_WORDS_CHUNK_SIZE = 200;
 const DECK_DELETE_PAGE_SIZE = 500;
 const SESSION_CACHE_TTL_MS = 10 * 60 * 1000;
 const PRACTICE_SESSION_BUFFER_SIZE = Math.max(0, PRACTICE_SESSION_CARD_CAP_DEFAULT - 1);
+const PRACTICE_TTS_PREFETCH_WINDOW = 7;
 const PRACTICE_QUEUE_RECOVERY_REBUILD_LIMIT = 256;
 
 const practiceSessionCache = new Map<string, PracticeSessionCacheEntry>();
@@ -121,6 +122,7 @@ export const PERFORMANCE_CONSTANTS = {
   CONVEX_ARRAY_ARG_LIMIT,
   BATCH_WORDS_CHUNK_SIZE,
   PRACTICE_SESSION_BUFFER_SIZE,
+  PRACTICE_TTS_PREFETCH_WINDOW,
 };
 
 export const testChunkArray = chunkArray;
@@ -241,6 +243,20 @@ function takeNextCachedCard(cache: PracticeSessionCacheEntry, excludedWordIds: S
     }
   }
   return null;
+}
+
+function peekUpcomingCachedCards(
+  cache: PracticeSessionCacheEntry,
+  excludedWordIds: Set<string>,
+  limit = PRACTICE_TTS_PREFETCH_WINDOW,
+) {
+  const upcoming: PracticeCardDTO[] = [];
+  for (const queuedCard of cache.cards) {
+    if (excludedWordIds.has(queuedCard.wordId)) continue;
+    upcoming.push(queuedCard);
+    if (upcoming.length >= limit) break;
+  }
+  return upcoming;
 }
 
 async function warmPracticeSessionBuffer(
@@ -407,6 +423,13 @@ export const repository = {
     return toWordDTO(word as ConvexWord);
   },
 
+  async getWordById(userId: string, wordId: string) {
+    const word = (await convex.query("words:getById", { wordId })) as ConvexWord | null;
+    if (!word) throw new RepositoryError("Word not found", 404);
+    if (word.userId !== userId) throw new RepositoryError("Forbidden", 403);
+    return toWordDTO(word);
+  },
+
   async deleteWord(userId: string, wordId: string) {
     const existingWord = (await convex.query("words:getById", { wordId })) as ConvexWord | null;
     if (!existingWord) throw new RepositoryError("Word not found", 404);
@@ -548,6 +571,11 @@ export const repository = {
     if (cache) {
       cache.bufferWarmPromise = bufferWarmPromise;
     }
+    await bufferWarmPromise;
+    const warmedCache = getSessionCache(session._id);
+    const upcomingCards = warmedCache
+      ? peekUpcomingCachedCards(warmedCache, new Set([card.wordId]))
+      : [];
 
     const userLookup = await measureAsync(
       async () => (await convex.query("users:getById", { userId })) as ConvexUser | null,
@@ -577,6 +605,7 @@ export const repository = {
     return {
       sessionId: session._id,
       card,
+      upcomingCards,
       typingMode: user?.typingMode ?? "language_specific",
       sessionTargetCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
       cardsCompleted: session.cardsCompleted,
@@ -749,6 +778,7 @@ export const repository = {
     let queueBufferFetchMs = 0;
     let queueProgressUpdateMs = 0;
     let nextCard: PracticeCardDTO | null = null;
+    let upcomingCards: PracticeCardDTO[] = [];
 
     if (cached && cached.userId === userId && cached.deckId === session.deckId) {
       cacheHit = true;
@@ -763,6 +793,12 @@ export const repository = {
       for (const attemptedWordId of cached.attemptedWordIds) attemptedWordIds.add(attemptedWordId);
 
       nextCard = takeNextCachedCard(cached, attemptedWordIds);
+      if (nextCard) {
+        upcomingCards = peekUpcomingCachedCards(
+          cached,
+          new Set([...attemptedWordIds, nextCard.wordId]),
+        );
+      }
     }
 
     if (!nextCard) {
@@ -796,6 +832,7 @@ export const repository = {
         bufferBuiltAt: Date.now(),
         updatedAt: Date.now(),
       });
+      upcomingCards = remainingCardsBuffer.slice(0, PRACTICE_TTS_PREFETCH_WINDOW);
     }
 
     if (!nextCard) {
@@ -833,6 +870,7 @@ export const repository = {
       scores: { shape, typing, listening },
       nextDueAt: new Date(nextDueAt(next)).toISOString(),
       nextCard,
+      upcomingCards,
       sessionTargetCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
       cardsCompleted,
       remainingCards,

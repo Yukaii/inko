@@ -4,20 +4,23 @@ import sensible from "@fastify/sensible";
 import { ErrorCode } from "@inko/shared";
 import { env } from "./lib/env";
 import { createMailer, type Mailer } from "./lib/mailer";
+import { ttsService, type TtsService } from "./lib/tts";
 import { setPracticeTraceSink } from "./lib/diagnostics";
 import { authRoutes } from "./routes/auth";
 import { deckRoutes } from "./routes/decks";
 import { practiceRoutes } from "./routes/practice";
 import { dashboardRoutes } from "./routes/dashboard";
+import { ttsRoutes } from "./routes/tts";
 import { repository, type Repository } from "./services/repository";
 
-export async function buildServer(options?: { repository?: Repository; mailer?: Mailer }) {
+export async function buildServer(options?: { repository?: Repository; mailer?: Mailer; ttsService?: TtsService }) {
   const app = Fastify({ logger: true });
   setPracticeTraceSink((payload, message) => {
     app.log.info(payload, message);
   });
   const repo = options?.repository ?? repository;
   const mailer = options?.mailer ?? createMailer();
+  const tts = options?.ttsService ?? ttsService;
 
   app.setErrorHandler((error: FastifyError, request, reply) => {
     app.log.error(error);
@@ -53,6 +56,7 @@ export async function buildServer(options?: { repository?: Repository; mailer?: 
   await app.register(async (instance) => deckRoutes(instance, repo));
   await app.register(async (instance) => practiceRoutes(instance, repo));
   await app.register(async (instance) => dashboardRoutes(instance, repo));
+  await app.register(async (instance) => ttsRoutes(instance, repo, tts));
 
   app.get("/health", async () => ({ ok: true }));
 
