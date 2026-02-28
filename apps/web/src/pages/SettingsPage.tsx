@@ -14,6 +14,7 @@ type MeResponse = {
   displayName: string;
   themeMode: ThemeMode;
   typingMode: TypingMode;
+  ttsEnabled: boolean;
   themes: ThemeConfig;
   createdAt: number;
 };
@@ -317,6 +318,7 @@ export function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
   const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
   const [typingMode, setTypingMode] = useState<TypingMode>("language_specific");
+  const [ttsEnabled, setTtsEnabled] = useState(true);
   const [themes, setThemes] = useState<ThemeConfig>(DefaultThemes);
   const [hexDrafts, setHexDrafts] = useState<Record<string, string>>({});
 
@@ -325,6 +327,7 @@ export function SettingsPage() {
     setDisplayName(user.displayName);
     setThemeMode(user.themeMode);
     setTypingMode(user.typingMode);
+    setTtsEnabled(user.ttsEnabled);
     setThemes(user.themes);
     setActiveThemeEditor(user.themeMode);
   }, [user]);
@@ -335,6 +338,7 @@ export function SettingsPage() {
         displayName: displayName.trim(),
         themeMode,
         typingMode,
+        ttsEnabled,
         themes,
       }),
     onSuccess: (updated) => {

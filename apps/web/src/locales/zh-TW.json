@@ -3,6 +3,8 @@
     "loading": "載入中...",
     "save": "儲存",
     "cancel": "取消",
+    "on": "開啟",
+    "off": "關閉",
     "delete": "刪除",
     "error": "錯誤",
     "clear": "清除",
@@ -11,6 +13,7 @@
     "change_language": "切換語言",
     "step": "步驟",
     "prev": "上一頁",
+    "previous": "上一頁",
     "next": "下一頁",
     "page": "頁",
     "page_of": "{{x}} / {{y}} 頁",
@@ -272,7 +275,9 @@
       "typing_mode": "打字模式",
       "lang_specific": "特定語言",
       "universal": "通用",
-      "typing_mode_desc": "特定語言模式使用具備文字感知的比對（例如日文的羅馬拼音轉換假名）。通用模式則使用標準化的直接輸入。"
+      "typing_mode_desc": "特定語言模式使用具備文字感知的比對（例如日文的羅馬拼音轉換假名）。通用模式則使用標準化的直接輸入。",
+      "tts": "語音朗讀",
+      "tts_desc": "在練習時自動播放發音。"
     },
     "appearance": {
       "reset": "重設 {{mode}}",
@@ -304,6 +309,14 @@
     "no_words_available": "此牌組目前沒有可練習的字詞。",
     "type_romaji": "輸入羅馬拼音...",
     "type_answer": "輸入答案...",
+    "tts_toggle": "切換發音音訊",
+    "tts_on": "TTS 開啟",
+    "tts_off": "TTS 關閉",
+    "tts_voice": "語音",
+    "tts_speed": "速度",
+    "tts_speed_slow": "慢速",
+    "tts_speed_normal": "正常",
+    "tts_speed_fast": "快速",
     "not_quite": "差一點 — 再試一次",
     "off_track": "偏離軌道"
   }

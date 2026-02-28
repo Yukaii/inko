@@ -3,6 +3,8 @@
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
+    "on": "On",
+    "off": "Off",
     "delete": "Delete",
     "error": "Error",
     "clear": "Clear",
@@ -11,6 +13,7 @@
     "change_language": "Change Language",
     "step": "Step",
     "prev": "Prev",
+    "previous": "Previous",
     "next": "Next",
     "page": "Page",
     "page_of": "Page {{x}} / {{y}}",
@@ -272,7 +275,9 @@
       "typing_mode": "Typing Mode",
       "lang_specific": "Language Specific",
       "universal": "Universal",
-      "typing_mode_desc": "Language-specific uses script-aware matching (e.g. romaji to kana for Japanese). Universal uses normalized direct typing."
+      "typing_mode_desc": "Language-specific uses script-aware matching (e.g. romaji to kana for Japanese). Universal uses normalized direct typing.",
+      "tts": "Text to Speech",
+      "tts_desc": "Automatically play pronunciation during practice."
     },
     "appearance": {
       "reset": "Reset {{mode}}",
@@ -304,6 +309,14 @@
     "no_words_available": "No words available in this deck yet.",
     "type_romaji": "type romaji...",
     "type_answer": "type answer...",
+    "tts_toggle": "Toggle pronunciation audio",
+    "tts_on": "TTS on",
+    "tts_off": "TTS off",
+    "tts_voice": "Voice",
+    "tts_speed": "Speed",
+    "tts_speed_slow": "Slow",
+    "tts_speed_normal": "Normal",
+    "tts_speed_fast": "Fast",
     "not_quite": "not quite — try again",
     "off_track": "off track"
   }

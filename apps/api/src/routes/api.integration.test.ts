@@ -15,6 +15,7 @@ function makeRepositoryMock(): Repository {
       displayName: "user",
       themeMode: "dark" as const,
       typingMode: "language_specific" as const,
+      ttsEnabled: true,
       themes: DefaultThemes,
       createdAt: Date.now(),
     })),
@@ -24,6 +25,7 @@ function makeRepositoryMock(): Repository {
       displayName: "user",
       themeMode: "dark" as const,
       typingMode: "language_specific" as const,
+      ttsEnabled: true,
       themes: DefaultThemes,
       createdAt: Date.now(),
     })),
@@ -33,7 +35,18 @@ function makeRepositoryMock(): Repository {
       displayName: input.displayName,
       themeMode: input.themeMode,
       typingMode: input.typingMode,
+      ttsEnabled: input.ttsEnabled,
       themes: input.themes,
+      createdAt: Date.now(),
+    })),
+    updateUserPreferences: vi.fn(async (_userId: string, input) => ({
+      id: "user_1",
+      email: "user@example.com",
+      displayName: "user",
+      themeMode: "dark" as const,
+      typingMode: "language_specific" as const,
+      ttsEnabled: input.ttsEnabled,
+      themes: DefaultThemes,
       createdAt: Date.now(),
     })),
     listDecks: vi.fn(async () => []),
@@ -43,6 +56,9 @@ function makeRepositoryMock(): Repository {
       name: "Core N5",
       language: "ja",
       archived: false,
+      ttsEnabled: true,
+      ttsVoice: "ja-JP-NanamiNeural",
+      ttsRate: "default" as const,
       createdAt: Date.now(),
     })),
     updateDeck: vi.fn(async (_userId: string, _deckId: string, input) => ({
@@ -51,6 +67,9 @@ function makeRepositoryMock(): Repository {
       name: input.name ?? "Core N5",
       language: input.language ?? "ja",
       archived: input.archived ?? false,
+      ttsEnabled: input.ttsEnabled ?? true,
+      ttsVoice: input.ttsVoice ?? (input.language === "fr" ? "fr-FR-DeniseNeural" : "ja-JP-NanamiNeural"),
+      ttsRate: input.ttsRate ?? "default",
       createdAt: Date.now(),
     })),
     listDeckWordsPage: vi.fn(async () => ({
@@ -117,6 +136,9 @@ function makeRepositoryMock(): Repository {
     startPracticeSession: vi.fn(async () => ({
       sessionId: "session_1",
       typingMode: "language_specific" as const,
+      ttsEnabled: true,
+      ttsVoice: "ja-JP-NanamiNeural",
+      ttsRate: "default" as const,
       sessionTargetCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
       cardsCompleted: 0,
       remainingCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
@@ -232,6 +254,7 @@ describe("API integration", () => {
       payload: {
         displayName: "Yukai",
         themeMode: "light",
+        ttsEnabled: false,
         themes: {
           ...DefaultThemes,
           light: {
@@ -245,6 +268,7 @@ describe("API integration", () => {
     expect(res.statusCode).toBe(200);
     expect(res.json().displayName).toBe("Yukai");
     expect(res.json().themeMode).toBe("light");
+    expect(res.json().ttsEnabled).toBe(false);
     expect(res.json().themes.light.accentOrange).toBe("#ff9900");
 
     await app.close();
@@ -279,6 +303,7 @@ describe("API integration", () => {
     expect(updateDeckRes.statusCode).toBe(200);
     expect(updateDeckRes.json().name).toBe("Core FR");
     expect(updateDeckRes.json().language).toBe("fr");
+    expect(updateDeckRes.json().ttsVoice).toBe("fr-FR-DeniseNeural");
 
     const createWordRes = await app.inject({
       method: "POST",
@@ -340,10 +365,13 @@ describe("API integration", () => {
     expect(startRes.statusCode).toBe(200);
     expect(startRes.json().sessionTargetCards).toBe(PRACTICE_SESSION_CARD_CAP_DEFAULT);
     expect(startRes.json().cardsCompleted).toBe(0);
+    expect(startRes.json().ttsEnabled).toBe(true);
+    expect(startRes.json().ttsVoice).toBe("ja-JP-NanamiNeural");
+    expect(startRes.json().ttsRate).toBe("default");
 
     const ttsRes = await app.inject({
       method: "GET",
-      url: "/api/words/word_1/tts",
+      url: "/api/words/word_1/tts?deckId=deck_1",
       headers: auth,
     });
     expect(ttsRes.statusCode).toBe(200);
@@ -352,7 +380,10 @@ describe("API integration", () => {
     expect(synthesizeWordAudio).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "user_1",
+        deckId: "deck_1",
         wordId: "word_1",
+        voice: undefined,
+        rate: undefined,
       }),
     );
 

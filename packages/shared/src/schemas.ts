@@ -32,6 +32,67 @@ export const LANGUAGE_LABELS: Record<z.infer<typeof LanguageSchema>, string> = {
 export const ThemeModeSchema = z.union([z.literal("dark"), z.literal("light")]);
 export const TypingModeSchema = z.union([z.literal("language_specific"), z.literal("universal")]);
 export const HexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+export const EDGE_TTS_RATE_PRESETS = ["-20%", "default", "+20%"] as const;
+export const EdgeTtsRateSchema = z.enum(EDGE_TTS_RATE_PRESETS);
+
+export const EDGE_TTS_VOICE_OPTIONS_BY_LANGUAGE = {
+  ja: [
+    { value: "ja-JP-NanamiNeural", label: "Nanami" },
+    { value: "ja-JP-KeitaNeural", label: "Keita" },
+  ],
+  ko: [
+    { value: "ko-KR-SunHiNeural", label: "SunHi" },
+    { value: "ko-KR-InJoonNeural", label: "InJoon" },
+  ],
+  zh: [
+    { value: "zh-CN-XiaoxiaoNeural", label: "Xiaoxiao" },
+    { value: "zh-CN-YunxiNeural", label: "Yunxi" },
+  ],
+  es: [
+    { value: "es-ES-ElviraNeural", label: "Elvira" },
+    { value: "es-ES-AlvaroNeural", label: "Alvaro" },
+  ],
+  fr: [
+    { value: "fr-FR-DeniseNeural", label: "Denise" },
+    { value: "fr-FR-HenriNeural", label: "Henri" },
+  ],
+  de: [
+    { value: "de-DE-KatjaNeural", label: "Katja" },
+    { value: "de-DE-ConradNeural", label: "Conrad" },
+  ],
+  it: [
+    { value: "it-IT-ElsaNeural", label: "Elsa" },
+    { value: "it-IT-DiegoNeural", label: "Diego" },
+  ],
+  pt: [
+    { value: "pt-BR-FranciscaNeural", label: "Francisca" },
+    { value: "pt-BR-AntonioNeural", label: "Antonio" },
+  ],
+  ru: [
+    { value: "ru-RU-SvetlanaNeural", label: "Svetlana" },
+    { value: "ru-RU-DmitryNeural", label: "Dmitry" },
+  ],
+  ar: [
+    { value: "ar-SA-ZariyahNeural", label: "Zariyah" },
+    { value: "ar-SA-HamedNeural", label: "Hamed" },
+  ],
+  hi: [
+    { value: "hi-IN-SwaraNeural", label: "Swara" },
+    { value: "hi-IN-MadhurNeural", label: "Madhur" },
+  ],
+  th: [
+    { value: "th-TH-PremwadeeNeural", label: "Premwadee" },
+    { value: "th-TH-NiwatNeural", label: "Niwat" },
+  ],
+} as const satisfies Record<z.infer<typeof LanguageSchema>, readonly { value: string; label: string }[]>;
+
+export const EDGE_TTS_VOICE_IDS = Object.values(EDGE_TTS_VOICE_OPTIONS_BY_LANGUAGE)
+  .flatMap((options) => options.map((option) => option.value)) as [string, ...string[]];
+export const EdgeTtsVoiceSchema = z.enum(EDGE_TTS_VOICE_IDS);
+
+export function getDefaultEdgeTtsVoice(language: z.infer<typeof LanguageSchema>) {
+  return EDGE_TTS_VOICE_OPTIONS_BY_LANGUAGE[language][0].value;
+}
 
 export const ThemePaletteSchema = z.object({
   accentOrange: HexColorSchema,
@@ -78,6 +139,7 @@ export const UserSchema = z.object({
   displayName: z.string().min(1).max(60),
   themeMode: ThemeModeSchema,
   typingMode: TypingModeSchema,
+  ttsEnabled: z.boolean(),
   themes: ThemeConfigSchema,
   createdAt: z.number(),
 });
@@ -88,6 +150,9 @@ export const DeckSchema = z.object({
   name: z.string().min(1),
   language: LanguageSchema,
   archived: z.boolean(),
+  ttsEnabled: z.boolean(),
+  ttsVoice: EdgeTtsVoiceSchema,
+  ttsRate: EdgeTtsRateSchema,
   createdAt: z.number(),
 });
 
@@ -131,7 +196,12 @@ export const UpdateProfileSchema = z.object({
   displayName: z.string().trim().min(1).max(60),
   themeMode: ThemeModeSchema,
   typingMode: TypingModeSchema.default("language_specific"),
+  ttsEnabled: z.boolean().default(true),
   themes: ThemeConfigSchema,
+});
+
+export const UpdatePreferencesSchema = z.object({
+  ttsEnabled: z.boolean(),
 });
 
 export const CreateDeckSchema = z.object({
@@ -143,6 +213,9 @@ export const UpdateDeckSchema = z.object({
   name: z.string().min(1).optional(),
   language: LanguageSchema.optional(),
   archived: z.boolean().optional(),
+  ttsEnabled: z.boolean().optional(),
+  ttsVoice: EdgeTtsVoiceSchema.optional(),
+  ttsRate: EdgeTtsRateSchema.optional(),
 });
 
 export const CreateWordSchema = z.object({
@@ -203,6 +276,8 @@ export type DeckDTO = z.infer<typeof DeckSchema>;
 export type WordDTO = z.infer<typeof WordSchema>;
 export type PracticeCardDTO = z.infer<typeof PracticeCardSchema>;
 export type SessionSummaryDTO = z.infer<typeof SessionSummarySchema>;
+export type EdgeTtsVoice = z.infer<typeof EdgeTtsVoiceSchema>;
+export type EdgeTtsRate = z.infer<typeof EdgeTtsRateSchema>;
 
 export type CreateDeckInput = z.infer<typeof CreateDeckSchema>;
 export type UpdateDeckInput = z.infer<typeof UpdateDeckSchema>;
@@ -216,5 +291,6 @@ export type ThemeMode = z.infer<typeof ThemeModeSchema>;
 export type ThemePalette = z.infer<typeof ThemePaletteSchema>;
 export type ThemeConfig = z.infer<typeof ThemeConfigSchema>;
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
+export type UpdatePreferencesInput = z.infer<typeof UpdatePreferencesSchema>;
 export type LanguageCode = z.infer<typeof LanguageSchema>;
 export type TypingMode = z.infer<typeof TypingModeSchema>;
