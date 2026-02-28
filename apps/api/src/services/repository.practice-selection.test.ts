@@ -1,14 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { queryMock, mutationMock } = vi.hoisted(() => ({
-  queryMock: vi.fn(),
-  mutationMock: vi.fn(),
-}));
+var queryMock = vi.fn();
+var mutationMock = vi.fn();
 
 vi.mock("../lib/convex", () => ({
   convex: {
-    query: queryMock,
-    mutation: mutationMock,
+    query: (...args: Parameters<typeof queryMock>) => queryMock(...args),
+    mutation: (...args: Parameters<typeof mutationMock>) => mutationMock(...args),
   },
 }));
 
@@ -144,5 +142,65 @@ describe("repository practice queue start", () => {
     const progressUpdates = mutationMock.mock.calls.filter(([name]) => name === "practiceQueue:upsertProgress");
     expect(progressUpdates.length).toBeGreaterThanOrEqual(2);
     expect(progressUpdates[0]?.[1]).toMatchObject({ coverageCursorPosition: 101 });
+  });
+
+  it("rebuilds a deck queue on demand when an older deck has no queue entries yet", async () => {
+    queryMock.mockImplementation(async (name: string) => {
+      switch (name) {
+        case "decks:getDeckById":
+          return {
+            ...makeDeck(),
+            wordCount: 12,
+          };
+        case "practiceQueue:getProgress":
+          return null;
+        case "practiceQueue:getNextCard":
+          return queryMock.mock.calls.filter(([callName]) => callName === "practiceQueue:getNextCard").length === 1
+            ? { card: null, nextCoverageCursorPosition: 0 }
+            : { card: makeCard("word_recovered"), nextCoverageCursorPosition: 401 };
+        case "practiceQueue:listSessionBuffer":
+          return {
+            cards: [makeCard("word_buffered")],
+            nextCoverageCursorPosition: 451,
+          };
+        case "users:getById":
+          return makeUser();
+        default:
+          throw new Error(`Unexpected query ${name}`);
+      }
+    });
+
+    mutationMock.mockImplementation(async (name: string) => {
+      switch (name) {
+        case "practice:startSession":
+          return {
+            _id: "session_rebuild",
+            userId: "user_1",
+            deckId: "deck_1",
+            startedAt: 1,
+            cardsCompleted: 0,
+            attemptedWordIds: [],
+          };
+        case "practiceQueue:rebuildDeckQueue":
+          return { ok: true, created: 12, updated: 0 };
+        case "practiceQueue:upsertProgress":
+          return null;
+        default:
+          throw new Error(`Unexpected mutation ${name}`);
+      }
+    });
+
+    const session = await repository.startPracticeSession("user_1", { deckId: "deck_1" });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(session.card.wordId).toBe("word_recovered");
+
+    const rebuildCalls = mutationMock.mock.calls.filter(([name]) => name === "practiceQueue:rebuildDeckQueue");
+    expect(rebuildCalls).toHaveLength(1);
+    expect(rebuildCalls[0]?.[1]).toMatchObject({ deckId: "deck_1" });
+
+    const firstCardCalls = queryMock.mock.calls.filter(([name]) => name === "practiceQueue:getNextCard");
+    expect(firstCardCalls).toHaveLength(2);
   });
 });
