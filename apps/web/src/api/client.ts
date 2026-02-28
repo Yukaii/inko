@@ -8,6 +8,7 @@ import type {
   SessionSummaryDTO,
   SubmitPracticeCardInput,
   TypingMode,
+  UpdatePreferencesInput,
   UpdateProfileInput,
   UpdateDeckInput,
   UpdateWordInput,
@@ -45,6 +46,9 @@ type StartPracticeResponse = {
   card: PracticeCardDTO;
   upcomingCards?: PracticeCardDTO[];
   typingMode?: TypingMode;
+  ttsEnabled?: boolean;
+  ttsVoice?: string;
+  ttsRate?: "-20%" | "default" | "+20%";
   sessionTargetCards?: number;
   cardsCompleted?: number;
   remainingCards?: number;
@@ -137,6 +141,8 @@ export const api = {
   me: (token: string) => request<UserDTO>("/api/me", {}, token),
   updateMe: (token: string, input: UpdateProfileInput) =>
     request<UserDTO>("/api/me", { method: "PATCH", body: JSON.stringify(input) }, token),
+  updatePreferences: (token: string, input: UpdatePreferencesInput) =>
+    request<UserDTO>("/api/me/preferences", { method: "PATCH", body: JSON.stringify(input) }, token),
   dashboard: (token: string) => request<DashboardSummary>("/api/dashboard/summary", {}, token),
   dashboardStats: (token: string) => request<DashboardStats>("/api/dashboard/stats", {}, token),
   dashboardRecentSessions: (token: string) =>
@@ -211,6 +217,10 @@ export const api = {
   finishPractice: (token: string, sessionId: string) =>
     request<SessionSummaryDTO>(`/api/practice/session/${sessionId}/finish`, { method: "POST" }, token),
 
-  fetchWordTts: (token: string, wordId: string) =>
-    requestBlob(`/api/words/${wordId}/tts`, {}, token),
+  fetchWordTts: (token: string, wordId: string, deckId: string, voice: string, rate: "-20%" | "default" | "+20%") =>
+    requestBlob(
+      `/api/words/${wordId}/tts?deckId=${encodeURIComponent(deckId)}&voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(rate)}`,
+      {},
+      token,
+    ),
 };

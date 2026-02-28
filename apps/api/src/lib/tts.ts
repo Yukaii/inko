@@ -9,7 +9,14 @@ export type TtsAudioResult = {
 };
 
 export type TtsService = {
-  synthesizeWordAudio(input: { userId: string; wordId: string; targetHint?: string }): Promise<TtsAudioResult>;
+  synthesizeWordAudio(input: {
+    userId: string;
+    deckId: string;
+    wordId: string;
+    targetHint?: string;
+    voice?: string;
+    rate?: "-20%" | "default" | "+20%";
+  }): Promise<TtsAudioResult>;
 };
 
 function sanitizeFileName(text: string) {
@@ -40,7 +47,10 @@ export const ttsService: TtsService = {
   async synthesizeWordAudio(input) {
     const result = await (convex as any).action("ttsNode:ensureWordAudio", {
       userId: input.userId,
+      deckId: input.deckId,
       wordId: input.wordId,
+      voice: input.voice,
+      rate: input.rate,
     }) as { audioUrl: string };
 
     const response = await fetch(result.audioUrl);

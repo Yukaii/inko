@@ -8,6 +8,7 @@ import { action } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { v } from "convex/values";
 import { EdgeTTS } from "node-edge-tts";
+import { getDefaultEdgeTtsVoice, type LanguageCode, type EdgeTtsRate } from "@inko/shared";
 
 const SPEECH_CONFIG_BY_LANGUAGE = {
   ja: { voice: "ja-JP-NanamiNeural", lang: "ja-JP" },
@@ -27,32 +28,60 @@ const SPEECH_CONFIG_BY_LANGUAGE = {
 export const ensureWordAudio = action({
   args: {
     userId: v.id("users"),
+    deckId: v.id("decks"),
     wordId: v.id("words"),
+    voice: v.optional(v.string()),
+    rate: v.optional(v.union(v.literal("-20%"), v.literal("default"), v.literal("+20%"))),
   },
   handler: async (ctx, args): Promise<{ audioUrl: string }> => {
     const word = await ctx.runQuery(api.words.getById, { wordId: args.wordId }) as {
       _id: string;
       userId: string;
-      language: keyof typeof SPEECH_CONFIG_BY_LANGUAGE;
+      language: LanguageCode;
       target: string;
       audioUrl?: string;
     } | null;
+    const deck = await ctx.runQuery(api.decks.getDeckById, { deckId: args.deckId }) as {
+      _id: string;
+      userId: string;
+      language: LanguageCode;
+      ttsEnabled?: boolean;
+      ttsVoice?: string;
+      ttsRate?: EdgeTtsRate;
+    } | null;
 
-    if (!word) {
-      throw new Error("Word not found");
-    }
-    if (`${word.userId}` !== `${args.userId}`) {
+    if (!word) throw new Error("Word not found");
+    if (!deck) throw new Error("Deck not found");
+    if (`${word.userId}` !== `${args.userId}` || `${deck.userId}` !== `${args.userId}`) {
       throw new Error("Forbidden");
     }
-    if (word.audioUrl) {
-      return { audioUrl: word.audioUrl };
+    const inDeck = await ctx.runQuery(api.decks.isWordInDeck, {
+      deckId: args.deckId,
+      wordId: args.wordId,
+    }) as boolean;
+    if (!inDeck) {
+      throw new Error("Word not found in deck");
+    }
+
+    const voice = args.voice ?? deck.ttsVoice ?? getDefaultEdgeTtsVoice(deck.language);
+    const rate = args.rate ?? deck.ttsRate ?? "default";
+    const cachedAudio = await ctx.runQuery(api.tts.getDeckWordAudio, {
+      deckId: args.deckId,
+      wordId: args.wordId,
+      voice,
+      rate,
+    }) as { audioUrl: string } | null;
+
+    if (cachedAudio?.audioUrl) {
+      return { audioUrl: cachedAudio.audioUrl };
     }
 
     const speechConfig = SPEECH_CONFIG_BY_LANGUAGE[word.language] ?? { voice: "en-US-EmmaNeural", lang: "en-US" };
     const tts = new EdgeTTS({
-      voice: speechConfig.voice,
+      voice,
       lang: speechConfig.lang,
       outputFormat: "audio-24khz-48kbitrate-mono-mp3",
+      rate,
       saveSubtitles: false,
     });
 
@@ -69,8 +98,11 @@ export const ensureWordAudio = action({
         throw new Error("Failed to resolve stored audio URL");
       }
 
-      await ctx.runMutation((internal as any).tts.persistWordAudio, {
+      await ctx.runMutation((internal as any).tts.persistDeckWordAudio, {
+        deckId: args.deckId,
         wordId: args.wordId,
+        voice,
+        rate,
         audioStorageId,
         audioUrl,
       });

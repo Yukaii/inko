@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getDefaultEdgeTtsVoice } from "@inko/shared";
 
 function defaultLinkStats(now: number) {
   return {
@@ -120,6 +121,9 @@ export const createDeck = mutation({
       name: args.name,
       language: args.language,
       archived: false,
+      ttsEnabled: true,
+      ttsVoice: getDefaultEdgeTtsVoice(args.language),
+      ttsRate: "default",
       wordCount: 0,
       createdAt: Date.now(),
     });
@@ -141,15 +145,24 @@ export const updateDeck = mutation({
     name: v.optional(v.string()),
     language: v.optional(languageValidator),
     archived: v.optional(v.boolean()),
+    ttsEnabled: v.optional(v.boolean()),
+    ttsVoice: v.optional(v.string()),
+    ttsRate: v.optional(v.union(v.literal("-20%"), v.literal("default"), v.literal("+20%"))),
   },
   handler: async (ctx, args) => {
     const deck = await ctx.db.get(args.deckId);
     if (!deck) return null;
 
+    const nextLanguage = args.language ?? deck.language;
+    const nextVoice = args.ttsVoice ?? (args.language !== undefined ? getDefaultEdgeTtsVoice(nextLanguage) : undefined);
+
     await ctx.db.patch(args.deckId, {
       ...(args.name !== undefined ? { name: args.name } : {}),
       ...(args.language !== undefined ? { language: args.language } : {}),
       ...(args.archived !== undefined ? { archived: args.archived } : {}),
+      ...(args.ttsEnabled !== undefined ? { ttsEnabled: args.ttsEnabled } : {}),
+      ...(nextVoice !== undefined ? { ttsVoice: nextVoice } : {}),
+      ...(args.ttsRate !== undefined ? { ttsRate: args.ttsRate } : {}),
     });
 
     return await ctx.db.get(args.deckId);
@@ -551,6 +564,15 @@ export const updateWord = mutation({
       .withIndex("by_word", (q) => q.eq("wordId", args.wordId))
       .collect();
 
+    if (shouldInvalidateGeneratedAudio) {
+      const generatedAudioEntries = await ctx.db
+        .query("deck_tts_audio")
+        .withIndex("by_word", (q) => q.eq("wordId", args.wordId))
+        .collect();
+
+      await Promise.all(generatedAudioEntries.map((entry) => ctx.db.delete(entry._id)));
+    }
+
     await Promise.all(
       queueEntries.map((entry) =>
         ctx.db.patch(entry._id, {
@@ -600,8 +622,13 @@ export const deleteWord = mutation({
       .query("word_channel_stats")
       .withIndex("by_word", (q) => q.eq("wordId", args.wordId))
       .collect();
+    const generatedAudioEntries = await ctx.db
+      .query("deck_tts_audio")
+      .withIndex("by_word", (q) => q.eq("wordId", args.wordId))
+      .collect();
 
     await Promise.all(stats.map((s) => ctx.db.delete(s._id)));
+    await Promise.all(generatedAudioEntries.map((entry) => ctx.db.delete(entry._id)));
 
     await ctx.db.delete(args.wordId);
     return { ok: true };
@@ -651,7 +678,12 @@ export const deleteWordsBatch = mutation({
         .query("word_channel_stats")
         .withIndex("by_word", (q) => q.eq("wordId", wordId))
         .collect();
+      const generatedAudioEntries = await ctx.db
+        .query("deck_tts_audio")
+        .withIndex("by_word", (q) => q.eq("wordId", wordId))
+        .collect();
       await Promise.all(stats.map((s) => ctx.db.delete(s._id)));
+      await Promise.all(generatedAudioEntries.map((entry) => ctx.db.delete(entry._id)));
 
       await ctx.db.delete(wordId);
       deleted += 1;
@@ -683,9 +715,14 @@ export const deleteDeck = mutation({
       .query("practice_queue_progress")
       .withIndex("by_user_deck", (q) => q.eq("userId", deck.userId).eq("deckId", args.deckId))
       .first();
+    const generatedAudioEntries = await ctx.db
+      .query("deck_tts_audio")
+      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+      .collect();
     if (queueProgress) {
       await ctx.db.delete(queueProgress._id);
     }
+    await Promise.all(generatedAudioEntries.map((entry) => ctx.db.delete(entry._id)));
     await ctx.db.delete(args.deckId);
     return { ok: true };
   },

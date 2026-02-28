@@ -3,6 +3,7 @@ import {
   ErrorCode,
   MagicLinkRequestSchema,
   MagicLinkVerifySchema,
+  UpdatePreferencesSchema,
   UpdateProfileSchema,
 } from "@inko/shared";
 import { consumeMagicToken, createMagicToken, issueAccessToken } from "../lib/auth";
@@ -68,6 +69,20 @@ export async function authRoutes(app: FastifyInstance, repo: Repository = reposi
   app.patch("/api/me", { preHandler: requireAuth }, async (request, reply) => {
     const body = UpdateProfileSchema.parse(request.body);
     const user = await repo.updateUserProfile(request.auth!.userId, body);
+    if (!user) {
+      return reply.status(404).send({
+        statusCode: 404,
+        code: ErrorCode.USER_NOT_FOUND,
+        error: "Not Found",
+        message: "User not found",
+      });
+    }
+    return user;
+  });
+
+  app.patch("/api/me/preferences", { preHandler: requireAuth }, async (request, reply) => {
+    const body = UpdatePreferencesSchema.parse(request.body);
+    const user = await repo.updateUserPreferences(request.auth!.userId, body);
     if (!user) {
       return reply.status(404).send({
         statusCode: 404,

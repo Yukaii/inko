@@ -22,6 +22,7 @@ export default defineSchema({
     displayName: v.optional(v.string()),
     themeMode: v.optional(v.union(v.literal("dark"), v.literal("light"))),
     typingMode: v.optional(v.union(v.literal("language_specific"), v.literal("universal"))),
+    ttsEnabled: v.optional(v.boolean()),
     themes: v.optional(
       v.object({
         dark: v.object({
@@ -54,6 +55,9 @@ export default defineSchema({
     name: v.string(),
     language: languageValidator,
     archived: v.boolean(),
+    ttsEnabled: v.optional(v.boolean()),
+    ttsVoice: v.optional(v.string()),
+    ttsRate: v.optional(v.union(v.literal("-20%"), v.literal("default"), v.literal("+20%"))),
     wordCount: v.optional(v.number()),
     createdAt: v.number(),
   })
@@ -179,6 +183,19 @@ export default defineSchema({
     coverageCursorPosition: v.number(),
     updatedAt: v.number(),
   }).index("by_user_deck", ["userId", "deckId"]),
+
+  deck_tts_audio: defineTable({
+    deckId: v.id("decks"),
+    wordId: v.id("words"),
+    voice: v.string(),
+    rate: v.union(v.literal("-20%"), v.literal("default"), v.literal("+20%")),
+    audioStorageId: v.id("_storage"),
+    audioUrl: v.string(),
+    updatedAt: v.number(),
+  })
+    .index("by_deck_word_voice_rate", ["deckId", "wordId", "voice", "rate"])
+    .index("by_word", ["wordId"])
+    .index("by_deck", ["deckId"]),
 
   deck_practice_progress: defineTable({
     userId: v.id("users"),

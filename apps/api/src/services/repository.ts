@@ -1,5 +1,6 @@
 import {
   DefaultThemes,
+  getDefaultEdgeTtsVoice,
   PRACTICE_SESSION_CARD_CAP_DEFAULT,
   type PracticeCardDTO,
   type CreateWordsBatchInput,
@@ -12,6 +13,7 @@ import {
   type ThemeConfig,
   type TypingMode,
   type UpdateDeckInput,
+  type UpdatePreferencesInput,
   type UpdateProfileInput,
   type UpdateWordInput,
   defaultWordChannelStats,
@@ -30,6 +32,7 @@ type ConvexUser = {
   displayName?: string;
   themeMode?: "dark" | "light";
   typingMode?: TypingMode;
+  ttsEnabled?: boolean;
   themes?: ThemeConfig;
   createdAt: number;
 };
@@ -39,6 +42,9 @@ type ConvexDeck = {
   name: string;
   language: LanguageCode;
   archived: boolean;
+  ttsEnabled?: boolean;
+  ttsVoice?: string;
+  ttsRate?: "-20%" | "default" | "+20%";
   wordCount?: number;
   createdAt: number;
 };
@@ -144,6 +150,7 @@ function toUserDTO(user: ConvexUser) {
     displayName: user.displayName ?? fallbackName.slice(0, 60),
     themeMode: user.themeMode ?? "dark",
     typingMode: user.typingMode ?? "language_specific",
+    ttsEnabled: user.ttsEnabled ?? true,
     themes: user.themes ?? DefaultThemes,
     createdAt: user.createdAt,
   };
@@ -156,6 +163,9 @@ function toDeckDTO(deck: ConvexDeck) {
     name: deck.name,
     language: deck.language,
     archived: deck.archived,
+    ttsEnabled: deck.ttsEnabled ?? true,
+    ttsVoice: deck.ttsVoice ?? getDefaultEdgeTtsVoice(deck.language),
+    ttsRate: deck.ttsRate ?? "default",
     createdAt: deck.createdAt,
   };
 }
@@ -318,6 +328,15 @@ export const repository = {
 
   async updateUserProfile(userId: string, input: UpdateProfileInput) {
     const user = await convex.mutation("users:updateProfile", {
+      userId,
+      ...input,
+    });
+    if (!user) throw new RepositoryError("User not found", 404);
+    return toUserDTO(user as ConvexUser);
+  },
+
+  async updateUserPreferences(userId: string, input: UpdatePreferencesInput) {
+    const user = await convex.mutation("users:updatePreferences", {
       userId,
       ...input,
     });
@@ -607,6 +626,9 @@ export const repository = {
       card,
       upcomingCards,
       typingMode: user?.typingMode ?? "language_specific",
+      ttsEnabled: deck.ttsEnabled ?? true,
+      ttsVoice: deck.ttsVoice ?? getDefaultEdgeTtsVoice(deck.language),
+      ttsRate: deck.ttsRate ?? "default",
       sessionTargetCards: PRACTICE_SESSION_CARD_CAP_DEFAULT,
       cardsCompleted: session.cardsCompleted,
       remainingCards: Math.max(0, PRACTICE_SESSION_CARD_CAP_DEFAULT - session.cardsCompleted),

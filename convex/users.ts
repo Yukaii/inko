@@ -24,6 +24,7 @@ export const getOrCreateByEmail = mutation({
       displayName: fallbackDisplayName(args.email).slice(0, 60),
       themeMode: "dark",
       typingMode: "language_specific",
+      ttsEnabled: true,
       themes: DefaultThemes,
       createdAt: now,
     });
@@ -45,6 +46,7 @@ export const updateProfile = mutation({
     displayName: v.string(),
     themeMode: v.union(v.literal("dark"), v.literal("light")),
     typingMode: v.union(v.literal("language_specific"), v.literal("universal")),
+    ttsEnabled: v.boolean(),
     themes: v.object({
       dark: v.object({
         accentOrange: v.string(),
@@ -73,7 +75,22 @@ export const updateProfile = mutation({
       displayName: args.displayName,
       themeMode: args.themeMode,
       typingMode: args.typingMode,
+      ttsEnabled: args.ttsEnabled,
       themes: args.themes,
+    });
+
+    return await ctx.db.get(args.userId);
+  },
+});
+
+export const updatePreferences = mutation({
+  args: {
+    userId: v.id("users"),
+    ttsEnabled: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      ttsEnabled: args.ttsEnabled,
     });
 
     return await ctx.db.get(args.userId);

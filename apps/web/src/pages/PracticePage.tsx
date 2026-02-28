@@ -6,11 +6,14 @@ import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
 import {
+  EDGE_TTS_RATE_PRESETS,
+  EDGE_TTS_VOICE_OPTIONS_BY_LANGUAGE,
   PRACTICE_SESSION_CARD_CAP_DEFAULT,
   getTypingMatchSource,
   getTypingMatchTarget,
   isTypingMatch,
   normalizeTypingInput,
+  type EdgeTtsRate,
   type LanguageCode,
   type TypingMode,
 } from "@inko/shared";
@@ -108,6 +111,10 @@ export function getPracticeCompletionTitle(input: {
   return input.t("practice.session_complete");
 }
 
+function getTtsCacheKey(deckId: string, wordId: string, voice: string, rate: EdgeTtsRate) {
+  return `${deckId}:${wordId}:${voice}:${rate}`;
+}
+
 export function PracticePage() {
   const { t } = useTranslation();
   const { deckId } = useParams<{ deckId: string }>();
@@ -123,6 +130,9 @@ export function PracticePage() {
   const [sessionDone, setSessionDone] = useState(false);
   const [sessionSummary, setSessionSummary] = useState<{ cardsCompleted: number; avgTypingScore: number } | null>(null);
   const [typingMode, setTypingMode] = useState<TypingMode>("language_specific");
+  const [ttsEnabled, setTtsEnabled] = useState(true);
+  const [ttsVoice, setTtsVoice] = useState("ja-JP-NanamiNeural");
+  const [ttsRate, setTtsRate] = useState<EdgeTtsRate>("default");
   const [upcomingCards, setUpcomingCards] = useState<PracticeCard[]>([]);
   const [cardTransition, setCardTransition] = useState(false);
   const [finishError, setFinishError] = useState("");
@@ -154,6 +164,9 @@ export function PracticePage() {
         setCard(res.card as PracticeCard);
         setUpcomingCards((res.upcomingCards as PracticeCard[] | undefined) ?? []);
         setTypingMode((res.typingMode as TypingMode | undefined) ?? "language_specific");
+        setTtsEnabled(res.ttsEnabled ?? true);
+        setTtsVoice(res.ttsVoice ?? EDGE_TTS_VOICE_OPTIONS_BY_LANGUAGE[(res.card.language ?? "ja") as LanguageCode][0].value);
+        setTtsRate(res.ttsRate ?? "default");
         setSessionTargetCards(res.sessionTargetCards ?? PRACTICE_SESSION_CARD_CAP_DEFAULT);
         setCardsCompleted(res.cardsCompleted ?? 0);
         setSessionCapped(false);
@@ -270,6 +283,32 @@ export function PracticePage() {
     },
   });
 
+  const updateDeckTtsMutation = useMutation({
+    mutationFn: async (input: { ttsEnabled?: boolean; ttsVoice?: string; ttsRate?: EdgeTtsRate }) => {
+      if (!token) throw new Error("Not authenticated");
+      if (!deckId) throw new Error("No deck selected");
+      return await api.updateDeck(token, deckId, input);
+    },
+    onMutate: async (input) => {
+      const previous = { ttsEnabled, ttsVoice, ttsRate };
+      if (input.ttsEnabled !== undefined) setTtsEnabled(input.ttsEnabled);
+      if (input.ttsVoice !== undefined) setTtsVoice(input.ttsVoice);
+      if (input.ttsRate !== undefined) setTtsRate(input.ttsRate);
+      return previous;
+    },
+    onSuccess: (updated) => {
+      setTtsEnabled(updated.ttsEnabled);
+      setTtsVoice(updated.ttsVoice);
+      setTtsRate(updated.ttsRate);
+    },
+    onError: (_error, _input, previous) => {
+      if (!previous) return;
+      setTtsEnabled(previous.ttsEnabled);
+      setTtsVoice(previous.ttsVoice);
+      setTtsRate(previous.ttsRate);
+    },
+  });
+
   const finishRequestedRef = useRef(false);
 
   const finishMutation = useMutation({
@@ -376,36 +415,44 @@ export function PracticePage() {
     focusInput();
   }, [focusKey, focusInput]);
 
-  const getOrPrefetchAudioUrl = useCallback(async (practiceCard: PracticeCard) => {
-    if (practiceCard.audioUrl) return practiceCard.audioUrl;
+  const voiceOptions = useMemo(
+    () => EDGE_TTS_VOICE_OPTIONS_BY_LANGUAGE[card?.language ?? "ja"],
+    [card?.language],
+  );
 
-    const cachedUrl = ttsUrlCacheRef.current.get(practiceCard.wordId);
+  const getOrPrefetchAudioUrl = useCallback(async (practiceCard: PracticeCard) => {
+    if (!token) throw new Error("Not authenticated");
+    if (!deckId) throw new Error("Deck not selected");
+    const cacheKey = getTtsCacheKey(deckId, practiceCard.wordId, ttsVoice, ttsRate);
+
+    const cachedUrl = ttsUrlCacheRef.current.get(cacheKey);
     if (cachedUrl) return cachedUrl;
 
-    const cachedPromise = ttsPromiseCacheRef.current.get(practiceCard.wordId);
+    const cachedPromise = ttsPromiseCacheRef.current.get(cacheKey);
     if (cachedPromise) return await cachedPromise;
 
-    const promise = api.fetchWordTts(token ?? "", practiceCard.wordId).then((blob) => {
+    const promise = api.fetchWordTts(token, practiceCard.wordId, deckId, ttsVoice, ttsRate).then((blob) => {
       const objectUrl = URL.createObjectURL(blob);
-      ttsUrlCacheRef.current.set(practiceCard.wordId, objectUrl);
-      ttsPromiseCacheRef.current.delete(practiceCard.wordId);
+      ttsUrlCacheRef.current.set(cacheKey, objectUrl);
+      ttsPromiseCacheRef.current.delete(cacheKey);
       return objectUrl;
     }).catch((error) => {
-      ttsPromiseCacheRef.current.delete(practiceCard.wordId);
+      ttsPromiseCacheRef.current.delete(cacheKey);
       throw error;
     });
 
-    ttsPromiseCacheRef.current.set(practiceCard.wordId, promise);
+    ttsPromiseCacheRef.current.set(cacheKey, promise);
     return await promise;
-  }, [token]);
+  }, [deckId, token, ttsRate, ttsVoice]);
 
   useEffect(() => {
+    if (!ttsEnabled) return;
     for (const upcomingCard of upcomingCards.slice(0, 7)) {
       void getOrPrefetchAudioUrl(upcomingCard).catch(() => {
         // Ignore prefetch failures; playback will retry on demand.
       });
     }
-  }, [getOrPrefetchAudioUrl, upcomingCards]);
+  }, [getOrPrefetchAudioUrl, upcomingCards, ttsEnabled]);
 
   useEffect(() => {
     if (!card) return;
@@ -416,6 +463,11 @@ export function PracticePage() {
       audioRef.current?.pause();
       audioRef.current = null;
     };
+
+    if (!ttsEnabled) {
+      resetAudio();
+      return;
+    }
 
     const playAudio = async () => {
       resetAudio();
@@ -441,7 +493,7 @@ export function PracticePage() {
       cancelled = true;
       resetAudio();
     };
-  }, [card, getOrPrefetchAudioUrl]);
+  }, [card, getOrPrefetchAudioUrl, ttsEnabled]);
 
   useEffect(() => {
     return () => {
@@ -453,6 +505,15 @@ export function PracticePage() {
       ttsPromiseCacheRef.current.clear();
     };
   }, []);
+
+  useEffect(() => {
+    audioRef.current?.pause();
+    for (const objectUrl of ttsUrlCacheRef.current.values()) {
+      URL.revokeObjectURL(objectUrl);
+    }
+    ttsUrlCacheRef.current.clear();
+    ttsPromiseCacheRef.current.clear();
+  }, [deckId, ttsRate, ttsVoice]);
 
   // Auto-submit on match
   useEffect(() => {
@@ -601,8 +662,8 @@ export function PracticePage() {
       onClick={focusInput}
     >
       {/* Minimal top bar */}
-      <div className="fixed inset-x-0 top-0 z-[210] flex items-center justify-between px-6 py-4 opacity-60 transition-opacity hover:opacity-100 focus-within:opacity-100">
-        <div className="flex items-center gap-3">
+      <div className="fixed inset-x-0 top-0 z-[210] flex flex-col gap-2 px-3 py-3 opacity-60 transition-opacity hover:opacity-100 focus-within:opacity-100 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <span
             className="inline-flex items-center rounded-full border border-[var(--border-muted)] bg-bg-page px-3 py-1 text-xs text-text-secondary font-medium"
             aria-label={`Session progress: ${cardsCompleted} of ${sessionTargetCards}`}
@@ -624,8 +685,67 @@ export function PracticePage() {
               best: {bestCardStreak}
             </span>
           ) : null}
+          <button
+            type="button"
+            className="inline-flex h-7 items-center whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-3 text-xs text-text-secondary font-medium hover:border-[var(--border-strong)] hover:text-text-primary"
+            onClick={() => updateDeckTtsMutation.mutate({ ttsEnabled: !ttsEnabled })}
+            aria-pressed={ttsEnabled}
+            title={t("practice.tts_toggle", "Toggle pronunciation audio")}
+          >
+            {ttsEnabled ? t("practice.tts_on", "TTS on") : t("practice.tts_off", "TTS off")}
+          </button>
+          {ttsEnabled ? (
+            <>
+              <label
+                className="inline-flex h-7 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-3 text-xs text-text-secondary"
+                onClick={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+              >
+                <span className="shrink-0">{t("practice.tts_voice", "Voice")}</span>
+                <select
+                  className="min-w-0 appearance-none border-0 bg-transparent text-xs leading-none text-text-primary outline-none ring-0 focus:outline-none focus:ring-0"
+                  value={ttsVoice}
+                  onChange={(event) => updateDeckTtsMutation.mutate({ ttsVoice: event.target.value })}
+                  onClick={(event) => event.stopPropagation()}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  disabled={updateDeckTtsMutation.isPending}
+                >
+                  {voiceOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label
+                className="inline-flex h-7 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-3 text-xs text-text-secondary"
+                onClick={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+              >
+                <span className="shrink-0">{t("practice.tts_speed", "Speed")}</span>
+                <select
+                  className="min-w-0 appearance-none border-0 bg-transparent text-xs leading-none text-text-primary outline-none ring-0 focus:outline-none focus:ring-0"
+                  value={ttsRate}
+                  onChange={(event) => updateDeckTtsMutation.mutate({ ttsRate: event.target.value as EdgeTtsRate })}
+                  onClick={(event) => event.stopPropagation()}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  disabled={updateDeckTtsMutation.isPending}
+                >
+                  {EDGE_TTS_RATE_PRESETS.map((rate) => (
+                    <option key={rate} value={rate}>
+                      {rate === "-20%" ? t("practice.tts_speed_slow", "Slow") : rate === "+20%" ? t("practice.tts_speed_fast", "Fast") : t("practice.tts_speed_normal", "Normal")}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          ) : null}
         </div>
-        <button type="button" className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-1.5 text-[13px] font-normal text-text-secondary hover:border-[var(--border-strong)] hover:text-text-primary" onClick={() => requestExitIntent("button")}>
+        <button
+          type="button"
+          className="inline-flex h-8 shrink-0 items-center justify-center gap-2 self-end whitespace-nowrap rounded-lg border border-[var(--border-muted)] bg-transparent px-3 text-xs font-normal text-text-secondary hover:border-[var(--border-strong)] hover:text-text-primary sm:h-auto sm:self-auto sm:px-3.5 sm:py-1.5 sm:text-[13px]"
+          onClick={() => requestExitIntent("button")}
+        >
           {t("practice.end_session")}
           <kbd className="rounded border border-[var(--border-strong)] bg-bg-card px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">esc</kbd>
         </button>

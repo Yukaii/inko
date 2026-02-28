@@ -1,48 +1,58 @@
-import { internalMutation } from "./_generated/server";
+import { internalMutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-export const persistWordAudio = internalMutation({
+export const getDeckWordAudio = query({
   args: {
+    deckId: v.id("decks"),
     wordId: v.id("words"),
+    voice: v.string(),
+    rate: v.union(v.literal("-20%"), v.literal("default"), v.literal("+20%")),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("deck_tts_audio")
+      .withIndex("by_deck_word_voice_rate", (q) =>
+        q.eq("deckId", args.deckId).eq("wordId", args.wordId).eq("voice", args.voice).eq("rate", args.rate),
+      )
+      .first();
+  },
+});
+
+export const persistDeckWordAudio = internalMutation({
+  args: {
+    deckId: v.id("decks"),
+    wordId: v.id("words"),
+    voice: v.string(),
+    rate: v.union(v.literal("-20%"), v.literal("default"), v.literal("+20%")),
     audioStorageId: v.id("_storage"),
     audioUrl: v.string(),
   },
   handler: async (ctx, args) => {
-    const word = await ctx.db.get(args.wordId);
-    if (!word) return null;
+    const existing = await ctx.db
+      .query("deck_tts_audio")
+      .withIndex("by_deck_word_voice_rate", (q) =>
+        q.eq("deckId", args.deckId).eq("wordId", args.wordId).eq("voice", args.voice).eq("rate", args.rate),
+      )
+      .first();
 
-    await ctx.db.patch(args.wordId, {
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        audioStorageId: args.audioStorageId,
+        audioUrl: args.audioUrl,
+        updatedAt: Date.now(),
+      });
+      return { ok: true, audioUrl: args.audioUrl };
+    }
+
+    await ctx.db.insert("deck_tts_audio", {
+      deckId: args.deckId,
+      wordId: args.wordId,
+      voice: args.voice,
+      rate: args.rate,
       audioStorageId: args.audioStorageId,
       audioUrl: args.audioUrl,
+      updatedAt: Date.now(),
     });
-
-    const deckLinks = await ctx.db
-      .query("deck_words")
-      .withIndex("by_word", (q) => q.eq("wordId", args.wordId))
-      .collect();
-
-    await Promise.all(
-      deckLinks.map((link) =>
-        ctx.db.patch(link._id, {
-          snapshotReady: true,
-          audioUrl: args.audioUrl,
-        }),
-      ),
-    );
-
-    const queueEntries = await ctx.db
-      .query("practice_queue_entries")
-      .withIndex("by_word", (q) => q.eq("wordId", args.wordId))
-      .collect();
-
-    await Promise.all(
-      queueEntries.map((entry) =>
-        ctx.db.patch(entry._id, {
-          audioUrl: args.audioUrl,
-          updatedAt: Date.now(),
-        }),
-      ),
-    );
 
     return { ok: true, audioUrl: args.audioUrl };
   },

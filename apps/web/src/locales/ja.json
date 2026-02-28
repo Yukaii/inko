@@ -3,6 +3,8 @@
     "loading": "読み込み中...",
     "save": "保存",
     "cancel": "キャンセル",
+    "on": "オン",
+    "off": "オフ",
     "delete": "削除",
     "error": "エラー",
     "clear": "クリア",
@@ -11,6 +13,7 @@
     "change_language": "言語を切替",
     "step": "ステップ",
     "prev": "前へ",
+    "previous": "前へ",
     "next": "次へ",
     "page": "ページ",
     "page_of": "ページ {{x}} / {{y}}",
@@ -272,7 +275,9 @@
       "typing_mode": "タイピングモード",
       "lang_specific": "言語固有",
       "universal": "ユニバーサル",
-      "typing_mode_desc": "言語固有モードはスクリプトを意識したマッチング（例: 日本語のローマ字からかなへ）を使用します。ユニバーサルモードは正規化された直接タイピングを使用します。"
+      "typing_mode_desc": "言語固有モードはスクリプトを意識したマッチング（例: 日本語のローマ字からかなへ）を使用します。ユニバーサルモードは正規化された直接タイピングを使用します。",
+      "tts": "音声読み上げ",
+      "tts_desc": "練習中に発音を自動再生します。"
     },
     "appearance": {
       "reset": "{{mode}}をリセット",
@@ -304,6 +309,14 @@
     "no_words_available": "このデッキにはまだ単語がありません。",
     "type_romaji": "ローマ字を入力...",
     "type_answer": "答えを入力...",
+    "tts_toggle": "発音音声の切り替え",
+    "tts_on": "TTS オン",
+    "tts_off": "TTS オフ",
+    "tts_voice": "音声",
+    "tts_speed": "速度",
+    "tts_speed_slow": "ゆっくり",
+    "tts_speed_normal": "標準",
+    "tts_speed_fast": "速い",
     "not_quite": "惜しい — もう一度試してください",
     "off_track": "少し違います"
   }
