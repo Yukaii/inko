@@ -10,7 +10,7 @@ export function LoginPage() {
   const [tokenInput, setTokenInput] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const { setToken } = useAuth();
+  const { token, setToken } = useAuth();
   const navigate = useNavigate();
 
   const getErrorMessage = (error: any) => {
@@ -41,6 +41,12 @@ export function LoginPage() {
 
     void verifyFromLink();
   }, [navigate, setToken, t]);
+
+  useEffect(() => {
+    const magicLinkToken = new URLSearchParams(window.location.search).get("token");
+    if (!token || magicLinkToken) return;
+    navigate("/dashboard", { replace: true });
+  }, [navigate, token]);
 
   const requestLink = async () => {
     setLoading(true);

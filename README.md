@@ -1,6 +1,6 @@
-# Inkō MVP
+# Inkō
 
-Monorepo for the Inkō web MVP.
+Monorepo for the Inkō web app.
 
 ## Stack
 

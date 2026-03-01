@@ -9,7 +9,7 @@ import {
   Repeat,
   TrendingUp,
   Layers,
-  Zap,
+  Volume2,
   Smartphone,
   Globe,
 } from "lucide-react";
@@ -285,9 +285,9 @@ export function LandingPage() {
                 color: "text-accent-teal",
               },
               {
-                icon: Zap,
-                title: t("landing.features.streak_system.title"),
-                desc: t("landing.features.streak_system.desc"),
+                icon: Volume2,
+                title: t("landing.features.tts_support.title"),
+                desc: t("landing.features.tts_support.desc"),
                 color: "text-accent-orange",
               },
               {
