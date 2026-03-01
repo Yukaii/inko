@@ -32,9 +32,9 @@ function AuthStateProvider({ children }: { children: React.ReactNode }) {
   const [exchangeLoading, setExchangeLoading] = useState(false);
   const convexToken = useAuthToken();
   const { signOut: signOutConvex } = useAuthActions();
-  const { isLoading: convexLoading, isAuthenticated: isConvexAuthenticated } = useConvexAuth();
+  const { isLoading: convexLoading } = useConvexAuth();
   const lastConvexTokenRef = useRef<string | null>(null);
-  const hasPendingConvexExchange = isConvexAuthenticated && token === null;
+  const hasPendingConvexExchange = Boolean(convexToken) && token === null;
 
   const setToken = (nextToken: string | null, nextSource: AuthSource = "magic-link") => {
     setTokenState(nextToken);
@@ -52,7 +52,7 @@ function AuthStateProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (convexLoading) return;
 
-    if (!isConvexAuthenticated) {
+    if (!convexToken) {
       lastConvexTokenRef.current = null;
       if (source === "convex-auth") {
         setToken(null);
@@ -60,7 +60,7 @@ function AuthStateProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (!convexToken || convexToken === lastConvexTokenRef.current) {
+    if (convexToken === lastConvexTokenRef.current) {
       return;
     }
 
@@ -90,7 +90,7 @@ function AuthStateProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [convexLoading, convexToken, isConvexAuthenticated, source]);
+  }, [convexLoading, convexToken, source]);
 
   const signOut = async () => {
     const activeSource = source;
