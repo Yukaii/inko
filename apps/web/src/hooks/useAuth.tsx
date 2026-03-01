@@ -34,6 +34,7 @@ function AuthStateProvider({ children }: { children: React.ReactNode }) {
   const { signOut: signOutConvex } = useAuthActions();
   const { isLoading: convexLoading, isAuthenticated: isConvexAuthenticated } = useConvexAuth();
   const lastConvexTokenRef = useRef<string | null>(null);
+  const hasPendingConvexExchange = isConvexAuthenticated && token === null;
 
   const setToken = (nextToken: string | null, nextSource: AuthSource = "magic-link") => {
     setTokenState(nextToken);
@@ -78,6 +79,7 @@ function AuthStateProvider({ children }: { children: React.ReactNode }) {
         console.error("Failed to exchange Convex auth token", error);
         lastConvexTokenRef.current = convexToken;
         setToken(null);
+        void signOutConvex();
       })
       .finally(() => {
         if (!cancelled) {
@@ -102,11 +104,11 @@ function AuthStateProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       token,
-      isLoading: convexLoading || exchangeLoading,
+      isLoading: convexLoading || exchangeLoading || hasPendingConvexExchange,
       setToken,
       signOut,
     }),
-    [convexLoading, exchangeLoading, token],
+    [convexLoading, exchangeLoading, hasPendingConvexExchange, token],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
