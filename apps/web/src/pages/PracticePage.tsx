@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Headphones, Keyboard, Radio, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
@@ -99,6 +100,10 @@ export function isEscDoublePress(lastEscPressedAt: number | null, now: number, w
   return now - lastEscPressedAt <= windowMs;
 }
 
+export function getNextCleanStreak(previousStreak: number, hadMistake: boolean) {
+  return hadMistake ? 0 : previousStreak + 1;
+}
+
 function isReplayTtsShortcut(event: Pick<KeyboardEvent, "key" | "code" | "altKey" | "ctrlKey" | "metaKey" | "shiftKey">) {
   return event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && (event.code === "KeyR" || event.key.toLowerCase() === "r");
 }
@@ -151,6 +156,9 @@ export function PracticePage() {
   const [exitEscHint, setExitEscHint] = useState(false);
   const [lastEscPressedAt, setLastEscPressedAt] = useState<number | null>(null);
   const [startError, setStartError] = useState("");
+  const [cardHadMistake, setCardHadMistake] = useState(false);
+  const [showShortcutHelp, setShowShortcutHelp] = useState(false);
+  const [advancedPracticeEnabled, setAdvancedPracticeEnabled] = useState(false);
 
   const startedAtRef = useRef<number>(Date.now());
   const autoSubmitKeyRef = useRef<string>("");
@@ -205,6 +213,7 @@ export function PracticePage() {
         setSessionTargetCards(res.sessionTargetCards ?? PRACTICE_SESSION_CARD_CAP_DEFAULT);
         setCardsCompleted(res.cardsCompleted ?? 0);
         setSessionCapped(false);
+        setCardHadMistake(false);
         startedAtRef.current = Date.now();
       })
       .catch((error: unknown) => {
@@ -290,7 +299,7 @@ export function PracticePage() {
       if (res.accepted) {
         setLastSubmitAccepted(true);
         setCardStreak((prev) => {
-          const next = prev + 1;
+          const next = getNextCleanStreak(prev, cardHadMistake);
           setBestCardStreak((best) => Math.max(best, next));
           return next;
         });
@@ -298,6 +307,7 @@ export function PracticePage() {
         setCardTransition(true);
         setTimeout(() => {
           setTypingInput("");
+          setCardHadMistake(false);
           if (res.nextCard) {
             setCard(res.nextCard as PracticeCard);
           } else {
@@ -311,6 +321,7 @@ export function PracticePage() {
       } else {
         setLastSubmitAccepted(false);
         setCardStreak(0);
+        setCardHadMistake(true);
         if (res.sessionCapped) {
           requestFinish();
         }
@@ -521,6 +532,17 @@ export function PracticePage() {
   }, [card, replayCardAudio, sessionDone]);
 
   useEffect(() => {
+    if (!ttsEnabled && advancedPracticeEnabled) {
+      setAdvancedPracticeEnabled(false);
+    }
+  }, [advancedPracticeEnabled, ttsEnabled]);
+
+  useEffect(() => {
+    if (!typingInput || typingFeedback.onTrack || cardHadMistake) return;
+    setCardHadMistake(true);
+  }, [cardHadMistake, typingFeedback.onTrack, typingInput]);
+
+  useEffect(() => {
     if (!card) return;
 
     let cancelled = false;
@@ -582,6 +604,10 @@ export function PracticePage() {
     (event: React.KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
+        if (showShortcutHelp) {
+          setShowShortcutHelp(false);
+          return;
+        }
         if (exitConfirmOpen) {
           setExitConfirmOpen(false);
           setExitEscHint(false);
@@ -594,10 +620,18 @@ export function PracticePage() {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       focusInput();
     },
-    [card, exitConfirmOpen, focusInput, replayCardAudio, requestExitIntent],
+    [card, exitConfirmOpen, focusInput, replayCardAudio, requestExitIntent, showShortcutHelp],
   );
 
   // Build character-by-character display for monkeytype effect
+  const isAudioChallengeActive = advancedPracticeEnabled && ttsEnabled;
+  const typingPrompt =
+    advancedPracticeEnabled
+      ? t("practice.audio_challenge_prompt", "listen and type what you hear...")
+      : typingMode === "language_specific" && card?.language === "ja"
+        ? t("practice.type_romaji")
+        : t("practice.type_answer");
+
   const romajiChars = useMemo(() => {
     const target = typingFeedback.target;
     if (!target) return [];
@@ -605,6 +639,17 @@ export function PracticePage() {
     const typed = card
       ? getTypingMatchSource(typingInput, card.reading, card.romanization, card.language, typingMode)
       : normalizeTypingInput(typingInput);
+
+    if (isAudioChallengeActive) {
+      if (!typed) return [];
+
+      return typed.split("").map((char, index) => ({
+        char,
+        pos: index,
+        state: typed[index] === target[index] ? "correct" : "wrong",
+      })) as Array<{ char: string; pos: number; state: "correct" | "wrong" | "cursor" | "pending" }>;
+    }
+
     const chars: Array<{ char: string; pos: number; state: "correct" | "wrong" | "cursor" | "pending" }> = [];
 
     for (let i = 0; i < target.length; i++) {
@@ -629,10 +674,7 @@ export function PracticePage() {
     }
 
     return chars;
-  }, [card, typingInput, typingFeedback.target, typingMode]);
-
-  const typingPrompt =
-    typingMode === "language_specific" && card?.language === "ja" ? t("practice.type_romaji") : t("practice.type_answer");
+  }, [card, isAudioChallengeActive, typingInput, typingFeedback.target, typingMode]);
 
   // Session done screen
   if (sessionDone) {
@@ -720,7 +762,7 @@ export function PracticePage() {
           >
             {cardsCompleted}/{sessionTargetCards}
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-muted)] bg-bg-page px-3.5 py-1.5 text-sm text-accent-orange font-bold [font-family:var(--font-display)]" aria-label={`Current streak: ${cardStreak}`}>
+          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border-muted)] bg-bg-page px-3.5 py-1.5 text-sm text-accent-orange font-bold [font-family:var(--font-display)]" aria-label={`${t("practice.clean_streak", "Clean streak")}: ${cardStreak}`}>
             {cardStreak > 0 ? (
               <>
                 <span className="text-base" aria-hidden="true">🔥</span>
@@ -729,29 +771,61 @@ export function PracticePage() {
             ) : (
               <span className="text-text-secondary">0</span>
             )}
+            <span className="font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
+              {t("practice.clean_streak", "Clean streak")}
+            </span>
           </span>
           {bestCardStreak > 0 ? (
-            <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary opacity-60" aria-label={`Best streak: ${bestCardStreak}`}>
-              best: {bestCardStreak}
+            <span className="hidden text-[11px] font-bold uppercase tracking-wider text-text-secondary opacity-60 sm:inline" aria-label={`${t("practice.best_clean_streak", "Best clean")}: ${bestCardStreak}`}>
+              {t("practice.best_clean_streak", "Best clean")}: {bestCardStreak}
             </span>
           ) : null}
           <button
             type="button"
-            className="inline-flex h-7 items-center whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-3 text-xs text-text-secondary font-medium hover:border-[var(--border-strong)] hover:text-text-primary"
+            className="inline-flex h-7 items-center whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-2.5 text-[11px] text-text-secondary font-medium outline-none hover:border-[var(--border-strong)] hover:text-text-primary focus:outline-none focus-visible:outline-none sm:px-3 sm:text-xs"
             onClick={() => updateDeckTtsMutation.mutate({ ttsEnabled: !ttsEnabled })}
             aria-pressed={ttsEnabled}
             title={t("practice.tts_toggle", "Toggle pronunciation audio")}
           >
-            {ttsEnabled ? t("practice.tts_on", "TTS on") : t("practice.tts_off", "TTS off")}
+            <span className="inline-flex items-center gap-1.5">
+              {ttsEnabled ? <Radio size={13} aria-hidden="true" /> : <VolumeX size={13} aria-hidden="true" />}
+              <span>{ttsEnabled ? t("practice.tts_on", "TTS on") : t("practice.tts_off", "TTS off")}</span>
+            </span>
           </button>
           {ttsEnabled ? (
             <>
+              <button
+                type="button"
+                className={`inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 text-[11px] font-medium outline-none focus:outline-none focus-visible:outline-none sm:gap-2 sm:px-3 sm:text-xs ${
+                  advancedPracticeEnabled
+                    ? "border-accent-orange bg-bg-page text-text-primary"
+                    : "border-[var(--border-muted)] bg-bg-page text-text-secondary hover:border-[var(--border-strong)] hover:text-text-primary"
+                }`}
+                onClick={() => setAdvancedPracticeEnabled((prev) => !prev)}
+                aria-pressed={advancedPracticeEnabled}
+                title={t("practice.audio_challenge_toggle", "Toggle audio challenge mode")}
+              >
+                <Headphones size={13} aria-hidden="true" />
+                <span className="hidden sm:inline">{t("practice.audio_challenge", "Audio challenge")}</span>
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-2.5 text-[11px] text-text-secondary font-medium outline-none hover:border-[var(--border-strong)] hover:text-text-primary focus:outline-none focus-visible:outline-none sm:gap-2 sm:px-3 sm:text-xs"
+                onClick={() => void replayCardAudio(card)}
+                title={t("practice.tts_replay", "Replay pronunciation audio")}
+                aria-label={t("practice.tts_replay", "Replay pronunciation audio")}
+              >
+                <RotateCcw size={13} aria-hidden="true" />
+                <span className="hidden sm:inline">{t("practice.tts_replay", "Replay")}</span>
+                <kbd className="hidden border-0 bg-transparent px-0 py-0 font-mono text-[10px] text-text-primary shadow-none outline-none sm:inline-block">alt+r</kbd>
+              </button>
               <label
-                className="inline-flex h-7 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-3 text-xs text-text-secondary"
+                className="inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-2.5 text-[11px] text-text-secondary sm:gap-2 sm:px-3 sm:text-xs"
                 onClick={(event) => event.stopPropagation()}
                 onMouseDown={(event) => event.stopPropagation()}
               >
-                <span className="shrink-0">{t("practice.tts_voice", "Voice")}</span>
+                <span className="shrink-0 hidden sm:inline">{t("practice.tts_voice", "Voice")}</span>
+                <span className="shrink-0 sm:hidden">{t("practice.tts_voice_short", "V")}</span>
                 <select
                   className="min-w-0 appearance-none border-0 bg-transparent text-xs leading-none text-text-primary outline-none ring-0 focus:outline-none focus:ring-0"
                   value={ttsVoice}
@@ -768,11 +842,12 @@ export function PracticePage() {
                 </select>
               </label>
               <label
-                className="inline-flex h-7 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-3 text-xs text-text-secondary"
+                className="inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-2.5 text-[11px] text-text-secondary sm:gap-2 sm:px-3 sm:text-xs"
                 onClick={(event) => event.stopPropagation()}
                 onMouseDown={(event) => event.stopPropagation()}
               >
-                <span className="shrink-0">{t("practice.tts_speed", "Speed")}</span>
+                <span className="shrink-0 hidden sm:inline">{t("practice.tts_speed", "Speed")}</span>
+                <span className="shrink-0 sm:hidden">{t("practice.tts_speed_short", "S")}</span>
                 <select
                   className="min-w-0 appearance-none border-0 bg-transparent text-xs leading-none text-text-primary outline-none ring-0 focus:outline-none focus:ring-0"
                   value={ttsRate}
@@ -790,6 +865,17 @@ export function PracticePage() {
               </label>
             </>
           ) : null}
+          <button
+            type="button"
+            className="inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-2.5 text-[11px] text-text-secondary font-medium outline-none hover:border-[var(--border-strong)] hover:text-text-primary focus:outline-none focus-visible:outline-none sm:gap-2 sm:px-3 sm:text-xs"
+            onClick={() => setShowShortcutHelp((prev) => !prev)}
+            aria-expanded={showShortcutHelp}
+            aria-controls="practice-shortcuts-panel"
+            title={t("practice.shortcuts_help", "Practice shortcuts")}
+          >
+            <Keyboard size={13} aria-hidden="true" />
+            <span className="hidden sm:inline">{t("practice.shortcuts_help", "Shortcuts")}</span>
+          </button>
         </div>
         <button
           type="button"
@@ -806,6 +892,47 @@ export function PracticePage() {
           {t("practice.esc_hint")}
         </div>
       ) : null}
+      {showShortcutHelp ? (
+        <div
+          id="practice-shortcuts-panel"
+          className="fixed left-3 top-14 z-[225] w-[min(92vw,22rem)] rounded-2xl border border-[var(--border-strong)] bg-bg-card/95 p-4 shadow-xl backdrop-blur-sm sm:left-6"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="m-0 text-sm font-medium text-text-primary">{t("practice.shortcuts_help", "Practice shortcuts")}</p>
+              <p className="mt-1 mb-0 text-xs text-text-secondary">{t("practice.shortcuts_desc", "Quick controls for audio and exit.")}</p>
+            </div>
+            <button
+              type="button"
+              className="rounded-full border border-[var(--border-strong)] bg-bg-page p-1 text-text-primary hover:border-accent-orange hover:text-text-primary"
+              onClick={() => setShowShortcutHelp(false)}
+              aria-label={t("common.close", "Close")}
+            >
+              <RotateCcw size={12} aria-hidden="true" />
+            </button>
+          </div>
+          <div className="mt-4 space-y-2 text-xs text-text-secondary">
+            {ttsEnabled ? (
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--border-muted)] bg-bg-page/80 px-3 py-2">
+                <span>{t("practice.shortcut_replay_audio", "Replay pronunciation")}</span>
+                <kbd className="rounded border border-[var(--border-strong)] bg-bg-card px-1.5 py-0.5 font-mono text-[10px] text-text-primary">alt+r</kbd>
+              </div>
+            ) : null}
+            {ttsEnabled ? (
+              <div className="rounded-xl border border-[var(--border-muted)] bg-bg-page/80 px-3 py-2 text-[11px] leading-5 text-text-secondary">
+                {t("practice.audio_challenge_desc", "Audio challenge hides the prompt so you answer from sound alone.")}
+              </div>
+            ) : null}
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--border-muted)] bg-bg-page/80 px-3 py-2">
+              <span>{t("practice.shortcut_end_session", "Exit session")}</span>
+              <kbd className="rounded border border-[var(--border-strong)] bg-bg-card px-1.5 py-0.5 font-mono text-[10px] text-text-secondary">esc esc</kbd>
+            </div>
+            <div className="rounded-xl border border-[var(--border-muted)] bg-bg-page/80 px-3 py-2 text-[11px] leading-5 text-text-secondary">
+              {t("practice.clean_streak_desc", "Clean streak only increases when you finish a card without ever going off track.")}
+            </div>
+          </div>
+        </div>
+      ) : null}
       {exitConfirmOpen ? (
         <div className="fixed left-1/2 top-16 z-[230] w-[min(92vw,420px)] -translate-x-1/2 rounded-xl border border-[var(--border-strong)] bg-bg-card p-4 shadow-xl">
           <p className="m-0 text-sm text-text-primary">{t("practice.end_confirm_title")}</p>
@@ -813,7 +940,7 @@ export function PracticePage() {
           <div className="mt-3 flex items-center justify-end gap-2">
             <button
               type="button"
-              className="rounded-md border border-[var(--border-muted)] px-3 py-1.5 text-xs text-text-secondary hover:border-[var(--border-strong)] hover:text-text-primary"
+              className="rounded-md border border-[var(--border-strong)] bg-bg-page px-3 py-1.5 text-xs font-medium text-text-primary hover:border-accent-orange hover:text-text-primary"
               onClick={() => {
                 setExitConfirmOpen(false);
                 setExitEscHint(false);
@@ -840,36 +967,49 @@ export function PracticePage() {
 
       {/* Center focus area */}
       <div className={`relative z-[200] flex flex-col items-center gap-4 transition-all duration-300 ${cardTransition ? "-translate-y-2 opacity-0" : ""}`}>
-        {/* Meaning as a subtle hint above */}
-        {card.meaning ? (
-          <div className="text-base tracking-[0.02em] text-text-secondary">{card.meaning}</div>
-        ) : null}
-
-        {/* Large kanji target */}
-        <div
-          className={`select-none text-5xl leading-tight tracking-[0.04em] text-text-primary md:text-7xl ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}
-          lang={card.language}
-        >
-          {card.target}
-        </div>
-
-        {/* Reading hint (small, below kanji) */}
-        {card.reading ? (
-          <div
-            className={`-mt-1 text-lg text-text-secondary ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}
-            lang={card.language}
-          >
-            {card.reading}
-          </div>
-        ) : null}
-
-        {card.example ? (
-          <div className="mt-2 max-w-[min(90vw,42rem)] rounded-2xl border border-[var(--border-muted)] bg-bg-card/70 px-4 py-3 text-center text-sm leading-6 text-text-secondary backdrop-blur-sm md:px-5">
-            <p className={`m-0 ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`} lang={card.language}>
-              {card.example}
+        {isAudioChallengeActive ? (
+          <div className="flex max-w-[min(90vw,32rem)] flex-col items-center gap-3 rounded-[28px] border border-[var(--border-strong)] bg-bg-card/80 px-6 py-7 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-sm">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[var(--border-muted)] bg-bg-page text-accent-orange">
+              <Headphones size={18} aria-hidden="true" />
+            </div>
+            <p className="m-0 text-xs font-semibold uppercase tracking-[0.14em] text-text-secondary">
+              {t("practice.audio_challenge", "Audio challenge")}
+            </p>
+            <h2 className="m-0 text-2xl leading-tight text-text-primary [font-family:var(--font-display)]">
+              {t("practice.audio_challenge_title", "Listen first. Type from memory.")}
+            </h2>
+            <p className="m-0 text-sm leading-6 text-text-secondary">
+              {t("practice.audio_challenge_body", "The prompt is hidden in this mode. Replay the audio if you need another pass, then type the word exactly.")}
             </p>
           </div>
-        ) : null}
+        ) : (
+          <>
+            {card.meaning ? (
+              <div className="text-base tracking-[0.02em] text-text-secondary">{card.meaning}</div>
+            ) : null}
+            <div
+              className={`select-none text-5xl leading-tight tracking-[0.04em] text-text-primary md:text-7xl ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}
+              lang={card.language}
+            >
+              {card.target}
+            </div>
+            {card.reading ? (
+              <div
+                className={`-mt-1 text-lg text-text-secondary ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}
+                lang={card.language}
+              >
+                {card.reading}
+              </div>
+            ) : null}
+            {card.example ? (
+              <div className="mt-2 max-w-[min(90vw,42rem)] rounded-2xl border border-[var(--border-muted)] bg-bg-card/70 px-4 py-3 text-center text-sm leading-6 text-text-secondary backdrop-blur-sm md:px-5">
+                <p className={`m-0 ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`} lang={card.language}>
+                  {card.example}
+                </p>
+              </div>
+            ) : null}
+          </>
+        )}
 
         {/* Monkeytype-style character display */}
         <div className={`mt-3 flex min-h-[42px] justify-center gap-0.5 font-mono text-[22px] tracking-[0.08em] md:text-[28px] ${lastSubmitAccepted === false ? "animate-shake text-[var(--danger-text)]" : ""}`} aria-hidden="true">
@@ -898,7 +1038,7 @@ export function PracticePage() {
 
         {/* Hidden input for capturing keystrokes */}
         <label className="absolute m-[-1px] h-px w-px overflow-hidden border-0 p-0 whitespace-nowrap [clip:rect(0,0,0,0)]" htmlFor="zen-typing-input">
-          Type answer for {card.target}
+          {isAudioChallengeActive ? t("practice.type_answer_generic", "Type answer") : `Type answer for ${card.target}`}
         </label>
         <input
           id="zen-typing-input"
@@ -911,6 +1051,10 @@ export function PracticePage() {
             if (event.key === "Escape") {
               event.preventDefault();
               event.stopPropagation();
+              if (showShortcutHelp) {
+                setShowShortcutHelp(false);
+                return;
+              }
               if (exitConfirmOpen) {
                 setExitConfirmOpen(false);
                 setExitEscHint(false);
@@ -919,7 +1063,7 @@ export function PracticePage() {
               }
             }
           }}
-          aria-label={`Type answer for ${card.target}`}
+          aria-label={isAudioChallengeActive ? t("practice.type_answer_generic", "Type answer") : `Type answer for ${card.target}`}
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
