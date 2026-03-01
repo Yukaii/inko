@@ -139,6 +139,7 @@
     "footer": {
       "desc": "打って、覚える。能動的なタイピング練習を通じて、本物の想起力を養うフラッシュカードアプリ。",
       "product": "製品",
+      "github": "GitHub",
       "rights": "© 2026 inko. all rights reserved.",
       "built_with": "// 学習者のために真心を込めて"
     },
@@ -293,6 +294,11 @@
     },
     "edit_word": {
       "title": "単語を編集"
+    },
+    "export": {
+      "button": "デッキをダウンロード",
+      "downloading": "ダウンロード中...",
+      "error": "今はこのデッキをダウンロードできません。もう一度お試しください。"
     }
   },
   "settings": {
@@ -307,7 +313,10 @@
       "theme_exported": "テーマを JSON としてエクスポートしました。",
       "theme_json_copied": "テーマ JSON をコピーしました。",
       "css_vars_copied": "CSS 変数をコピーしました。",
-      "palette_hex_copied": "{{mode}} の Hex 値をコピーしました。"
+      "palette_hex_copied": "{{mode}} の Hex 値をコピーしました。",
+      "deck_exported": "{{name}} をダウンロードしました。",
+      "all_decks_exported": "{{count}} 個のデッキをダウンロードしました。",
+      "deck_export_failed": "今はデッキデータをダウンロードできません。もう一度お試しください。"
     },
     "nav": {
       "profile": "プロフィール",
@@ -357,8 +366,19 @@
     },
     "about": {
       "desc": "monkeytypeにインスパイアされた、シンプルで集中できる言語タイピング練習アプリです。",
+      "github": "GitHub リポジトリ",
       "version": "バージョン {{version}}",
       "release_label": "リリース"
+    },
+    "takeout": {
+      "title": "データ持ち出し",
+      "description": "デッキデータを CSV としてダウンロードし、手元に保存したり他の場所へインポートしたりできます。",
+      "download_all": "すべてのデッキをダウンロード ({{count}})",
+      "downloading_all": "まとめてダウンロード中...",
+      "download_one": "CSVをダウンロード",
+      "downloading_one": "ダウンロード中...",
+      "empty": "エクスポートできるデッキはまだありません。",
+      "deck_meta": "{{language}} デッキ"
     }
   },
   "practice": {

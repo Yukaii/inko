@@ -7,6 +7,7 @@ import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { applyThemePreferences, saveThemePreferences } from "../theme/theme";
 import { SUPPORTED_UI_LANGUAGES } from "../i18n";
+import { downloadDeckCsv, fetchAllDeckWords } from "./wordBankExport";
 
 type MeResponse = {
   id: string;
@@ -314,6 +315,12 @@ export function SettingsPage() {
   });
 
   const user = profileQuery.data as MeResponse | undefined;
+  const decksQuery = useQuery({
+    queryKey: ["decks"],
+    queryFn: () => api.listDecks(token ?? ""),
+    enabled: Boolean(token),
+  });
+  const decks = decksQuery.data ?? [];
 
   const [displayName, setDisplayName] = useState("");
   const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
@@ -469,6 +476,45 @@ export function SettingsPage() {
     navigate("/login", { replace: true });
   };
 
+  const downloadDeckTakeout = async (deckId: string) => {
+    const deck = decks.find((candidate) => candidate.id === deckId);
+    if (!deck) return;
+
+    const words = await fetchAllDeckWords(deckId, (nextDeckId, options) =>
+      api.listWordsPage(token ?? "", nextDeckId, options),
+    );
+    downloadDeckCsv(deck, words);
+  };
+
+  const downloadAllDecks = async () => {
+    for (const deck of decks) {
+      await downloadDeckTakeout(deck.id);
+    }
+  };
+
+  const exportDeckTakeoutMutation = useMutation({
+    mutationFn: downloadDeckTakeout,
+    onSuccess: (_, deckId) => {
+      const deck = decks.find((candidate) => candidate.id === deckId);
+      if (deck) {
+        setMessage(t("settings.messages.deck_exported", { name: deck.name }));
+      }
+    },
+    onError: (error) => {
+      setMessage(error instanceof Error ? error.message : t("settings.messages.deck_export_failed"));
+    },
+  });
+
+  const exportAllDecksMutation = useMutation({
+    mutationFn: downloadAllDecks,
+    onSuccess: () => {
+      setMessage(t("settings.messages.all_decks_exported", { count: decks.length }));
+    },
+    onError: (error) => {
+      setMessage(error instanceof Error ? error.message : t("settings.messages.deck_export_failed"));
+    },
+  });
+
   const navItems = [
     { id: "profile" as const, label: "settings.nav.profile" },
     { id: "preferences" as const, label: "settings.nav.preferences" },
@@ -596,6 +642,63 @@ export function SettingsPage() {
                       <div className="rounded-[10px] border border-[var(--border-strong)] bg-bg-elevated px-3 py-2.5 font-mono text-sm text-text-secondary">
                         {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}
                       </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 rounded-[14px] border border-[var(--border-subtle)] bg-bg-elevated p-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">
+                          {t("settings.takeout.title")}
+                        </span>
+                        <p className="m-0 text-sm text-text-secondary">{t("settings.takeout.description")}</p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className="bg-bg-card text-text-primary hover:bg-bg-card"
+                          onClick={() => exportAllDecksMutation.mutate()}
+                          disabled={decks.length === 0 || exportAllDecksMutation.isPending || exportDeckTakeoutMutation.isPending}
+                        >
+                          {exportAllDecksMutation.isPending
+                            ? t("settings.takeout.downloading_all")
+                            : t("settings.takeout.download_all", { count: decks.length })}
+                        </button>
+                      </div>
+
+                      {decksQuery.isLoading ? (
+                        <p className="m-0 text-sm text-text-secondary">{t("common.loading")}</p>
+                      ) : decks.length === 0 ? (
+                        <p className="m-0 text-sm text-text-secondary">{t("settings.takeout.empty")}</p>
+                      ) : (
+                        <div className="grid gap-2">
+                          {decks.map((deck) => {
+                            const isDownloading =
+                              exportDeckTakeoutMutation.isPending && exportDeckTakeoutMutation.variables === deck.id;
+
+                            return (
+                              <div
+                                key={deck.id}
+                                className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[var(--border-subtle)] bg-bg-card px-3 py-3"
+                              >
+                                <div className="min-w-0">
+                                  <p className="m-0 truncate text-sm font-medium text-text-primary">{deck.name}</p>
+                                  <p className="m-0 text-xs uppercase tracking-[0.08em] text-text-secondary">
+                                    {t("settings.takeout.deck_meta", { language: deck.language.toUpperCase() })}
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="bg-bg-elevated text-text-primary hover:bg-bg-elevated"
+                                  onClick={() => exportDeckTakeoutMutation.mutate(deck.id)}
+                                  disabled={exportAllDecksMutation.isPending || exportDeckTakeoutMutation.isPending}
+                                >
+                                  {isDownloading ? t("settings.takeout.downloading_one") : t("settings.takeout.download_one")}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -820,6 +923,16 @@ export function SettingsPage() {
                       <span>{t("settings.about.version", { version: "0.1.0" })}</span>
                       <span>·</span>
                       <span>{t("settings.about.release_label")}</span>
+                    </div>
+                    <div className="mt-4">
+                      <a
+                        href="https://github.com/Yukaii/inko"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-mono text-sm text-accent-teal transition-colors hover:text-accent-orange"
+                      >
+                        {t("settings.about.github")}
+                      </a>
                     </div>
                   </div>
                 </section>

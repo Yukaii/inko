@@ -139,6 +139,7 @@
     "footer": {
       "desc": "Type it until you own it. The flashcard app that builds real recall through active typing practice.",
       "product": "Product",
+      "github": "GitHub",
       "rights": "© 2026 inko. all rights reserved.",
       "built_with": "// built with care for learners"
     },
@@ -293,6 +294,11 @@
     },
     "edit_word": {
       "title": "Edit Word"
+    },
+    "export": {
+      "button": "Download deck",
+      "downloading": "Downloading...",
+      "error": "Couldn't download this deck right now. Try again."
     }
   },
   "settings": {
@@ -307,7 +313,10 @@
       "theme_exported": "Theme exported as JSON.",
       "theme_json_copied": "Theme JSON copied.",
       "css_vars_copied": "CSS variables copied.",
-      "palette_hex_copied": "{{mode}} palette hex values copied."
+      "palette_hex_copied": "{{mode}} palette hex values copied.",
+      "deck_exported": "Downloaded {{name}}.",
+      "all_decks_exported": "Downloaded {{count}} decks.",
+      "deck_export_failed": "Couldn't download your deck data right now. Try again."
     },
     "nav": {
       "profile": "Profile",
@@ -357,8 +366,19 @@
     },
     "about": {
       "desc": "A minimal, focused language typing practice app inspired by monkeytype.",
+      "github": "GitHub Repository",
       "version": "Version {{version}}",
       "release_label": "Release"
+    },
+    "takeout": {
+      "title": "Data Takeout",
+      "description": "Download your deck data as CSV files you can keep or import elsewhere.",
+      "download_all": "Download all decks ({{count}})",
+      "downloading_all": "Downloading all...",
+      "download_one": "Download CSV",
+      "downloading_one": "Downloading...",
+      "empty": "No decks available to export yet.",
+      "deck_meta": "{{language}} deck"
     }
   },
   "practice": {

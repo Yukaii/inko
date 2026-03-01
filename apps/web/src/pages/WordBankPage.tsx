@@ -2,11 +2,12 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Pencil, Trash2, ChevronLeft, ChevronRight, Search, BookOpen, ArrowLeft } from "lucide-react";
+import { Pencil, Trash2, ChevronLeft, ChevronRight, Search, BookOpen, ArrowLeft, Download } from "lucide-react";
 import { LANGUAGE_LABELS, type LanguageCode, SUPPORTED_LANGUAGES } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
+import { downloadDeckCsv, fetchAllDeckWords } from "./wordBankExport";
 
 type AddTab = "single" | "import";
 const IMPORT_BATCH_SIZE = 10000;
@@ -77,6 +78,7 @@ export function WordBankPage() {
   const [wordsCursorHistory, setWordsCursorHistory] = useState<Array<string | null>>([]);
   const [selectedWordIds, setSelectedWordIds] = useState<Set<string>>(new Set());
   const [showMobileAddModal, setShowMobileAddModal] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const decksQuery = useQuery({
     queryKey: ["decks"],
@@ -247,6 +249,24 @@ export function WordBankPage() {
     onSuccess: async () => {
       setSelectedWordIds(new Set());
       await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+    },
+  });
+
+  const exportDeck = useMutation({
+    mutationFn: async () => {
+      if (!selectedDeckId || !activeDeck) throw new Error("No deck selected");
+      const exportedWords = await fetchAllDeckWords(selectedDeckId, (deckId, options) =>
+        api.listWordsPage(token ?? "", deckId, options),
+      );
+      downloadDeckCsv(activeDeck, exportedWords);
+    },
+    onMutate: () => {
+      setExportError(null);
+    },
+    onError: () => {
+      setExportError(
+        t("word_bank.export.error"),
+      );
     },
   });
 
@@ -652,7 +672,7 @@ export function WordBankPage() {
           ) : (
             <section className="flex flex-1 min-h-0 flex-col gap-6">
               <div className="flex flex-1 min-h-0 flex-col gap-4">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="relative flex-1 max-w-md">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
                     <input
@@ -663,7 +683,20 @@ export function WordBankPage() {
                       className="w-full pl-9"
                     />
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 bg-bg-elevated px-3 py-1.5 text-xs rounded-lg border-0 cursor-pointer text-text-primary hover:bg-bg-hover transition-colors"
+                      onClick={() => exportDeck.mutate()}
+                      disabled={exportDeck.isPending || isWordsLoading || totalWordsCount === 0}
+                    >
+                      <Download size={14} aria-hidden="true" />
+                      <span>
+                        {exportDeck.isPending
+                          ? t("word_bank.export.downloading")
+                          : t("word_bank.export.button")}
+                      </span>
+                    </button>
                     <button
                       type="button"
                       className="bg-bg-elevated px-3 py-1.5 text-xs rounded-lg border-0 cursor-pointer text-text-primary hover:bg-bg-hover transition-colors"
@@ -696,6 +729,8 @@ export function WordBankPage() {
                     </button>
                   </div>
                 </div>
+
+                {exportError ? <p className="m-0 text-sm text-[var(--danger-text)]">{exportError}</p> : null}
 
                 {selectedWordIds.size > 0 && (
                   <div className="flex items-center gap-4 rounded-xl bg-bg-elevated p-3 border border-accent-teal/20 animate-in fade-in slide-in-from-top-2">
