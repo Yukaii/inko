@@ -43,6 +43,10 @@ function getEnabledProviders() {
   return providers;
 }
 
+function getFrontendSiteUrl() {
+  return (process.env.SITE_URL ?? "").replace(/\/$/, "");
+}
+
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: getEnabledProviders(),
   jwt: {
@@ -99,7 +103,17 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       });
     },
     async redirect({ redirectTo }) {
-      return redirectTo;
+      if (/^https?:\/\//i.test(redirectTo)) {
+        return redirectTo;
+      }
+
+      const siteUrl = getFrontendSiteUrl();
+      if (!siteUrl) {
+        throw new Error("SITE_URL must be configured for OAuth redirects.");
+      }
+
+      const normalizedPath = redirectTo.startsWith("/") ? redirectTo : `/${redirectTo}`;
+      return `${siteUrl}${normalizedPath}`;
     },
   },
 });
