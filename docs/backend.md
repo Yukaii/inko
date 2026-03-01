@@ -23,3 +23,9 @@ Mail provider envs (`apps/api`):
 - `MAIL_FROM=<from address>`
 - `RESEND_API_KEY=<required when MAIL_PROVIDER=resend>`
 - `MAGIC_LINK_LOGIN_URL=<optional override, defaults to ${FRONTEND_URL}/login>`
+
+OAuth-related envs:
+
+- `apps/api/.env`: `CONVEX_SITE_URL=<Convex site origin used for OIDC token verification>`
+- repo/root `.env.local` for Convex Auth: `SITE_URL`, `JWT_PRIVATE_KEY`
+- optional social providers in repo/root `.env.local`: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `AUTH_APPLE_ID`, `AUTH_APPLE_SECRET`

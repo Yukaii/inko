@@ -6,12 +6,17 @@ import {
   UpdatePreferencesSchema,
   UpdateProfileSchema,
 } from "@inko/shared";
-import { consumeMagicToken, createMagicToken, issueAccessToken } from "../lib/auth";
+import { z } from "zod";
+import { consumeMagicToken, createMagicToken, issueAccessToken, verifyConvexAccessToken } from "../lib/auth";
 import type { Mailer } from "../lib/mailer";
 import { repository, type Repository } from "../services/repository";
 import { requireAuth } from "../plugins/auth";
 
 export async function authRoutes(app: FastifyInstance, repo: Repository = repository, mailer: Mailer) {
+  const ConvexAuthVerifySchema = z.object({
+    token: z.string().min(1),
+  });
+
   app.post("/api/auth/magic-link/request", async (request) => {
     const body = MagicLinkRequestSchema.parse(request.body);
     const email = body.email.toLowerCase();
@@ -47,6 +52,35 @@ export async function authRoutes(app: FastifyInstance, repo: Repository = reposi
     const accessToken = await issueAccessToken(user.id, user.email);
 
     return { accessToken, user };
+  });
+
+  app.post("/api/auth/convex/verify", async (request, reply) => {
+    const body = ConvexAuthVerifySchema.parse(request.body);
+
+    try {
+      const identity = await verifyConvexAccessToken(body.token);
+      const user = await repo.getUserById(identity.userId);
+
+      if (!user) {
+        return reply.status(401).send({
+          statusCode: 401,
+          code: ErrorCode.UNAUTHORIZED,
+          error: "Unauthorized",
+          message: "User not found for Convex auth session",
+        });
+      }
+
+      const accessToken = await issueAccessToken(user.id, user.email);
+      return { accessToken, user };
+    } catch (error) {
+      app.log.warn({ err: error }, "failed to verify convex auth token");
+      return reply.status(401).send({
+        statusCode: 401,
+        code: ErrorCode.UNAUTHORIZED,
+        error: "Unauthorized",
+        message: "Invalid Convex auth token",
+      });
+    }
   });
 
   app.post("/api/auth/logout", async () => {

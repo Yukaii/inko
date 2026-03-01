@@ -76,7 +76,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { token, setToken } = useAuth();
+  const { token, signOut } = useAuth();
   const [showHelp, setShowHelp] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showLangSubMenu, setShowLangSubMenu] = useState(false);
@@ -195,8 +195,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     };
   }, [navigate, t]);
 
-  const handleSignOut = () => {
-    setToken(null);
+  const handleSignOut = async () => {
+    await signOut();
     navigate("/login", { replace: true });
   };
 
@@ -322,7 +322,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <button
                   type="button"
                   className="flex w-full items-center gap-2 rounded-lg bg-transparent px-3 py-2 text-sm text-[var(--danger-text)] transition-colors hover:bg-[var(--danger-bg)]"
-                  onClick={handleSignOut}
+                  onClick={() => void handleSignOut()}
                 >
                   <LogoutIcon className="h-4 w-4" />
                   {t("auth.sign_out")}

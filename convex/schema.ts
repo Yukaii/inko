@@ -1,3 +1,4 @@
+import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
@@ -17,8 +18,15 @@ const languageValidator = v.union(
 );
 
 export default defineSchema({
+  ...authTables,
   users: defineTable({
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
     email: v.string(),
+    emailVerificationTime: v.optional(v.number()),
+    phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
     displayName: v.optional(v.string()),
     themeMode: v.optional(v.union(v.literal("dark"), v.literal("light"))),
     typingMode: v.optional(v.union(v.literal("language_specific"), v.literal("universal"))),
@@ -48,7 +56,9 @@ export default defineSchema({
       }),
     ),
     createdAt: v.number(),
-  }).index("by_email", ["email"]),
+  })
+    .index("email", ["email"])
+    .index("phone", ["phone"]),
 
   decks: defineTable({
     userId: v.id("users"),

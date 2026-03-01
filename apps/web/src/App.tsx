@@ -14,9 +14,13 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage").then((m) => ({ de
 const LandingPage = lazy(() => import("./pages/LandingPage").then((m) => ({ default: m.LandingPage })));
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  const { token } = useAuth();
+  const { token, isLoading } = useAuth();
   // Initialize keyboard shortcuts system
   useKeyboardShortcuts();
+
+  if (isLoading) {
+    return <RouteFallback />;
+  }
 
   if (!token) {
     return <Navigate to="/login" replace />;

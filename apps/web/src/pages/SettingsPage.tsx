@@ -298,7 +298,7 @@ function parseThemePayload(text: string, currentMode: ThemeMode, currentThemes: 
 
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
-  const { token, setToken } = useAuth();
+  const { token, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [message, setMessage] = useState("");
@@ -471,8 +471,8 @@ export function SettingsPage() {
     return true;
   };
 
-  const handleSignOut = () => {
-    setToken(null);
+  const handleSignOut = async () => {
+    await signOut();
     navigate("/login", { replace: true });
   };
 
@@ -703,7 +703,7 @@ export function SettingsPage() {
                   </div>
 
                   <div className="border-t border-[var(--border-subtle)] pt-4">
-                    <button type="button" className="bg-[var(--danger-bg)] text-[var(--danger-text)] hover:bg-[var(--danger-bg-hover)]" onClick={handleSignOut}>
+                    <button type="button" className="bg-[var(--danger-bg)] text-[var(--danger-text)] hover:bg-[var(--danger-bg-hover)]" onClick={() => void handleSignOut()}>
                       {t("auth.sign_out")}
                     </button>
                   </div>
