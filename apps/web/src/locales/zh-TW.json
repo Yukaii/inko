@@ -99,7 +99,7 @@
       },
       "step3": {
         "title": "聰明複習",
-        "desc": "我們的演算法會在您即將遺忘之前安排複習。"
+        "desc": "我們的演算法會在你即將遺忘之前安排複習。"
       }
     },
     "features": {
@@ -112,7 +112,7 @@
       },
       "spaced_repetition": {
         "title": "間隔複習",
-        "desc": "智慧排程會在您忘記之前顯示字卡，每次複習都是完美時機。"
+        "desc": "智慧排程會在你忘記之前顯示字卡，每次複習都是完美時機。"
       },
       "progress_tracking": {
         "title": "進度追蹤",
@@ -133,12 +133,13 @@
     },
     "cta": {
       "title": "透過打字，精通任何知識。",
-      "subtitle": "親手打出通往恆久知識的道路。",
+      "subtitle": "親手鋪就通往恆久知識的道路。",
       "button": "現在開始練習"
     },
     "footer": {
       "desc": "打字，直到你完全掌握。透過主動打字練習建立真實回憶能力的字卡 App。",
       "product": "產品",
+      "github": "GitHub",
       "rights": "© 2026 inko. all rights reserved.",
       "built_with": "// 為學習者精心打造"
     },
@@ -293,6 +294,11 @@
     },
     "edit_word": {
       "title": "編輯單字"
+    },
+    "export": {
+      "button": "下載牌組",
+      "downloading": "下載中...",
+      "error": "目前無法下載這個牌組，請稍後再試。"
     }
   },
   "settings": {
@@ -307,7 +313,10 @@
       "theme_exported": "主題已匯出為 JSON。",
       "theme_json_copied": "已複製主題 JSON。",
       "css_vars_copied": "已複製 CSS 變數。",
-      "palette_hex_copied": "已複製 {{mode}} 調色盤的 Hex 值。"
+      "palette_hex_copied": "已複製 {{mode}} 調色盤的 Hex 值。",
+      "deck_exported": "已下載 {{name}}。",
+      "all_decks_exported": "已下載 {{count}} 個牌組。",
+      "deck_export_failed": "目前無法下載你的牌組資料，請稍後再試。"
     },
     "nav": {
       "profile": "個人資料",
@@ -357,8 +366,19 @@
     },
     "about": {
       "desc": "一款受到 monkeytype 啟發、極簡且專注的語言打字練習 App。",
+      "github": "GitHub 原始碼",
       "version": "版本 {{version}}",
       "release_label": "版本"
+    },
+    "takeout": {
+      "title": "資料匯出",
+      "description": "將你的牌組資料下載成 CSV，方便自行保存或匯入到其他地方。",
+      "download_all": "下載全部牌組 ({{count}})",
+      "downloading_all": "全部下載中...",
+      "download_one": "下載 CSV",
+      "downloading_one": "下載中...",
+      "empty": "目前還沒有可匯出的牌組。",
+      "deck_meta": "{{language}} 牌組"
     }
   },
   "practice": {

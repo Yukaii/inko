@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { PracticeSimulator } from "../components/PracticeSimulator";
+import { useAuth } from "../hooks/useAuth";
 import { SUPPORTED_UI_LANGUAGES } from "../i18n";
 import {
   Keyboard,
@@ -30,6 +31,7 @@ const staggerContainer = {
 
 export function LandingPage() {
   const { t, i18n } = useTranslation();
+  const { token } = useAuth();
   const [showLangMenu, setShowLangMenu] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
 
@@ -112,7 +114,7 @@ export function LandingPage() {
             </AnimatePresence>
           </div>
           <Link
-            to="/login"
+            to={token ? "/dashboard" : "/login"}
             className="rounded-xl bg-accent-orange px-5 py-2 font-mono text-xs font-bold text-text-on-accent transition-transform hover:scale-105 active:scale-95 no-underline"
           >
             {t("landing.nav.get_started")}
@@ -359,6 +361,14 @@ export function LandingPage() {
                 <span className="font-bold text-text-primary mb-2">{t("landing.footer.product")}</span>
                 <a href="#features" className="text-text-secondary hover:text-accent-teal transition-colors">{t("landing.nav.features")}</a>
                 <a href="#how-it-works" className="text-text-secondary hover:text-accent-teal transition-colors">{t("landing.nav.how_it_works")}</a>
+                <a
+                  href="https://github.com/Yukaii/inko"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-text-secondary hover:text-accent-teal transition-colors"
+                >
+                  {t("landing.footer.github")}
+                </a>
               </div>
             </div>
           </div>
