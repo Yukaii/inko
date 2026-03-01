@@ -9,6 +9,10 @@ spec:
       type: DOMAIN
       name: Convex Backend Domain
       description: Subdomain for Convex backend (resulting in <value>.zeabur.app)
+    - key: SYNC_DOMAIN
+      type: DOMAIN
+      name: Convex Site/Auth Domain
+      description: Subdomain for Convex site/auth HTTP origin on port 3211 (resulting in <value>.zeabur.app)
     - key: API_DOMAIN
       type: DOMAIN
       name: API Domain
@@ -45,6 +49,8 @@ spec:
             default: "4000"
           CONVEX_URL:
             default: "https://${BACKEND_DOMAIN}.zeabur.app"
+          CONVEX_SITE_URL:
+            default: "https://${SYNC_DOMAIN}.zeabur.app"
           JWT_SECRET:
             default: "replace-with-strong-secret-at-least-16-chars"
           FRONTEND_URL:
@@ -67,7 +73,7 @@ spec:
             type: HTTP
           - id: convex-sync
             port: 3211
-            type: TCP
+            type: HTTP
         volumes:
           - id: data
             dir: /convex/data
@@ -79,7 +85,11 @@ spec:
           CONVEX_CLOUD_ORIGIN:
             default: "https://${BACKEND_DOMAIN}.zeabur.app"
           CONVEX_SITE_ORIGIN:
-            default: "https://${BACKEND_DOMAIN}.zeabur.app"
+            default: "https://${SYNC_DOMAIN}.zeabur.app"
+          CONVEX_SITE_URL:
+            default: "https://${SYNC_DOMAIN}.zeabur.app"
+          CUSTOM_AUTH_SITE_URL:
+            default: "https://${SYNC_DOMAIN}.zeabur.app"
       domainKey: BACKEND_DOMAIN
 
     - name: Convex Dashboard
