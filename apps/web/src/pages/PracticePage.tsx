@@ -844,6 +844,14 @@ export function PracticePage() {
           </div>
         ) : null}
 
+        {card.example ? (
+          <div className="mt-2 max-w-[min(90vw,42rem)] rounded-2xl border border-[var(--border-muted)] bg-bg-card/70 px-4 py-3 text-center text-sm leading-6 text-text-secondary backdrop-blur-sm md:px-5">
+            <p className={`m-0 ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`} lang={card.language}>
+              {card.example}
+            </p>
+          </div>
+        ) : null}
+
         {/* Monkeytype-style character display */}
         <div className={`mt-3 flex min-h-[42px] justify-center gap-0.5 font-mono text-[22px] tracking-[0.08em] md:text-[28px] ${lastSubmitAccepted === false ? "animate-shake text-[var(--danger-text)]" : ""}`} aria-hidden="true">
           {romajiChars.map((c) => (

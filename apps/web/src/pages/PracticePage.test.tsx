@@ -1,5 +1,86 @@
-import { describe, expect, it } from "vitest";
-import { canSubmitCard, getPracticeCompletionTitle, getTypingFeedback, isEscDoublePress } from "./PracticePage";
+/** @vitest-environment jsdom */
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { describe, expect, it, beforeEach, vi } from "vitest";
+import { canSubmitCard, getPracticeCompletionTitle, getTypingFeedback, isEscDoublePress, PracticePage } from "./PracticePage";
+
+const {
+  mockStartPractice,
+  mockSubmitPractice,
+  mockFinishPractice,
+  mockUpdateDeck,
+  mockFetchWordTts,
+} = vi.hoisted(() => ({
+  mockStartPractice: vi.fn(),
+  mockSubmitPractice: vi.fn(),
+  mockFinishPractice: vi.fn(),
+  mockUpdateDeck: vi.fn(),
+  mockFetchWordTts: vi.fn(),
+}));
+
+vi.mock("../api/client", () => ({
+  api: {
+    startPractice: mockStartPractice,
+    submitPractice: mockSubmitPractice,
+    finishPractice: mockFinishPractice,
+    updateDeck: mockUpdateDeck,
+    fetchWordTts: mockFetchWordTts,
+  },
+}));
+
+vi.mock("../hooks/useAuth", () => ({
+  useAuth: () => ({ token: "test-token" }),
+}));
+
+vi.mock("../hooks/useKeyboard", () => ({
+  registerShortcut: () => () => undefined,
+}));
+
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, fallback?: string) => fallback ?? key,
+    i18n: { language: "en" },
+  }),
+}));
+
+function renderPracticePage() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={["/practice/deck-1"]}>
+        <Routes>
+          <Route path="/practice/:deckId" element={<PracticePage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
+beforeEach(() => {
+  mockStartPractice.mockReset();
+  mockSubmitPractice.mockReset();
+  mockFinishPractice.mockReset();
+  mockUpdateDeck.mockReset();
+  mockFetchWordTts.mockReset();
+  mockFetchWordTts.mockResolvedValue(new Blob(["audio"], { type: "audio/mpeg" }));
+  vi.stubGlobal("Audio", class {
+    play = vi.fn().mockResolvedValue(undefined);
+    pause = vi.fn();
+  });
+  vi.stubGlobal("URL", {
+    ...URL,
+    createObjectURL: vi.fn(() => "blob:mock-audio"),
+    revokeObjectURL: vi.fn(),
+  });
+});
 
 describe("canSubmitCard", () => {
   it("requires correct romaji typing", () => {
@@ -134,5 +215,34 @@ describe("isEscDoublePress", () => {
 
   it("returns false when there is no first escape", () => {
     expect(isEscDoublePress(null, 1500)).toBe(false);
+  });
+});
+
+describe("PracticePage", () => {
+  it("shows the example sentence when the practice card includes one", async () => {
+    mockStartPractice.mockResolvedValue({
+      sessionId: "session-1",
+      card: {
+        wordId: "word-1",
+        deckId: "deck-1",
+        language: "ja",
+        target: "勉強",
+        reading: "べんきょう",
+        romanization: "benkyou",
+        meaning: "study",
+        example: "毎日日本語を勉強しています。",
+      },
+      upcomingCards: [],
+      ttsEnabled: false,
+      typingMode: "language_specific",
+      sessionTargetCards: 50,
+      cardsCompleted: 0,
+    });
+
+    renderPracticePage();
+
+    await waitFor(() => {
+      expect(screen.getByText("毎日日本語を勉強しています。")).toBeTruthy();
+    });
   });
 });
