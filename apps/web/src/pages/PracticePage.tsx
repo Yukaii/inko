@@ -99,6 +99,10 @@ export function isEscDoublePress(lastEscPressedAt: number | null, now: number, w
   return now - lastEscPressedAt <= windowMs;
 }
 
+function isReplayTtsShortcut(event: Pick<KeyboardEvent, "key" | "code" | "altKey" | "ctrlKey" | "metaKey" | "shiftKey">) {
+  return event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && (event.code === "KeyR" || event.key.toLowerCase() === "r");
+}
+
 export function getPracticeCompletionTitle(input: {
   sessionCapped: boolean;
   cardsCompleted: number;
@@ -485,46 +489,61 @@ export function PracticePage() {
     }
   }, [card, getOrPrefetchAudioUrl, upcomingCards, ttsEnabled]);
 
+  const replayCardAudio = useCallback(async (practiceCard: PracticeCard | null) => {
+    if (!practiceCard || !ttsEnabled) return;
+
+    audioRef.current?.pause();
+    audioRef.current = null;
+
+    try {
+      const source = await getOrPrefetchAudioUrl(practiceCard);
+      const audio = new Audio(source);
+      audioRef.current = audio;
+      await audio.play();
+    } catch {
+      // Ignore autoplay and synthesis failures so practice can continue.
+    }
+  }, [getOrPrefetchAudioUrl, ttsEnabled]);
+
+  useEffect(() => {
+    if (sessionDone || !card) return;
+
+    const handleReplayShortcut = (event: KeyboardEvent) => {
+      if (!isReplayTtsShortcut(event)) return;
+      event.preventDefault();
+      void replayCardAudio(card);
+    };
+
+    window.addEventListener("keydown", handleReplayShortcut, { capture: true });
+    return () => {
+      window.removeEventListener("keydown", handleReplayShortcut, { capture: true });
+    };
+  }, [card, replayCardAudio, sessionDone]);
+
   useEffect(() => {
     if (!card) return;
 
     let cancelled = false;
 
-    const resetAudio = () => {
+    if (!ttsEnabled) {
       audioRef.current?.pause();
       audioRef.current = null;
-    };
-
-    if (!ttsEnabled) {
-      resetAudio();
       return;
     }
 
-    const playAudio = async () => {
-      resetAudio();
-
-      try {
-        const source = await getOrPrefetchAudioUrl(card);
-
-        if (cancelled) {
-          return;
-        }
-
-        const audio = new Audio(source);
-        audioRef.current = audio;
-        await audio.play();
-      } catch {
-        // Ignore autoplay and synthesis failures so practice can continue.
+    void replayCardAudio(card).then(() => {
+      if (cancelled && audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
       }
-    };
-
-    void playAudio();
+    });
 
     return () => {
       cancelled = true;
-      resetAudio();
+      audioRef.current?.pause();
+      audioRef.current = null;
     };
-  }, [card, getOrPrefetchAudioUrl, ttsEnabled]);
+  }, [card, replayCardAudio, ttsEnabled]);
 
   useEffect(() => {
     return () => {
@@ -575,7 +594,7 @@ export function PracticePage() {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       focusInput();
     },
-    [exitConfirmOpen, requestExitIntent, focusInput],
+    [card, exitConfirmOpen, focusInput, replayCardAudio, requestExitIntent],
   );
 
   // Build character-by-character display for monkeytype effect
@@ -891,6 +910,7 @@ export function PracticePage() {
           onKeyDown={(event) => {
             if (event.key === "Escape") {
               event.preventDefault();
+              event.stopPropagation();
               if (exitConfirmOpen) {
                 setExitConfirmOpen(false);
                 setExitEscHint(false);

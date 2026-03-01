@@ -1,9 +1,9 @@
 /** @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { canSubmitCard, getPracticeCompletionTitle, getTypingFeedback, isEscDoublePress, PracticePage } from "./PracticePage";
 
 const {
@@ -12,12 +12,14 @@ const {
   mockFinishPractice,
   mockUpdateDeck,
   mockFetchWordTts,
+  mockRegisterShortcut,
 } = vi.hoisted(() => ({
   mockStartPractice: vi.fn(),
   mockSubmitPractice: vi.fn(),
   mockFinishPractice: vi.fn(),
   mockUpdateDeck: vi.fn(),
   mockFetchWordTts: vi.fn(),
+  mockRegisterShortcut: vi.fn(),
 }));
 
 vi.mock("../api/client", () => ({
@@ -35,7 +37,7 @@ vi.mock("../hooks/useAuth", () => ({
 }));
 
 vi.mock("../hooks/useKeyboard", () => ({
-  registerShortcut: () => () => undefined,
+  registerShortcut: mockRegisterShortcut,
 }));
 
 vi.mock("react-i18next", () => ({
@@ -70,6 +72,8 @@ beforeEach(() => {
   mockFinishPractice.mockReset();
   mockUpdateDeck.mockReset();
   mockFetchWordTts.mockReset();
+  mockRegisterShortcut.mockReset();
+  mockRegisterShortcut.mockImplementation(() => () => undefined);
   mockFetchWordTts.mockResolvedValue(new Blob(["audio"], { type: "audio/mpeg" }));
   vi.stubGlobal("Audio", class {
     play = vi.fn().mockResolvedValue(undefined);
@@ -81,6 +85,31 @@ beforeEach(() => {
     revokeObjectURL: vi.fn(),
   });
 });
+
+afterEach(() => {
+  cleanup();
+});
+
+function mockPracticeStart(overrides?: Record<string, unknown>) {
+  mockStartPractice.mockResolvedValue({
+    sessionId: "session-1",
+    card: {
+      wordId: "word-1",
+      deckId: "deck-1",
+      language: "ja",
+      target: "勉強",
+      reading: "べんきょう",
+      romanization: "benkyou",
+      meaning: "study",
+    },
+    upcomingCards: [],
+    ttsEnabled: true,
+    typingMode: "language_specific",
+    sessionTargetCards: 50,
+    cardsCompleted: 0,
+    ...overrides,
+  });
+}
 
 describe("canSubmitCard", () => {
   it("requires correct romaji typing", () => {
@@ -220,8 +249,7 @@ describe("isEscDoublePress", () => {
 
 describe("PracticePage", () => {
   it("shows the example sentence when the practice card includes one", async () => {
-    mockStartPractice.mockResolvedValue({
-      sessionId: "session-1",
+    mockPracticeStart({
       card: {
         wordId: "word-1",
         deckId: "deck-1",
@@ -232,17 +260,38 @@ describe("PracticePage", () => {
         meaning: "study",
         example: "毎日日本語を勉強しています。",
       },
-      upcomingCards: [],
       ttsEnabled: false,
-      typingMode: "language_specific",
-      sessionTargetCards: 50,
-      cardsCompleted: 0,
     });
 
     renderPracticePage();
 
     await waitFor(() => {
       expect(screen.getByText("毎日日本語を勉強しています。")).toBeTruthy();
+    });
+  });
+
+  it("replays tts with alt+r during practice", async () => {
+    const playMock = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("Audio", class {
+      play = playMock;
+      pause = vi.fn();
+    });
+
+    mockPracticeStart();
+
+    renderPracticePage();
+
+    await screen.findByLabelText("Type answer for 勉強");
+    await screen.findByText("TTS on");
+
+    await waitFor(() => {
+      expect(playMock).toHaveBeenCalledTimes(1);
+    });
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "®", code: "KeyR", altKey: true }));
+
+    await waitFor(() => {
+      expect(playMock).toHaveBeenCalledTimes(2);
     });
   });
 });
