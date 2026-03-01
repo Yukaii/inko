@@ -11,3 +11,13 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+interface Window {
+  __INKO_ENV__?: {
+    apiUrl?: string;
+    convexUrl?: string;
+    authGoogleEnabled?: string;
+    authGithubEnabled?: string;
+    authAppleEnabled?: string;
+  };
+}
