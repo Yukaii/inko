@@ -79,7 +79,7 @@ Inkō bridges these gaps by combining all input methods into a unified learning 
 
 ---
 
-## 5. Core Features (MVP)
+## 5. Core Features (Current Scope)
 
 ### 5.1 Word Bank Management
 
@@ -271,7 +271,7 @@ Gamification must not distract from core learning.
 
 ---
 
-## 10. Non-Goals (MVP)
+## 10. Non-Goals (Current Scope)
 
 Inkō will not initially include:
 
@@ -286,7 +286,7 @@ The focus remains on **vocabulary production mastery**.
 
 ---
 
-## 11. Future Expansion (Post-MVP)
+## 11. Future Expansion
 
 * Sentence construction mode
 * Radical/component breakdown view
@@ -312,11 +312,11 @@ It is designed to turn passive learners into active producers of language — st
 
 ---
 
-## 12. Implementation Status (as of February 27, 2026)
+## 12. Implementation Status (as of March 1, 2026)
 
 ### 12.1 Delivered
 
-* Web MVP monorepo scaffold:
+* Web app monorepo scaffold:
   * `apps/web` (Vite + React + TypeScript)
   * `apps/api` (Fastify + TypeScript)
   * `packages/shared` (zod schemas + scoring/scheduling logic)
@@ -324,7 +324,7 @@ It is designed to turn passive learners into active producers of language — st
 * Auth:
   * Email magic-link request/verify endpoints
   * JWT-based API auth for protected routes
-  * Local dev flow currently uses token from API logs
+  * Resend-backed email delivery for magic links in dev/prod flows
 * Word Bank:
   * Create/list/update decks
   * Create/list/update/delete words
@@ -353,6 +353,7 @@ It is designed to turn passive learners into active producers of language — st
   * Deck deletion made incremental/paged to avoid large read explosions
   * Practice submit latency reduced via session-level attempted-word tracking and candidate-window cache
   * Practice candidate scans reduced and bounded for faster start/submit under large decks
+  * Practice cold-start performance improved to an acceptable baseline after queue/preselection optimization work
 * Quality gates:
   * Shared/unit tests
   * API integration tests (Fastify `inject`)
@@ -365,12 +366,12 @@ It is designed to turn passive learners into active producers of language — st
   * Core layout and tokens are implemented
   * Fine-grained visual parity and polish are still pending
 * Audio experience:
-  * Works with stored `audioUrl` or manual played toggle
+  * Built-in TTS support is available during practice
+  * Works with stored `audioUrl` or generated pronunciation playback
   * No advanced playback UX (slow mode, waveform) yet
 
 ### 12.3 Not Yet Delivered
 
-* Production-grade email delivery for magic links
 * CSV import workflow
 * Additional review modes beyond full Triple Mode
 * Advanced analytics visuals (heatmap/radar)
@@ -378,13 +379,13 @@ It is designed to turn passive learners into active producers of language — st
 
 ---
 
-## 13. Current MVP Focus (Immediate Next Steps)
+## 13. Current Product Focus (Immediate Next Steps)
 
-1. Replace log-based magic-link with real dev/prod mail delivery.
-2. Reduce practice cold-start latency (`/practice/session/start`) with production tracing and cache-aware preselection.
-3. Improve visual fidelity against `inko.pen` for dashboard and practice screens.
-4. Expand API integration coverage for all authorization edge cases and large-deck regression paths.
-5. Add operational docs for cloud deployment + environment matrix.
+1. Improve visual fidelity against `inko.pen` for dashboard and practice screens.
+2. Expand API integration coverage for all authorization edge cases and large-deck regression paths.
+3. Add operational docs for cloud deployment + environment matrix.
+4. Ship CSV import workflow.
+5. Validate practice performance with regression benchmarks/tracing so recent speed gains stay intact.
 
 Implementation reference:
 
