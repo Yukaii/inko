@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { PracticeSimulator } from "../components/PracticeSimulator";
-import { useAuth } from "../hooks/useAuth";
 import { SUPPORTED_UI_LANGUAGES } from "../i18n";
 import {
   Keyboard,
@@ -29,9 +28,22 @@ const staggerContainer = {
   }
 };
 
+function GetStartedLink({
+  className,
+  children,
+}: {
+  className: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link to="/dashboard" className={className}>
+      {children}
+    </Link>
+  );
+}
+
 export function LandingPage() {
   const { t, i18n } = useTranslation();
-  const { token } = useAuth();
   const [showLangMenu, setShowLangMenu] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
 
@@ -113,12 +125,11 @@ export function LandingPage() {
               )}
             </AnimatePresence>
           </div>
-          <Link
-            to={token ? "/dashboard" : "/login"}
+          <GetStartedLink
             className="rounded-xl bg-accent-orange px-5 py-2 font-mono text-xs font-bold text-text-on-accent transition-transform hover:scale-105 active:scale-95 no-underline"
           >
             {t("landing.nav.get_started")}
-          </Link>
+          </GetStartedLink>
         </div>
       </nav>
 
@@ -152,12 +163,11 @@ export function LandingPage() {
             variants={fadeInUp}
             className="mb-20 flex flex-col gap-4 sm:flex-row sm:gap-6 font-mono font-semibold"
           >
-            <Link
-              to="/login"
+            <GetStartedLink
               className="rounded-base bg-accent-orange px-7 py-3.5 text-text-on-accent transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-accent-orange/20"
             >
               {t("landing.hero.cta_primary")}
-            </Link>
+            </GetStartedLink>
             <a
               href="#how-it-works"
               className="rounded-base border border-text-primary px-7 py-3.5 text-text-primary transition-colors hover:bg-bg-elevated"
@@ -334,12 +344,11 @@ export function LandingPage() {
             {t("landing.cta.subtitle")}
           </p>
           <div className="flex flex-col items-center gap-4 mt-4">
-            <Link
-              to="/login"
+            <GetStartedLink
               className="rounded-base bg-accent-orange px-8 py-4 font-mono font-semibold text-text-on-accent transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-accent-orange/20"
             >
               {t("landing.cta.button")}
-            </Link>
+            </GetStartedLink>
           </div>
         </motion.div>
       </section>

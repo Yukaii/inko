@@ -7,7 +7,13 @@ import {
   UpdateProfileSchema,
 } from "@inko/shared";
 import { z } from "zod";
-import { consumeMagicToken, createMagicToken, issueAccessToken, verifyConvexAccessToken } from "../lib/auth";
+import {
+  consumeMagicToken,
+  createMagicToken,
+  getConvexVerificationDebugInfo,
+  issueAccessToken,
+  verifyConvexAccessToken,
+} from "../lib/auth";
 import type { Mailer } from "../lib/mailer";
 import { repository, type Repository } from "../services/repository";
 import { requireAuth } from "../plugins/auth";
@@ -56,6 +62,7 @@ export async function authRoutes(app: FastifyInstance, repo: Repository = reposi
 
   app.post("/api/auth/convex/verify", async (request, reply) => {
     const body = ConvexAuthVerifySchema.parse(request.body);
+    app.log.info(getConvexVerificationDebugInfo(body.token), "verifying convex auth token");
 
     try {
       const identity = await verifyConvexAccessToken(body.token);
@@ -73,7 +80,7 @@ export async function authRoutes(app: FastifyInstance, repo: Repository = reposi
       const accessToken = await issueAccessToken(user.id, user.email);
       return { accessToken, user };
     } catch (error) {
-      app.log.warn({ err: error }, "failed to verify convex auth token");
+      app.log.warn({ err: error, ...getConvexVerificationDebugInfo(body.token) }, "failed to verify convex auth token");
       return reply.status(401).send({
         statusCode: 401,
         code: ErrorCode.UNAUTHORIZED,
