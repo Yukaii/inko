@@ -105,7 +105,7 @@
     "features": {
       "badge": "// Features",
       "title": "Everything You Need",
-      "subtitle": "Built for learners who want real retention, not just recognition.",
+      "subtitle": "Typing-first practice, smart review timing, and pronunciation audio that keeps the training loop complete.",
       "typing_first": {
         "title": "Typing First",
         "desc": "No multiple choice. No matching. Type your answers from memory to build real neural pathways."
@@ -122,9 +122,9 @@
         "title": "Custom Decks",
         "desc": "Create decks for any subject — languages, code syntax, med terms, history dates. Your knowledge, your way."
       },
-      "streak_system": {
-        "title": "Streak System",
-        "desc": "Daily streaks and scoring keep you motivated. Consistency beats cramming every time."
+      "tts_support": {
+        "title": "Pronunciation Audio",
+        "desc": "Built-in TTS plays pronunciations during practice, so you can reinforce recall with listening as well as typing."
       },
       "practice_anywhere": {
         "title": "Practice Anywhere",
@@ -358,7 +358,7 @@
     "about": {
       "desc": "A minimal, focused language typing practice app inspired by monkeytype.",
       "version": "Version {{version}}",
-      "release_label": "MVP Release"
+      "release_label": "Release"
     }
   },
   "practice": {

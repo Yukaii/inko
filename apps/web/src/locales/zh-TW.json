@@ -105,7 +105,7 @@
     "features": {
       "badge": "// 特點",
       "title": "你所需要的一切",
-      "subtitle": "為追求真實長期記憶而非僅僅「認得」的學習者打造。",
+      "subtitle": "以打字為核心，搭配智慧複習節奏與發音音訊，形成完整的練習循環。",
       "typing_first": {
         "title": "輸入優先",
         "desc": "沒有選擇題，沒有連連看。從記憶中打出答案，建立真實的神經連結。"
@@ -122,9 +122,9 @@
         "title": "自訂牌組",
         "desc": "建立任何主題的牌組 —— 語言、程式語法、醫學術語或歷史日期。"
       },
-      "streak_system": {
-        "title": "連續紀錄",
-        "desc": "每日紀錄與評分機制保持動力。持之以恆的練習勝過臨時抱佛腳。"
+      "tts_support": {
+        "title": "發音音訊",
+        "desc": "內建 TTS 會在練習時播放發音，讓你不只靠打字，也能透過聽覺一起強化記憶。"
       },
       "practice_anywhere": {
         "title": "隨時練習",
@@ -358,7 +358,7 @@
     "about": {
       "desc": "一款受到 monkeytype 啟發、極簡且專注的語言打字練習 App。",
       "version": "版本 {{version}}",
-      "release_label": "MVP 版本"
+      "release_label": "版本"
     }
   },
   "practice": {
