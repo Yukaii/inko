@@ -81,6 +81,13 @@ Environment variables:
 - optional social providers in repo/root `.env.local`: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `AUTH_APPLE_ID`, `AUTH_APPLE_SECRET`
 - `apps/api/.env`: `CONVEX_SITE_URL`
 - `apps/web/.env.local`: `VITE_CONVEX_URL`
+- `apps/web/.env.local`: `VITE_AUTH_GOOGLE_ENABLED=true`, `VITE_AUTH_GITHUB_ENABLED=true`, `VITE_AUTH_APPLE_ENABLED=true`
+
+Frontend visibility rule:
+
+- A provider button is shown on the login page only when its `VITE_AUTH_*_ENABLED` flag is set to `true`.
+- Keep the flag unset or set it to anything else to hide that provider from the UI.
+- These flags should match the backend/provider configuration so users never see a provider that is not actually available.
 
 ## Implemented Routes
 
