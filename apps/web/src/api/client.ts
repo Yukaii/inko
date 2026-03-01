@@ -167,6 +167,12 @@ export const api = {
       body: JSON.stringify({ token }),
     }),
 
+  verifyConvexAuth: (token: string) =>
+    request<AuthVerifyResponse>("/api/auth/convex/verify", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
+
   me: (token: string) => request<UserDTO>("/api/me", {}, token),
   updateMe: (token: string, input: UpdateProfileInput) =>
     request<UserDTO>("/api/me", { method: "PATCH", body: JSON.stringify(input) }, token),

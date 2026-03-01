@@ -66,6 +66,21 @@ bunx convex run seed:seedStarterData '{"email":"you@example.com"}'
 - Request magic link from login page.
 - With `MAIL_PROVIDER=log` (default), token is returned for local/dev and can be pasted in login form.
 - With `MAIL_PROVIDER=resend`, magic link is sent via email and login page can auto-verify from `?token=...`.
+- OAuth sign-in is supported through Convex Auth for Google, GitHub, and Apple once the provider env vars are configured.
+
+## OAuth Provider Setup
+
+Convex Auth uses the Convex HTTP auth routes under your Convex site URL. Register these callback URLs with each provider:
+
+- Local: `http://127.0.0.1:3211/api/auth/callback/<provider>`
+- Production: `https://<your-convex-site>/api/auth/callback/<provider>`
+
+Environment variables:
+
+- repo/root `.env.local` for Convex Auth: `SITE_URL`, `JWT_PRIVATE_KEY`
+- optional social providers in repo/root `.env.local`: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `AUTH_APPLE_ID`, `AUTH_APPLE_SECRET`
+- `apps/api/.env`: `CONVEX_SITE_URL`
+- `apps/web/.env.local`: `VITE_CONVEX_URL`
 
 ## Implemented Routes
 

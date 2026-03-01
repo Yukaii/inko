@@ -1,25 +1,113 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { ConvexAuthProvider, useAuthActions, useAuthToken } from "@convex-dev/auth/react";
+import { ConvexReactClient, useConvexAuth } from "convex/react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { api } from "../api/client";
+
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL ?? "http://127.0.0.1:3210");
+
+type AuthSource = "magic-link" | "convex-auth";
 
 type AuthState = {
   token: string | null;
-  setToken: (token: string | null) => void;
+  isLoading: boolean;
+  setToken: (token: string | null, source?: AuthSource) => void;
+  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setTokenState] = useState<string | null>(() => localStorage.getItem("inko_token"));
+  return (
+    <ConvexAuthProvider client={convex}>
+      <AuthStateProvider>{children}</AuthStateProvider>
+    </ConvexAuthProvider>
+  );
+}
 
-  const setToken = (nextToken: string | null) => {
+function AuthStateProvider({ children }: { children: React.ReactNode }) {
+  const [token, setTokenState] = useState<string | null>(() => localStorage.getItem("inko_token"));
+  const [source, setSourceState] = useState<AuthSource | null>(
+    () => (localStorage.getItem("inko_auth_source") as AuthSource | null) ?? null,
+  );
+  const [exchangeLoading, setExchangeLoading] = useState(false);
+  const convexToken = useAuthToken();
+  const { signOut: signOutConvex } = useAuthActions();
+  const { isLoading: convexLoading, isAuthenticated: isConvexAuthenticated } = useConvexAuth();
+  const lastConvexTokenRef = useRef<string | null>(null);
+
+  const setToken = (nextToken: string | null, nextSource: AuthSource = "magic-link") => {
     setTokenState(nextToken);
     if (nextToken) {
+      setSourceState(nextSource);
       localStorage.setItem("inko_token", nextToken);
+      localStorage.setItem("inko_auth_source", nextSource);
     } else {
+      setSourceState(null);
       localStorage.removeItem("inko_token");
+      localStorage.removeItem("inko_auth_source");
     }
   };
 
-  const value = useMemo(() => ({ token, setToken }), [token]);
+  useEffect(() => {
+    if (convexLoading) return;
+
+    if (!isConvexAuthenticated) {
+      lastConvexTokenRef.current = null;
+      if (source === "convex-auth") {
+        setToken(null);
+      }
+      return;
+    }
+
+    if (!convexToken || convexToken === lastConvexTokenRef.current) {
+      return;
+    }
+
+    let cancelled = false;
+    setExchangeLoading(true);
+
+    void api
+      .verifyConvexAuth(convexToken)
+      .then((result) => {
+        if (cancelled) return;
+        lastConvexTokenRef.current = convexToken;
+        setToken(result.accessToken, "convex-auth");
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("Failed to exchange Convex auth token", error);
+        lastConvexTokenRef.current = convexToken;
+        setToken(null);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setExchangeLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [convexLoading, convexToken, isConvexAuthenticated, source]);
+
+  const signOut = async () => {
+    const activeSource = source;
+    setToken(null);
+    lastConvexTokenRef.current = null;
+    if (activeSource === "convex-auth") {
+      await signOutConvex();
+    }
+  };
+
+  const value = useMemo(
+    () => ({
+      token,
+      isLoading: convexLoading || exchangeLoading,
+      setToken,
+      signOut,
+    }),
+    [convexLoading, exchangeLoading, token],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
