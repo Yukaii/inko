@@ -97,6 +97,7 @@ If Node actions fail on the first `ctx.runQuery(...)` with `Invalid URL`, verify
 
 The template deploys `Frontend` from `apps/web` and sets:
 - `VITE_API_URL=https://${API_DOMAIN}.zeabur.app`
+- `VITE_SITE_URL=https://${FRONTEND_DOMAIN}.zeabur.app`
 
 After deploy, use:
 - `https://<FRONTEND_DOMAIN>.zeabur.app`
@@ -108,6 +109,7 @@ Workflow file:
 
 Required GitHub repository secret:
 - `VITE_API_URL=https://<your-zeabur-api-domain>`
+- `VITE_SITE_URL=https://<your-frontend-domain>`
 
 Notes:
 - Workflow builds Vite with repo base path: `/<repo-name>/`

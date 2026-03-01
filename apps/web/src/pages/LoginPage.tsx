@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
+import { applyNoIndexMetadata } from "../lib/seo";
 
 function GoogleIcon() {
   return (
@@ -81,6 +82,10 @@ export function LoginPage() {
   const { token, isLoading: authLoading, setToken } = useAuth();
   const { signIn } = useAuthActions();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    applyNoIndexMetadata("Log In | Inko");
+  }, []);
 
   const getErrorMessage = (error: any) => {
     if (error.code) {

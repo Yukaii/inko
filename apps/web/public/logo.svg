@@ -1,0 +1,27 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Squircle Background -->
+  <rect width="1024" height="1024" rx="250" fill="#0F172A"/>
+  
+  <!-- Triple Concentric Arcs -->
+  <path d="M340 700C340 794.992 417.008 872 512 872C606.992 872 684 794.992 684 700" stroke="#2D6A6A" stroke-width="44" stroke-linecap="round"/>
+  <path d="M400 700C400 761.858 450.142 812 512 812C573.858 812 624 761.858 624 700" stroke="#2D6A6A" stroke-width="44" stroke-linecap="round"/>
+  <path d="M460 700C460 728.719 483.281 752 512 752C540.719 752 564 728.719 564 700" stroke="#2D6A6A" stroke-width="44" stroke-linecap="round"/>
+  
+  <!-- Stem -->
+  <path d="M512 700V495" stroke="#2D6A6A" stroke-width="44" stroke-linecap="round"/>
+  
+  <!-- Head Cradle -->
+  <path d="M380 280V425C380 463.66 411.34 495 450 495H574C612.66 495 644 463.66 644 425V280" stroke="#2D6A6A" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Roller Head -->
+  <g clip-path="url(#rollerClip)">
+    <rect x="404" y="260" width="216" height="100" fill="#F59E0B"/>
+    <rect x="404" y="360" width="216" height="85" fill="#1E3A3A"/>
+  </g>
+  
+  <defs>
+    <clipPath id="rollerClip">
+      <rect x="404" y="260" width="216" height="185" rx="24"/>
+    </clipPath>
+  </defs>
+</svg>

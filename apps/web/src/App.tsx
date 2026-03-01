@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { useKeyboardShortcuts } from "./hooks/useKeyboard";
@@ -6,6 +6,7 @@ import { Layout } from "./components/Layout";
 import { PwaUpdateBanner } from "./components/PwaUpdateBanner";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
+import { applyNoIndexMetadata } from "./lib/seo";
 
 const DashboardPage = lazy(() => import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })));
 const WordBankPage = lazy(() => import("./pages/WordBankPage").then((m) => ({ default: m.WordBankPage })));
@@ -17,6 +18,10 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth();
   // Initialize keyboard shortcuts system
   useKeyboardShortcuts();
+
+  useEffect(() => {
+    applyNoIndexMetadata("Inko App");
+  }, []);
 
   if (isLoading) {
     return <RouteFallback />;

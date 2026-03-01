@@ -130,4 +130,6 @@ spec:
             default: "https://${API_DOMAIN}.zeabur.app"
           VITE_CONVEX_URL:
             default: "https://${BACKEND_DOMAIN}.zeabur.app"
+          VITE_SITE_URL:
+            default: "https://${FRONTEND_DOMAIN}.zeabur.app"
       domainKey: FRONTEND_DOMAIN
