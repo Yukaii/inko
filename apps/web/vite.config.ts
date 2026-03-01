@@ -11,9 +11,9 @@ export default defineConfig({
       manifest: {
         name: "Inko",
         short_name: "Inko",
-        description: "Inko frontend app",
-        theme_color: "#111827",
-        background_color: "#ffffff",
+        description: "Practice vocabulary with typing-first drills, spaced repetition, and audio support.",
+        theme_color: "#1a1a1a",
+        background_color: "#111111",
         display: "standalone",
         start_url: "/",
         scope: "/",

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.json && vite build",
+    "build": "node ./scripts/generate-seo.mjs && tsc -p tsconfig.json && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "tsc -p tsconfig.json --noEmit"

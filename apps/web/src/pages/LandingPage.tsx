@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { PracticeSimulator } from "../components/PracticeSimulator";
 import { SUPPORTED_UI_LANGUAGES } from "../i18n";
+import { applyMetadata } from "../lib/seo";
 import {
   Keyboard,
   Repeat,
@@ -48,6 +49,16 @@ export function LandingPage() {
   const langMenuRef = useRef<HTMLDivElement>(null);
 
   const currentLang = SUPPORTED_UI_LANGUAGES.find((l) => i18n.language.startsWith(l.code)) || SUPPORTED_UI_LANGUAGES[0];
+
+  useEffect(() => {
+    applyMetadata({
+      title: "Inko | Learn Languages by Typing",
+      description:
+        "Build vocabulary with typing-first practice, spaced repetition, text-to-speech, and progress tracking.",
+      path: "/",
+      robots: "index,follow",
+    });
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
