@@ -1,10 +1,10 @@
 /** @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { canSubmitCard, getPracticeCompletionTitle, getTypingFeedback, isEscDoublePress, PracticePage } from "./PracticePage";
+import { canSubmitCard, getNextCleanStreak, getPracticeCompletionTitle, getTypingFeedback, isEscDoublePress, PracticePage } from "./PracticePage";
 
 const {
   mockStartPractice,
@@ -247,6 +247,16 @@ describe("isEscDoublePress", () => {
   });
 });
 
+describe("getNextCleanStreak", () => {
+  it("increments streak after a clean card", () => {
+    expect(getNextCleanStreak(3, false)).toBe(4);
+  });
+
+  it("resets streak after a card with mistakes", () => {
+    expect(getNextCleanStreak(3, true)).toBe(0);
+  });
+});
+
 describe("PracticePage", () => {
   it("shows the example sentence when the practice card includes one", async () => {
     mockPracticeStart({
@@ -293,5 +303,40 @@ describe("PracticePage", () => {
     await waitFor(() => {
       expect(playMock).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it("shows replay and shortcuts controls when tts is enabled", async () => {
+    mockPracticeStart();
+
+    renderPracticePage();
+
+    await screen.findByText("Replay");
+    await screen.findByTitle("Practice shortcuts");
+  });
+
+  it("hides visible card content in audio challenge mode", async () => {
+    mockPracticeStart({
+      card: {
+        wordId: "word-1",
+        deckId: "deck-1",
+        language: "ja",
+        target: "勉強",
+        reading: "べんきょう",
+        romanization: "benkyou",
+        meaning: "study",
+        example: "毎日日本語を勉強しています。",
+      },
+    });
+
+    renderPracticePage();
+
+    const toggle = await screen.findByRole("button", { name: "Audio challenge" });
+    fireEvent.click(toggle);
+
+    await screen.findByText("Listen first. Type from memory.");
+    await screen.findByLabelText("Type answer");
+    expect(screen.queryByText("study")).toBeNull();
+    expect(screen.queryByText("毎日日本語を勉強しています。")).toBeNull();
+    expect(screen.queryByText("benkyou")).toBeNull();
   });
 });
