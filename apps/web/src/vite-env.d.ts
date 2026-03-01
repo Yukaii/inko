@@ -12,6 +12,7 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
+// NOTE: prevent exposing secrets! This is just for some easy debug on production
 interface Window {
   __INKO_ENV__?: {
     apiUrl?: string;
