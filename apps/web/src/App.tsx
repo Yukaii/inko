@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { useKeyboardShortcuts } from "./hooks/useKeyboard";
 import { Layout } from "./components/Layout";
@@ -15,10 +15,12 @@ const LandingPage = lazy(() => import("./pages/LandingPage").then((m) => ({ defa
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth();
+  const location = useLocation();
   // Initialize keyboard shortcuts system
   useKeyboardShortcuts();
+  const isCompletingOauth = new URLSearchParams(location.search).has("code");
 
-  if (isLoading) {
+  if (isLoading || isCompletingOauth) {
     return <RouteFallback />;
   }
 
