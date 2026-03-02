@@ -52,13 +52,13 @@ export function LandingPage() {
 
   useEffect(() => {
     applyMetadata({
-      title: "Inko | Learn Languages by Typing",
+      title: t("landing.meta.title"),
       description:
-        "Build vocabulary with typing-first practice, spaced repetition, text-to-speech, and progress tracking.",
+        t("landing.meta.description"),
       path: "/",
       robots: "index,follow",
     });
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -89,7 +89,7 @@ export function LandingPage() {
               {t("landing.nav.features")}
             </a>
             <Link to="/community" className="hover:text-text-primary transition-colors no-underline text-text-secondary">
-              Community
+              {t("landing.nav.community")}
             </Link>
           </div>
         </div>

@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Pencil, Trash2, ChevronLeft, ChevronRight, Search, BookOpen, ArrowLeft, Download } from "lucide-react";
-import { LANGUAGE_LABELS, type LanguageCode, SUPPORTED_LANGUAGES } from "@inko/shared";
+import { LANGUAGE_LABELS, type CreateCommunityDeckSubmissionInput, type LanguageCode, SUPPORTED_LANGUAGES } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
@@ -12,6 +12,14 @@ import { downloadDeckCsv, fetchAllDeckWords } from "./wordBankExport";
 type AddTab = "single" | "import";
 const IMPORT_BATCH_SIZE = 10000;
 const WORDS_PAGE_SIZE = 100;
+
+type PublishDeckForm = {
+  title: string;
+  summary: string;
+  description: string;
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
+  tags: string;
+};
 
 function chunkArray<T>(items: T[], size: number): T[][] {
   if (size <= 0) return [items];
@@ -39,6 +47,7 @@ export function WordBankPage() {
   const [editingDeck, setEditingDeck] = useState<{ id: string; name: string; language: LanguageCode; archived: boolean } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deckToDelete, setDeckToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [showPublishDeckModal, setShowPublishDeckModal] = useState(false);
   const [addTab, setAddTab] = useState<AddTab>("single");
   const [importText, setImportText] = useState("");
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -60,6 +69,13 @@ export function WordBankPage() {
     audioUrl: "",
     tags: "",
   });
+  const [publishDeckForm, setPublishDeckForm] = useState<PublishDeckForm>({
+    title: "",
+    summary: "",
+    description: "",
+    difficulty: "Beginner",
+    tags: "",
+  });
 
   const [showEditWordModal, setShowEditWordModal] = useState(false);
   const [editingWord, setEditingWord] = useState<{
@@ -79,6 +95,8 @@ export function WordBankPage() {
   const [selectedWordIds, setSelectedWordIds] = useState<Set<string>>(new Set());
   const [showMobileAddModal, setShowMobileAddModal] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [publishStatus, setPublishStatus] = useState<string | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
   const [showDeckActionsHint, setShowDeckActionsHint] = useState(() => {
     if (typeof window === "undefined") return true;
     return window.localStorage.getItem("inko_word_bank_hide_deck_actions_hint") !== "1";
@@ -274,6 +292,56 @@ export function WordBankPage() {
     },
   });
 
+  const publishDeck = useMutation({
+    mutationFn: async () => {
+      if (!selectedDeckId || !activeDeck) throw new Error(t("word_bank.publish.no_deck"));
+      const publishedWords = await fetchAllDeckWords(selectedDeckId, (deckId, options) =>
+        api.listWordsPage(token ?? "", deckId, options),
+      );
+      if (publishedWords.length === 0) throw new Error(t("word_bank.publish.empty_deck"));
+
+      const noteTypes: CreateCommunityDeckSubmissionInput["noteTypes"] = [
+        {
+          name: activeDeck.name,
+          fields: ["target", "reading", "meaning", "romanization", "example", "audioUrl", "tags"],
+        },
+      ];
+
+      return await api.submitCommunityDeck(token ?? "", {
+        title: publishDeckForm.title.trim(),
+        summary: publishDeckForm.summary.trim(),
+        description: publishDeckForm.description.trim(),
+        language: activeDeck.language,
+        difficulty: publishDeckForm.difficulty,
+        sourceKind: "manual",
+        sourceName: activeDeck.name,
+        tags: publishDeckForm.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+        noteTypes,
+        words: publishedWords.map((word) => ({
+          target: word.target,
+          reading: word.reading,
+          meaning: word.meaning,
+          romanization: word.romanization,
+          example: word.example,
+          audioUrl: word.audioUrl,
+          tags: word.tags ?? [],
+        })),
+      });
+    },
+    onMutate: () => {
+      setPublishError(null);
+      setPublishStatus(t("word_bank.publish.submitting"));
+    },
+    onSuccess: (submission) => {
+      setShowPublishDeckModal(false);
+      setPublishStatus(t("word_bank.publish.submitted", { title: submission.title }));
+    },
+    onError: (mutationError) => {
+      setPublishStatus(null);
+      setPublishError(mutationError instanceof Error ? mutationError.message : t("word_bank.publish.submit_failed"));
+    },
+  });
+
   const pagedWords = useMemo(() => {
     if (!wordSearch.trim()) return words;
     const searchLower = wordSearch.toLowerCase();
@@ -291,6 +359,28 @@ export function WordBankPage() {
   const isWordsLoading = wordsQuery.isLoading;
   const showWordActionsColumn = isWordsLoading || pagedWords.length > 0;
   const wordsTableColumnCount = showWordActionsColumn ? 6 : 5;
+  const canPublishDeck =
+    Boolean(activeDeck) &&
+    Boolean(publishDeckForm.title.trim()) &&
+    Boolean(publishDeckForm.summary.trim()) &&
+    Boolean(publishDeckForm.description.trim()) &&
+    !publishDeck.isPending;
+
+  useEffect(() => {
+    if (!activeDeck) return;
+    setPublishDeckForm((current) => ({
+      title: current.title || activeDeck.name,
+      summary: current.summary || t("word_bank.publish.default_summary", { name: activeDeck.name }),
+      description:
+        current.description ||
+        t("word_bank.publish.default_description", {
+          name: activeDeck.name,
+          language: activeDeck.language.toUpperCase(),
+        }),
+      difficulty: current.difficulty,
+      tags: current.tags || activeDeck.language,
+    }));
+  }, [activeDeck, t]);
 
   const parseCSVLine = (line: string): string[] => {
     const result: string[] = [];
@@ -762,6 +852,14 @@ export function WordBankPage() {
                     <button
                       type="button"
                       className="inline-flex items-center gap-2 bg-bg-elevated px-3 py-1.5 text-xs rounded-lg border-0 cursor-pointer text-text-primary hover:bg-bg-hover transition-colors"
+                      onClick={() => setShowPublishDeckModal(true)}
+                      disabled={isWordsLoading || totalWordsCount === 0}
+                    >
+                      <span>{t("word_bank.publish.button")}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 bg-bg-elevated px-3 py-1.5 text-xs rounded-lg border-0 cursor-pointer text-text-primary hover:bg-bg-hover transition-colors"
                       onClick={() => exportDeck.mutate()}
                       disabled={exportDeck.isPending || isWordsLoading || totalWordsCount === 0}
                     >
@@ -806,6 +904,8 @@ export function WordBankPage() {
                 </div>
 
                 {exportError ? <p className="m-0 text-sm text-[var(--danger-text)]">{exportError}</p> : null}
+                {publishStatus ? <p className="m-0 text-sm text-accent-teal">{publishStatus}</p> : null}
+                {publishError ? <p className="m-0 text-sm text-[var(--danger-text)]">{publishError}</p> : null}
 
                 {selectedWordIds.size > 0 && (
                   <div className="flex items-center gap-4 rounded-xl bg-bg-elevated p-3 border border-accent-teal/20 animate-in fade-in slide-in-from-top-2">
@@ -1075,6 +1175,100 @@ export function WordBankPage() {
                 disabled={!editingDeck.name.trim() || updateDeck.isPending}
               >
                 {t("common.save")}
+              </button>
+            </div>
+          </dialog>
+        </div>
+      )}
+
+      {showPublishDeckModal && activeDeck && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm border-0"
+            onClick={() => setShowPublishDeckModal(false)}
+          />
+          <dialog className="relative z-[1010] flex w-full max-w-[560px] flex-col gap-6 rounded-2xl border border-[var(--border-subtle)] bg-bg-card p-8 shadow-2xl" open>
+            <h2 className="m-0 text-2xl font-semibold [font-family:var(--font-display)]">{t("word_bank.publish.title")}</h2>
+            <p className="m-0 text-sm leading-relaxed text-text-secondary">{t("word_bank.publish.description")}</p>
+            <div className="grid gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-text-secondary">{t("word_bank.publish.deck")}</label>
+                <div className="rounded-lg border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary">
+                  {activeDeck.name} ({activeDeck.language.toUpperCase()})
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-text-secondary" htmlFor={`${formId}-publish-title`}>{t("word_bank.publish.form.title")}</label>
+                <input
+                  id={`${formId}-publish-title`}
+                  className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none"
+                  value={publishDeckForm.title}
+                  onChange={(e) => setPublishDeckForm((current) => ({ ...current, title: e.target.value }))}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-text-secondary" htmlFor={`${formId}-publish-summary`}>{t("word_bank.publish.form.summary")}</label>
+                <input
+                  id={`${formId}-publish-summary`}
+                  className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none"
+                  value={publishDeckForm.summary}
+                  onChange={(e) => setPublishDeckForm((current) => ({ ...current, summary: e.target.value }))}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-text-secondary" htmlFor={`${formId}-publish-description`}>{t("word_bank.publish.form.description")}</label>
+                <textarea
+                  id={`${formId}-publish-description`}
+                  className="min-h-[100px] p-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none resize-none"
+                  value={publishDeckForm.description}
+                  onChange={(e) => setPublishDeckForm((current) => ({ ...current, description: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-text-secondary" htmlFor={`${formId}-publish-difficulty`}>{t("word_bank.publish.form.difficulty")}</label>
+                  <select
+                    id={`${formId}-publish-difficulty`}
+                    className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none"
+                    value={publishDeckForm.difficulty}
+                    onChange={(e) => setPublishDeckForm((current) => ({ ...current, difficulty: e.target.value as PublishDeckForm["difficulty"] }))}
+                  >
+                    <option value="Beginner">{t("importer.difficulty.beginner")}</option>
+                    <option value="Intermediate">{t("importer.difficulty.intermediate")}</option>
+                    <option value="Advanced">{t("importer.difficulty.advanced")}</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-text-secondary" htmlFor={`${formId}-publish-tags`}>{t("word_bank.publish.form.tags")}</label>
+                  <input
+                    id={`${formId}-publish-tags`}
+                    className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none"
+                    value={publishDeckForm.tags}
+                    onChange={(e) => setPublishDeckForm((current) => ({ ...current, tags: e.target.value }))}
+                    placeholder={t("word_bank.publish.form.tags_placeholder")}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-bg-page px-4 py-3 text-sm text-text-secondary">
+              {t("word_bank.publish.review_note")}
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                className="bg-bg-elevated text-text-primary px-5 py-2 rounded-lg border-0 cursor-pointer"
+                onClick={() => setShowPublishDeckModal(false)}
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                className="bg-accent-orange text-text-on-accent px-5 py-2 rounded-lg border-0 font-bold cursor-pointer disabled:opacity-60"
+                onClick={() => publishDeck.mutate()}
+                disabled={!canPublishDeck}
+              >
+                {publishDeck.isPending ? t("word_bank.publish.submitting") : t("word_bank.publish.submit")}
               </button>
             </div>
           </dialog>

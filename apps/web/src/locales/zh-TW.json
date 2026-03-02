@@ -66,6 +66,7 @@
     "dashboard": "控制台",
     "word_bank": "單字庫",
     "settings": "設定",
+    "my_submissions": "我的提交",
     "shortcuts": "快速鍵",
     "home": "首頁",
     "decks": "牌組",
@@ -78,15 +79,20 @@
     "refreshing": "重新整理中..."
   },
   "landing": {
+    "meta": {
+      "title": "Inko | 用打字學語言",
+      "description": "透過打字練習、Anki 牌組匯入、社群分享、TTS 與進度追蹤來建立穩固詞彙記憶。"
+    },
     "nav": {
       "how_it_works": "運作原理",
       "features": "產品特點",
+      "community": "社群",
       "get_started": "立即開始"
     },
     "hero": {
       "badge": "記憶的未來",
       "title": "打字，直到你完全掌握",
-      "subtitle": "這是一款讓你證明自己真的記住了的字卡 App。透過打字建立肌肉記憶，從此不再遺忘。",
+      "subtitle": "匯入 Anki 牌組、用打字訓練記憶，並把整理好的牌組提交到內建審核的社群牌組庫。",
       "cta_primary": "開始練習",
       "cta_secondary": "了解更多"
     },
@@ -94,22 +100,22 @@
       "title": "// 運作原理",
       "subtitle": "三個步驟，讓你永不遺忘",
       "step1": {
-        "title": "建立牌組",
-        "desc": "為任何學科建立自訂牌組，添加你的術語和定義。"
+        "title": "建立或匯入",
+        "desc": "你可以從零開始，也可以從 Anki 套件或社群牌組快速起步。"
       },
       "step2": {
         "title": "輸入答案",
         "desc": "沒有選擇題。從記憶中提取答案並親手打出來。"
       },
       "step3": {
-        "title": "聰明複習",
-        "desc": "我們的演算法會在你即將遺忘之前安排複習。"
+        "title": "複習並分享",
+        "desc": "用智慧排程持續複習，再把整理好的牌組送進社群審核流程。"
       }
     },
     "features": {
       "badge": "// 特點",
       "title": "你所需要的一切",
-      "subtitle": "以打字為核心，搭配智慧複習節奏與發音音訊，形成完整的練習循環。",
+      "subtitle": "從打字練習、Anki 遷移到社群發布，完整流程都在同一個產品裡。",
       "typing_first": {
         "title": "輸入優先",
         "desc": "沒有選擇題，沒有連連看。從記憶中打出答案，建立真實的神經連結。"
@@ -123,25 +129,25 @@
         "desc": "視覺化儀表板顯示掌握程度、連續天數與薄弱環節，精確掌握學習重心。"
       },
       "custom_decks": {
-        "title": "自訂牌組",
-        "desc": "建立任何主題的牌組 —— 語言、程式語法、醫學術語或歷史日期。"
+        "title": "Anki 匯入與欄位對應",
+        "desc": "匯入 `.apkg`、`.colpkg`、`.csv` 或貼上資料，檢查欄位後再精準匯入。"
       },
       "tts_support": {
-        "title": "發音音訊",
-        "desc": "內建 TTS 會在練習時播放發音，讓你不只靠打字，也能透過聽覺一起強化記憶。"
+        "title": "社群牌組",
+        "desc": "瀏覽公開牌組、檢查範例卡片，也能把自己編輯過的牌組送交審核。"
       },
       "practice_anywhere": {
-        "title": "隨時練習",
-        "desc": "支援任何有鍵盤的裝置。不論是在通勤、在書桌前，甚至是睡前都能練習。"
+        "title": "發音與媒體",
+        "desc": "把內建 TTS 與 Anki 匯入音訊放進同一套學習流程，讓聽覺與打字互相強化。"
       }
     },
     "cta": {
       "title": "透過打字，精通任何知識。",
-      "subtitle": "親手鋪就通往恆久知識的道路。",
+      "subtitle": "把既有牌組帶進來，持續打磨，再把好的內容分享回社群。",
       "button": "現在開始練習"
     },
     "footer": {
-      "desc": "打字，直到你完全掌握。透過主動打字練習建立真實回憶能力的字卡 App。",
+      "desc": "打字，直到你完全掌握。這是一款能匯入 Anki、建立更好學習牌組、並透過審核後分享給社群的字卡 App。",
       "product": "產品",
       "github": "GitHub",
       "rights": "© 2026 inko. all rights reserved.",
@@ -309,6 +315,29 @@
       "button": "下載牌組",
       "downloading": "下載中...",
       "error": "目前無法下載這個牌組，請稍後再試。"
+    },
+    "publish": {
+      "button": "發布",
+      "title": "將牌組提交到社群",
+      "description": "把你編輯過的牌組送進審核佇列，讓它有機會進入公開社群庫。",
+      "deck": "牌組",
+      "review_note": "社群提交內容會先經過審核，之後才會公開。",
+      "submit": "提交審核",
+      "submitting": "提交中...",
+      "submitted": "「{{title}}」已送出審核。",
+      "submit_failed": "目前無法提交這個牌組，請再試一次。",
+      "no_deck": "尚未選擇牌組。",
+      "empty_deck": "發布前請先至少加入一張卡片。",
+      "default_summary": "已將 {{name}} 準備好送交社群審核。",
+      "default_description": "這是從單字庫匯出的使用者編輯 {{language}} 牌組，已提交到社群審核流程。",
+      "form": {
+        "title": "標題",
+        "summary": "摘要",
+        "description": "描述",
+        "difficulty": "難度",
+        "tags": "標籤",
+        "tags_placeholder": "community, curated, phrases"
+      }
     }
   },
   "settings": {
@@ -576,6 +605,60 @@
     "import_into_inko": "匯入到 Inko",
     "note_types": "筆記類型",
     "sample_cards": "範例卡片",
+    "detail": {
+      "seo_title": "{{title}} | Inko 社群"
+    },
+    "library": {
+      "seo_title": "社群牌組 | Inko",
+      "seo_description": "瀏覽社群建立的語言牌組，檢查筆記欄位後再匯入到 Inko。",
+      "badge": "社群牌組庫",
+      "title": "先看共享牌組，再決定是否匯入。",
+      "subtitle": "先檢查筆記類型、欄位配置與範例卡片，再把內容帶進你的個人單字庫。",
+      "open_importer": "開啟匯入工具",
+      "search_placeholder": "搜尋牌組、作者或標籤",
+      "all_languages": "所有語言",
+      "empty": "目前沒有符合這個篩選條件的公開社群牌組。",
+      "updated": "更新於 {{date}}",
+      "view_deck": "查看牌組"
+    },
+    "moderation": {
+      "seo_title": "社群審核 | Inko",
+      "badge": "審核",
+      "title": "審核社群牌組提交內容。",
+      "subtitle": "把高品質牌組批准進公開庫，或附上審核說明拒絕低品質提交。",
+      "browse_library": "瀏覽牌組庫",
+      "open_importer": "開啟匯入工具",
+      "source": "來源",
+      "source_meta": "{{count}} 張卡片 • {{email}}",
+      "published_slug": "公開 slug",
+      "slug_placeholder": "submitted-deck",
+      "moderation_notes": "審核備註",
+      "notes_placeholder": "說明核准或拒絕原因",
+      "approve": "核准",
+      "reject": "拒絕",
+      "updated_feedback": "已將 {{title}} 更新為 {{status}}。",
+      "access_denied": "這個帳號尚未啟用審核者權限。",
+      "access_denied_help": "請在 API 伺服器的 `MODERATOR_EMAILS` 加入你的電子郵件，才能使用這個佇列。",
+      "empty": "{{status}} 佇列中目前沒有提交內容。",
+      "catalog_note": "審核結果會直接寫入公開社群牌組目錄。",
+      "status": {
+        "pending": "待審核",
+        "approved": "已通過",
+        "rejected": "已拒絕"
+      }
+    },
+    "submissions": {
+      "seo_title": "我的社群提交 | Inko",
+      "badge": "我的提交",
+      "title": "追蹤你送出的牌組。",
+      "subtitle": "查看審核狀態、範例卡片，以及審核者留下的備註。",
+      "open_importer": "開啟匯入工具",
+      "empty": "你還沒有提交任何牌組。",
+      "source": "來源",
+      "cards": "卡片數",
+      "created": "建立時間",
+      "moderation_notes": "審核備註"
+    },
     "stats": {
       "downloads": "下載次數",
       "rating": "評分",

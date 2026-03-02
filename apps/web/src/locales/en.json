@@ -66,6 +66,7 @@
     "dashboard": "Dashboard",
     "word_bank": "Word Bank",
     "settings": "Settings",
+    "my_submissions": "My submissions",
     "shortcuts": "Shortcuts",
     "home": "Home",
     "decks": "Decks",
@@ -78,15 +79,20 @@
     "refreshing": "Refreshing..."
   },
   "landing": {
+    "meta": {
+      "title": "Inko | Learn Languages by Typing",
+      "description": "Build vocabulary with typing-first practice, Anki deck import, community deck sharing, text-to-speech, and progress tracking."
+    },
     "nav": {
       "how_it_works": "How It Works",
       "features": "Features",
+      "community": "Community",
       "get_started": "Get Started"
     },
     "hero": {
       "badge": "The Future of Retention",
       "title": "type it until you own it",
-      "subtitle": "The flashcard app that makes you prove you know it. Type your answers, build muscle memory, and never forget again.",
+      "subtitle": "Import Anki decks, train by typing, and publish curated decks back to a community library with moderation built in.",
       "cta_primary": "Start Typing",
       "cta_secondary": "Learn More"
     },
@@ -94,22 +100,22 @@
       "title": "// How It Works",
       "subtitle": "Three steps to never forgetting again",
       "step1": {
-        "title": "Create Decks",
-        "desc": "Build custom decks for any subject. Add your terms and definitions."
+        "title": "Import or Create",
+        "desc": "Start from scratch, upload Anki packages with field mapping, or pull from community decks."
       },
       "step2": {
         "title": "Type Answers",
         "desc": "No multiple choice. Recall the answer from memory and type it out."
       },
       "step3": {
-        "title": "Review Smartly",
-        "desc": "Our algorithm schedules reviews just before you're likely to forget."
+        "title": "Review and Share",
+        "desc": "Train with smart scheduling, then submit your best decks to the moderated community library."
       }
     },
     "features": {
       "badge": "// Features",
       "title": "Everything You Need",
-      "subtitle": "Typing-first practice, smart review timing, and pronunciation audio that keeps the training loop complete.",
+      "subtitle": "Typing-first practice, smart review timing, Anki migration, and community publishing in one loop.",
       "typing_first": {
         "title": "Typing First",
         "desc": "No multiple choice. No matching. Type your answers from memory to build real neural pathways."
@@ -123,25 +129,25 @@
         "desc": "Visual dashboards show mastery levels, streaks, and weak spots so you know exactly where to focus."
       },
       "custom_decks": {
-        "title": "Custom Decks",
-        "desc": "Create decks for any subject — languages, code syntax, med terms, history dates. Your knowledge, your way."
+        "title": "Anki Import + Mapping",
+        "desc": "Upload `.apkg`, `.colpkg`, `.csv`, or pasted exports, inspect note fields, and map them into your deck cleanly."
       },
       "tts_support": {
-        "title": "Pronunciation Audio",
-        "desc": "Built-in TTS plays pronunciations during practice, so you can reinforce recall with listening as well as typing."
+        "title": "Community Decks",
+        "desc": "Browse public decks, inspect sample cards, clone useful sets, and submit your own edited decks for review."
       },
       "practice_anywhere": {
-        "title": "Practice Anywhere",
-        "desc": "Works on any device with a keyboard. Practice on your commute, at your desk, or in bed."
+        "title": "Pronunciation + Media",
+        "desc": "Keep TTS support and imported Anki audio in the same study flow, so listening and typing reinforce each other."
       }
     },
     "cta": {
       "title": "Master anything by typing.",
-      "subtitle": "Type your way to lasting knowledge.",
+      "subtitle": "Bring your existing decks, refine them, and share the good ones back.",
       "button": "Start Typing Now"
     },
     "footer": {
-      "desc": "Type it until you own it. The flashcard app that builds real recall through active typing practice.",
+      "desc": "Type it until you own it. Import Anki decks, build better study sets, and share them through a moderated community library.",
       "product": "Product",
       "github": "GitHub",
       "rights": "© 2026 inko. all rights reserved.",
@@ -309,6 +315,29 @@
       "button": "Download deck",
       "downloading": "Downloading...",
       "error": "Couldn't download this deck right now. Try again."
+    },
+    "publish": {
+      "button": "Publish",
+      "title": "Publish deck to community",
+      "description": "Submit your edited deck to the moderation queue so it can be reviewed for the public library.",
+      "deck": "Deck",
+      "review_note": "Community submissions are reviewed before they appear publicly.",
+      "submit": "Submit for review",
+      "submitting": "Submitting...",
+      "submitted": "\"{{title}}\" was submitted for review.",
+      "submit_failed": "Couldn't submit this deck right now. Try again.",
+      "no_deck": "No deck selected.",
+      "empty_deck": "Add at least one card before publishing this deck.",
+      "default_summary": "{{name}} prepared for community review.",
+      "default_description": "User-edited {{language}} deck exported from the word bank and submitted for community moderation.",
+      "form": {
+        "title": "Title",
+        "summary": "Summary",
+        "description": "Description",
+        "difficulty": "Difficulty",
+        "tags": "Tags",
+        "tags_placeholder": "community, curated, phrases"
+      }
     }
   },
   "settings": {
@@ -578,6 +607,60 @@
     "import_into_inko": "Import into Inko",
     "note_types": "Note types",
     "sample_cards": "Sample cards",
+    "detail": {
+      "seo_title": "{{title}} | Inko Community"
+    },
+    "library": {
+      "seo_title": "Community Decks | Inko",
+      "seo_description": "Browse community-built language decks, inspect note fields, and import them into Inko.",
+      "badge": "Community Library",
+      "title": "Discover shared decks before you import them.",
+      "subtitle": "Review note types, field layouts, and sample cards before moving anything into your personal word bank.",
+      "open_importer": "Open importer",
+      "search_placeholder": "Search decks, authors, or tags",
+      "all_languages": "All languages",
+      "empty": "No published community decks match this filter yet.",
+      "updated": "Updated {{date}}",
+      "view_deck": "View deck"
+    },
+    "moderation": {
+      "seo_title": "Community Moderation | Inko",
+      "badge": "Moderation",
+      "title": "Review community deck submissions.",
+      "subtitle": "Approve clean deck submissions into the public library or reject low-quality uploads with review notes.",
+      "browse_library": "Browse library",
+      "open_importer": "Open importer",
+      "source": "Source",
+      "source_meta": "{{count}} cards • {{email}}",
+      "published_slug": "Published slug",
+      "slug_placeholder": "submitted-deck",
+      "moderation_notes": "Moderation notes",
+      "notes_placeholder": "Why this was approved or rejected",
+      "approve": "Approve",
+      "reject": "Reject",
+      "updated_feedback": "Updated {{title}} to {{status}}.",
+      "access_denied": "Moderator access is not enabled for this account.",
+      "access_denied_help": "Add your email to `MODERATOR_EMAILS` on the API server to unlock this queue.",
+      "empty": "No submissions in the {{status}} queue.",
+      "catalog_note": "Moderation writes directly into the published community deck catalog.",
+      "status": {
+        "pending": "pending",
+        "approved": "approved",
+        "rejected": "rejected"
+      }
+    },
+    "submissions": {
+      "seo_title": "My Community Submissions | Inko",
+      "badge": "My Submissions",
+      "title": "Track the decks you've submitted.",
+      "subtitle": "Review moderation status, sample cards, and any notes left by moderators.",
+      "open_importer": "Open importer",
+      "empty": "You haven't submitted any decks yet.",
+      "source": "Source",
+      "cards": "Cards",
+      "created": "Created",
+      "moderation_notes": "Moderation notes"
+    },
     "stats": {
       "downloads": "Downloads",
       "rating": "Rating",

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { ShieldCheck, XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { CommunityDeckSubmissionDTO } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
@@ -21,6 +22,7 @@ function SubmissionCard({
   onApprove,
   onReject,
   isPending,
+  t,
 }: {
   submission: CommunityDeckSubmissionDTO;
   draft: ReviewDraft;
@@ -28,6 +30,7 @@ function SubmissionCard({
   onApprove: () => void;
   onReject: () => void;
   isPending: boolean;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }) {
   return (
     <article className="rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-6">
@@ -37,7 +40,7 @@ function SubmissionCard({
           <h2 className="mt-2 text-2xl font-bold [font-family:var(--font-display)] text-text-primary">{submission.title}</h2>
           <p className="mt-2 text-sm text-text-secondary">{submission.summary}</p>
         </div>
-        <div className="rounded-full bg-bg-page px-3 py-1 text-xs font-medium text-text-secondary">{submission.status}</div>
+        <div className="rounded-full bg-bg-page px-3 py-1 text-xs font-medium text-text-secondary">{t(`community.moderation.status.${submission.status}`)}</div>
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -51,17 +54,17 @@ function SubmissionCard({
             ))}
           </div>
           <div className="rounded-2xl bg-bg-page p-4">
-            <div className="text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">Source</div>
+            <div className="text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">{t("community.moderation.source")}</div>
             <div className="mt-2 text-sm text-text-primary">{submission.sourceKind} • {submission.sourceName}</div>
-            <div className="mt-1 text-sm text-text-secondary">{submission.cardCount} cards • {submission.submitterEmail}</div>
+            <div className="mt-1 text-sm text-text-secondary">{t("community.moderation.source_meta", { count: submission.cardCount, email: submission.submitterEmail })}</div>
           </div>
           <div className="overflow-hidden rounded-2xl border border-[var(--border-subtle)]">
             <table className="w-full border-collapse text-sm">
               <thead className="bg-bg-page text-left text-text-secondary">
                 <tr>
-                  <th className="px-4 py-3">Target</th>
-                  <th className="px-4 py-3">Meaning</th>
-                  <th className="px-4 py-3">Reading</th>
+                  <th className="px-4 py-3">{t("importer.fields.target")}</th>
+                  <th className="px-4 py-3">{t("importer.fields.meaning")}</th>
+                  <th className="px-4 py-3">{t("importer.fields.reading")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -78,19 +81,19 @@ function SubmissionCard({
         </div>
 
         <div className="rounded-2xl bg-bg-page p-4">
-          <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">Published slug</label>
+          <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">{t("community.moderation.published_slug")}</label>
           <input
             className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] bg-transparent px-3 py-2 text-sm text-text-primary outline-none"
             value={draft.slug}
             onChange={(event) => onDraftChange({ ...draft, slug: event.target.value })}
-            placeholder="submitted-deck"
+            placeholder={t("community.moderation.slug_placeholder")}
           />
-          <label className="mt-4 block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">Moderation notes</label>
+          <label className="mt-4 block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">{t("community.moderation.moderation_notes")}</label>
           <textarea
             className="mt-2 min-h-28 w-full rounded-xl border border-[var(--border-subtle)] bg-transparent px-3 py-2 text-sm text-text-primary outline-none"
             value={draft.moderationNotes}
             onChange={(event) => onDraftChange({ ...draft, moderationNotes: event.target.value })}
-            placeholder="Why this was approved or rejected"
+            placeholder={t("community.moderation.notes_placeholder")}
           />
           <div className="mt-4 flex gap-3">
             <button
@@ -99,7 +102,7 @@ function SubmissionCard({
               disabled={isPending}
               className="flex-1 rounded-xl bg-accent-orange px-4 py-2.5 text-sm font-bold text-text-on-accent disabled:opacity-60"
             >
-              Approve
+              {t("community.moderation.approve")}
             </button>
             <button
               type="button"
@@ -107,7 +110,7 @@ function SubmissionCard({
               disabled={isPending}
               className="flex-1 rounded-xl border border-[var(--border-subtle)] bg-transparent px-4 py-2.5 text-sm font-bold text-text-primary disabled:opacity-60"
             >
-              Reject
+              {t("community.moderation.reject")}
             </button>
           </div>
         </div>
@@ -117,6 +120,7 @@ function SubmissionCard({
 }
 
 export function CommunityModerationPage() {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<StatusFilter>("pending");
@@ -124,8 +128,8 @@ export function CommunityModerationPage() {
   const [feedback, setFeedback] = useState<string | null>(null);
 
   useEffect(() => {
-    applyNoIndexMetadata("Community Moderation | Inko");
-  }, []);
+    applyNoIndexMetadata(t("community.moderation.seo_title"));
+  }, [t]);
 
   const submissionsQuery = useQuery({
     queryKey: ["community-submissions", status],
@@ -144,7 +148,10 @@ export function CommunityModerationPage() {
       });
     },
     onSuccess: async (submission) => {
-      setFeedback(`Updated ${submission.title} to ${submission.status}.`);
+      setFeedback(t("community.moderation.updated_feedback", {
+        title: submission.title,
+        status: t(`community.moderation.status.${submission.status}`),
+      }));
       await queryClient.invalidateQueries({ queryKey: ["community-submissions"] });
       await queryClient.invalidateQueries({ queryKey: ["community-decks"] });
     },
@@ -168,18 +175,18 @@ export function CommunityModerationPage() {
     <div className="mx-auto flex max-w-7xl flex-col gap-8 p-5 md:p-10">
       <header className="grid gap-5 rounded-[28px] border border-[var(--border-subtle)] bg-[radial-gradient(circle_at_top_left,rgba(0,212,170,0.18),transparent_34%),linear-gradient(135deg,var(--bg-card),var(--bg-page))] p-8 md:grid-cols-[minmax(0,1fr)_auto]">
         <div>
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-accent-teal">Moderation</p>
-          <h1 className="m-0 text-4xl font-bold [font-family:var(--font-display)] md:text-5xl">Review community deck submissions.</h1>
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-accent-teal">{t("community.moderation.badge")}</p>
+          <h1 className="m-0 text-4xl font-bold [font-family:var(--font-display)] md:text-5xl">{t("community.moderation.title")}</h1>
           <p className="mt-4 max-w-3xl text-sm leading-6 text-text-secondary md:text-base">
-            Approve clean deck submissions into the public library or reject low-quality uploads with review notes.
+            {t("community.moderation.subtitle")}
           </p>
         </div>
         <div className="flex flex-col gap-3">
           <Link to="/community" className="rounded-2xl border border-[var(--border-subtle)] px-4 py-3 text-sm font-medium text-text-primary no-underline">
-            Browse library
+            {t("community.moderation.browse_library")}
           </Link>
           <Link to="/imports/anki" className="rounded-2xl bg-accent-orange px-4 py-3 text-sm font-bold text-text-on-accent no-underline">
-            Open importer
+            {t("community.moderation.open_importer")}
           </Link>
         </div>
       </header>
@@ -192,7 +199,7 @@ export function CommunityModerationPage() {
             onClick={() => setStatus(value)}
             className={`rounded-full px-4 py-2 text-sm font-medium ${status === value ? "bg-accent-orange text-text-on-accent" : "border border-[var(--border-subtle)] bg-bg-card text-text-primary"}`}
           >
-            {value}
+            {t(`community.moderation.status.${value}`)}
           </button>
         ))}
       </section>
@@ -203,15 +210,15 @@ export function CommunityModerationPage() {
         <section className="rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-8 text-sm leading-6 text-text-secondary">
           <div className="flex items-center gap-3 text-text-primary">
             <XCircle size={18} />
-            Moderator access is not enabled for this account.
+            {t("community.moderation.access_denied")}
           </div>
-          <p className="mb-0 mt-3">Add your email to `MODERATOR_EMAILS` on the API server to unlock this queue.</p>
+          <p className="mb-0 mt-3">{t("community.moderation.access_denied_help")}</p>
         </section>
       ) : null}
 
       {!accessDenied && submissions.length === 0 && !submissionsQuery.isLoading ? (
         <section className="rounded-[24px] border border-dashed border-[var(--border-subtle)] bg-bg-card p-8 text-sm leading-6 text-text-secondary">
-          No submissions in the {status} queue.
+          {t("community.moderation.empty", { status: t(`community.moderation.status.${status}`) })}
         </section>
       ) : null}
 
@@ -224,6 +231,7 @@ export function CommunityModerationPage() {
           onApprove={() => reviewMutation.mutate({ submissionId: submission.id, nextStatus: "approved" })}
           onReject={() => reviewMutation.mutate({ submissionId: submission.id, nextStatus: "rejected" })}
           isPending={reviewMutation.isPending}
+          t={t}
         />
       ))}
 
@@ -231,7 +239,7 @@ export function CommunityModerationPage() {
         <div className="rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-6 text-sm text-text-secondary">
           <div className="flex items-center gap-2 text-text-primary">
             <ShieldCheck size={16} />
-            Moderation writes directly into the published community deck catalog.
+            {t("community.moderation.catalog_note")}
           </div>
         </div>
       ) : null}

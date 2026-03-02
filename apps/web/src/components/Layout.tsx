@@ -66,6 +66,15 @@ function ShieldIcon({ className }: { className?: string }) {
   );
 }
 
+function InboxIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 12h-4l-3 4H9l-3-4H2" />
+      <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+    </svg>
+  );
+}
+
 function GlobeIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -327,6 +336,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <SettingsIcon className="h-4 w-4" />
                   {t("auth.settings")}
+                </NavLink>
+                <NavLink
+                  to="/community/submissions"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
+                  onClick={() => setShowProfileMenu(false)}
+                >
+                  <InboxIcon className="h-4 w-4 shrink-0" />
+                  {t("nav.my_submissions")}
                 </NavLink>
                 {user?.canModerateCommunity ? (
                   <NavLink

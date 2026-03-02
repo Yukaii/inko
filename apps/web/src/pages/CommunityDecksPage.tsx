@@ -2,21 +2,23 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Download, Search, Star, Users } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { applyMetadata } from "../lib/seo";
 
 export function CommunityDecksPage() {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [language, setLanguage] = useState("all");
 
   useEffect(() => {
     applyMetadata({
-      title: "Community Decks | Inko",
-      description: "Browse community-built language decks, inspect note fields, and import them into Inko.",
+      title: t("community.library.seo_title"),
+      description: t("community.library.seo_description"),
       path: "/community",
       robots: "index,follow",
     });
-  }, []);
+  }, [t]);
 
   const decksQuery = useQuery({
     queryKey: ["community-decks", language, query],
@@ -35,17 +37,17 @@ export function CommunityDecksPage() {
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
         <header className="grid gap-4 rounded-[28px] border border-[var(--border-subtle)] bg-[radial-gradient(circle_at_top_left,rgba(255,107,53,0.18),transparent_32%),linear-gradient(135deg,var(--bg-card),var(--bg-page))] p-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
           <div className="max-w-3xl">
-            <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-accent-teal">Community Library</p>
-            <h1 className="m-0 text-4xl font-bold [font-family:var(--font-display)] md:text-5xl">Discover shared decks before you import them.</h1>
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-accent-teal">{t("community.library.badge")}</p>
+            <h1 className="m-0 text-4xl font-bold [font-family:var(--font-display)] md:text-5xl">{t("community.library.title")}</h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-text-secondary md:text-base">
-              Review note types, field layouts, and sample cards before moving anything into your personal word bank.
+              {t("community.library.subtitle")}
             </p>
           </div>
           <Link
             to="/imports/anki"
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-accent-orange px-5 py-3 text-sm font-bold text-text-on-accent no-underline transition-transform hover:scale-[1.02]"
           >
-            Open importer
+            {t("community.library.open_importer")}
             <ArrowRight size={16} />
           </Link>
         </header>
@@ -57,7 +59,7 @@ export function CommunityDecksPage() {
               className="w-full border-0 bg-transparent text-text-primary outline-none"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search decks, authors, or tags"
+              placeholder={t("community.library.search_placeholder")}
             />
           </label>
           <select
@@ -67,7 +69,7 @@ export function CommunityDecksPage() {
           >
             {languages.map((value) => (
               <option key={value} value={value}>
-                {value === "all" ? "All languages" : value.toUpperCase()}
+                {value === "all" ? t("community.library.all_languages") : value.toUpperCase()}
               </option>
             ))}
           </select>
@@ -76,7 +78,7 @@ export function CommunityDecksPage() {
         <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {decks.length === 0 && !decksQuery.isLoading ? (
             <article className="md:col-span-2 xl:col-span-3 rounded-[24px] border border-dashed border-[var(--border-subtle)] bg-bg-card p-8 text-sm text-text-secondary">
-              No published community decks match this filter yet.
+              {t("community.library.empty")}
             </article>
           ) : null}
           {decks.map((deck) => (
@@ -96,15 +98,15 @@ export function CommunityDecksPage() {
               </div>
               <div className="grid grid-cols-3 gap-3 rounded-2xl bg-bg-page p-3 text-sm">
                 <div>
-                  <div className="flex items-center gap-1 text-text-secondary"><Download size={14} /> Downloads</div>
+                  <div className="flex items-center gap-1 text-text-secondary"><Download size={14} /> {t("community.stats.downloads")}</div>
                   <div className="mt-1 font-bold text-text-primary">{deck.downloads.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div className="flex items-center gap-1 text-text-secondary"><Star size={14} /> Rating</div>
+                  <div className="flex items-center gap-1 text-text-secondary"><Star size={14} /> {t("community.stats.rating")}</div>
                   <div className="mt-1 font-bold text-text-primary">{deck.rating.toFixed(1)}</div>
                 </div>
                 <div>
-                  <div className="flex items-center gap-1 text-text-secondary"><Users size={14} /> Cards</div>
+                  <div className="flex items-center gap-1 text-text-secondary"><Users size={14} /> {t("community.stats.cards")}</div>
                   <div className="mt-1 font-bold text-text-primary">{deck.cardCount}</div>
                 </div>
               </div>
@@ -116,9 +118,9 @@ export function CommunityDecksPage() {
                 ))}
               </div>
               <div className="mt-auto flex items-center justify-between text-xs text-text-secondary">
-                <span>Updated {new Date(deck.updatedAt).toLocaleDateString()}</span>
+                <span>{t("community.library.updated", { date: new Date(deck.updatedAt).toLocaleDateString() })}</span>
                 <Link className="font-bold text-accent-orange no-underline" to={`/community/decks/${deck.slug}`}>
-                  View deck
+                  {t("community.library.view_deck")}
                 </Link>
               </div>
             </article>
