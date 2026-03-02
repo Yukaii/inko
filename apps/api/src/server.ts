@@ -10,6 +10,7 @@ import { authRoutes } from "./routes/auth";
 import { deckRoutes } from "./routes/decks";
 import { practiceRoutes } from "./routes/practice";
 import { dashboardRoutes } from "./routes/dashboard";
+import { communityRoutes } from "./routes/community";
 import { ttsRoutes } from "./routes/tts";
 import { repository, type Repository } from "./services/repository";
 
@@ -56,6 +57,7 @@ export async function buildServer(options?: { repository?: Repository; mailer?: 
   await app.register(async (instance) => deckRoutes(instance, repo));
   await app.register(async (instance) => practiceRoutes(instance, repo));
   await app.register(async (instance) => dashboardRoutes(instance, repo));
+  await app.register(async (instance) => communityRoutes(instance, repo));
   await app.register(async (instance) => ttsRoutes(instance, tts));
 
   app.get("/health", async () => ({ ok: true }));

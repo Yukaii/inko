@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Download, Search, Star, Users } from "lucide-react";
+import { api } from "../api/client";
 import { applyMetadata } from "../lib/seo";
-import { COMMUNITY_DECKS } from "./communityDecks";
 
 export function CommunityDecksPage() {
   const [query, setQuery] = useState("");
@@ -17,18 +18,17 @@ export function CommunityDecksPage() {
     });
   }, []);
 
-  const decks = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return COMMUNITY_DECKS.filter((deck) => {
-      if (language !== "all" && deck.language !== language) return false;
-      if (!normalized) return true;
-      return [deck.title, deck.summary, deck.author, ...deck.tags].some((value) =>
-        value.toLowerCase().includes(normalized),
-      );
-    });
-  }, [language, query]);
+  const decksQuery = useQuery({
+    queryKey: ["community-decks", language, query],
+    queryFn: () =>
+      api.listCommunityDecks({
+        language: language === "all" ? undefined : language,
+        search: query.trim() || undefined,
+      }),
+  });
 
-  const languages = ["all", ...new Set(COMMUNITY_DECKS.map((deck) => deck.language))];
+  const decks = decksQuery.data ?? [];
+  const languages = useMemo(() => ["all", ...new Set(decks.map((deck) => deck.language))], [decks]);
 
   return (
     <div className="min-h-screen bg-bg-page px-6 py-10 text-text-primary md:px-10">
@@ -74,6 +74,11 @@ export function CommunityDecksPage() {
         </section>
 
         <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {decks.length === 0 && !decksQuery.isLoading ? (
+            <article className="md:col-span-2 xl:col-span-3 rounded-[24px] border border-dashed border-[var(--border-subtle)] bg-bg-card p-8 text-sm text-text-secondary">
+              No published community decks match this filter yet.
+            </article>
+          ) : null}
           {decks.map((deck) => (
             <article
               key={deck.slug}
@@ -111,7 +116,7 @@ export function CommunityDecksPage() {
                 ))}
               </div>
               <div className="mt-auto flex items-center justify-between text-xs text-text-secondary">
-                <span>Updated {deck.updatedAt}</span>
+                <span>Updated {new Date(deck.updatedAt).toLocaleDateString()}</span>
                 <Link className="font-bold text-accent-orange no-underline" to={`/community/decks/${deck.slug}`}>
                   View deck
                 </Link>

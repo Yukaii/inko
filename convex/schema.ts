@@ -223,4 +223,90 @@ export default defineSchema({
   })
     .index("by_user_date", ["userId", "date"])
     .index("by_user", ["userId"]),
+
+  community_decks: defineTable({
+    slug: v.string(),
+    title: v.string(),
+    summary: v.string(),
+    description: v.string(),
+    language: languageValidator,
+    difficulty: v.union(v.literal("Beginner"), v.literal("Intermediate"), v.literal("Advanced")),
+    authorName: v.string(),
+    sourceSubmissionId: v.optional(v.id("community_deck_submissions")),
+    publishedByUserId: v.optional(v.id("users")),
+    downloads: v.number(),
+    rating: v.number(),
+    cardCount: v.number(),
+    tags: v.array(v.string()),
+    noteTypes: v.array(
+      v.object({
+        name: v.string(),
+        fields: v.array(v.string()),
+      }),
+    ),
+    words: v.array(
+      v.object({
+        target: v.string(),
+        reading: v.optional(v.string()),
+        romanization: v.optional(v.string()),
+        meaning: v.string(),
+        example: v.optional(v.string()),
+        audioUrl: v.optional(v.string()),
+        tags: v.array(v.string()),
+      }),
+    ),
+    publishedAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_language", ["language"])
+    .index("by_updated_at", ["updatedAt"]),
+
+  community_deck_submissions: defineTable({
+    submitterUserId: v.id("users"),
+    submitterEmail: v.string(),
+    title: v.string(),
+    summary: v.string(),
+    description: v.string(),
+    language: languageValidator,
+    difficulty: v.union(v.literal("Beginner"), v.literal("Intermediate"), v.literal("Advanced")),
+    sourceKind: v.union(
+      v.literal("apkg"),
+      v.literal("colpkg"),
+      v.literal("csv"),
+      v.literal("tsv"),
+      v.literal("community_clone"),
+      v.literal("manual"),
+    ),
+    sourceName: v.string(),
+    cardCount: v.number(),
+    tags: v.array(v.string()),
+    noteTypes: v.array(
+      v.object({
+        name: v.string(),
+        fields: v.array(v.string()),
+      }),
+    ),
+    words: v.array(
+      v.object({
+        target: v.string(),
+        reading: v.optional(v.string()),
+        romanization: v.optional(v.string()),
+        meaning: v.string(),
+        example: v.optional(v.string()),
+        audioUrl: v.optional(v.string()),
+        tags: v.array(v.string()),
+      }),
+    ),
+    status: v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected")),
+    moderationNotes: v.optional(v.string()),
+    reviewedByUserId: v.optional(v.id("users")),
+    reviewedAt: v.optional(v.number()),
+    publishedDeckId: v.optional(v.id("community_decks")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_submitter", ["submitterUserId"])
+    .index("by_status", ["status"])
+    .index("by_status_created_at", ["status", "createdAt"]),
 });

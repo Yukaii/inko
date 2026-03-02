@@ -228,8 +228,102 @@ export const CreateWordSchema = z.object({
   tags: z.array(z.string()).default([]),
 });
 
+export const CommunityDeckDifficultySchema = z.union([
+  z.literal("Beginner"),
+  z.literal("Intermediate"),
+  z.literal("Advanced"),
+]);
+
+export const CommunityDeckNoteTypeSchema = z.object({
+  name: z.string().min(1),
+  fields: z.array(z.string().min(1)).min(1),
+});
+
+export const CommunityDeckSummarySchema = z.object({
+  id: z.string(),
+  slug: z.string().min(1),
+  title: z.string().min(1),
+  summary: z.string().min(1),
+  language: LanguageSchema,
+  difficulty: CommunityDeckDifficultySchema,
+  authorName: z.string().min(1),
+  downloads: z.number().int().nonnegative(),
+  rating: z.number().min(0).max(5),
+  cardCount: z.number().int().nonnegative(),
+  updatedAt: z.number(),
+  tags: z.array(z.string()).default([]),
+});
+
+export const CommunityDeckDetailSchema = CommunityDeckSummarySchema.extend({
+  description: z.string().min(1),
+  noteTypes: z.array(CommunityDeckNoteTypeSchema).default([]),
+  words: z.array(CreateWordSchema),
+});
+
+export const CommunitySubmissionStatusSchema = z.union([
+  z.literal("pending"),
+  z.literal("approved"),
+  z.literal("rejected"),
+]);
+
+export const CommunitySourceKindSchema = z.union([
+  z.literal("apkg"),
+  z.literal("colpkg"),
+  z.literal("csv"),
+  z.literal("tsv"),
+  z.literal("community_clone"),
+  z.literal("manual"),
+]);
+
+export const CommunityDeckSubmissionSchema = z.object({
+  id: z.string(),
+  submitterUserId: z.string(),
+  submitterEmail: z.string().email(),
+  title: z.string().min(1),
+  summary: z.string().min(1),
+  description: z.string().min(1),
+  language: LanguageSchema,
+  difficulty: CommunityDeckDifficultySchema,
+  sourceKind: CommunitySourceKindSchema,
+  sourceName: z.string().min(1),
+  cardCount: z.number().int().nonnegative(),
+  tags: z.array(z.string()).default([]),
+  noteTypes: z.array(CommunityDeckNoteTypeSchema).default([]),
+  sampleWords: z.array(CreateWordSchema).default([]),
+  status: CommunitySubmissionStatusSchema,
+  moderationNotes: z.string().optional(),
+  reviewedByUserId: z.string().optional(),
+  reviewedAt: z.number().optional(),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+});
+
 export const CreateWordsBatchSchema = z.object({
   words: z.array(CreateWordSchema).min(1).max(10000),
+});
+
+export const CreateCommunityDeckSubmissionSchema = z.object({
+  title: z.string().min(1).max(120),
+  summary: z.string().min(1).max(220),
+  description: z.string().min(1).max(2000),
+  language: LanguageSchema,
+  difficulty: CommunityDeckDifficultySchema.default("Beginner"),
+  sourceKind: CommunitySourceKindSchema,
+  sourceName: z.string().min(1).max(200),
+  tags: z.array(z.string().min(1)).max(24).default([]),
+  noteTypes: z.array(CommunityDeckNoteTypeSchema).max(32).default([]),
+  words: z.array(CreateWordSchema).min(1).max(5000),
+});
+
+export const ReviewCommunityDeckSubmissionSchema = z.object({
+  status: z.union([z.literal("approved"), z.literal("rejected")]),
+  moderationNotes: z.string().trim().max(1000).optional(),
+  slug: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    .max(80)
+    .optional(),
 });
 
 export const DeleteWordsBatchSchema = z.object({
@@ -273,6 +367,9 @@ export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 
 export type UserDTO = z.infer<typeof UserSchema>;
 export type DeckDTO = z.infer<typeof DeckSchema>;
+export type CommunityDeckSummaryDTO = z.infer<typeof CommunityDeckSummarySchema>;
+export type CommunityDeckDetailDTO = z.infer<typeof CommunityDeckDetailSchema>;
+export type CommunityDeckSubmissionDTO = z.infer<typeof CommunityDeckSubmissionSchema>;
 export type WordDTO = z.infer<typeof WordSchema>;
 export type PracticeCardDTO = z.infer<typeof PracticeCardSchema>;
 export type SessionSummaryDTO = z.infer<typeof SessionSummarySchema>;
@@ -283,7 +380,9 @@ export type CreateDeckInput = z.infer<typeof CreateDeckSchema>;
 export type UpdateDeckInput = z.infer<typeof UpdateDeckSchema>;
 export type CreateWordInput = z.infer<typeof CreateWordSchema>;
 export type CreateWordsBatchInput = z.infer<typeof CreateWordsBatchSchema>;
+export type CreateCommunityDeckSubmissionInput = z.infer<typeof CreateCommunityDeckSubmissionSchema>;
 export type DeleteWordsBatchInput = z.infer<typeof DeleteWordsBatchSchema>;
+export type ReviewCommunityDeckSubmissionInput = z.infer<typeof ReviewCommunityDeckSubmissionSchema>;
 export type UpdateWordInput = z.infer<typeof UpdateWordSchema>;
 export type StartPracticeSessionInput = z.infer<typeof StartPracticeSessionSchema>;
 export type SubmitPracticeCardInput = z.infer<typeof SubmitPracticeCardSchema>;
@@ -294,3 +393,4 @@ export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
 export type UpdatePreferencesInput = z.infer<typeof UpdatePreferencesSchema>;
 export type LanguageCode = z.infer<typeof LanguageSchema>;
 export type TypingMode = z.infer<typeof TypingModeSchema>;
+export type CommunitySubmissionStatus = z.infer<typeof CommunitySubmissionStatusSchema>;
