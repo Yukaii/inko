@@ -16,6 +16,7 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage").then((m) => ({ de
 const CommunityDecksPage = lazy(() => import("./pages/CommunityDecksPage").then((m) => ({ default: m.CommunityDecksPage })));
 const CommunityDeckDetailPage = lazy(() => import("./pages/CommunityDeckDetailPage").then((m) => ({ default: m.CommunityDeckDetailPage })));
 const AnkiImportPage = lazy(() => import("./pages/AnkiImportPage").then((m) => ({ default: m.AnkiImportPage })));
+const CommunityModerationPage = lazy(() => import("./pages/CommunityModerationPage").then((m) => ({ default: m.CommunityModerationPage })));
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth();
@@ -130,6 +131,14 @@ export function App() {
           element={
             <ProtectedRoute>
               <AnkiImportPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/community/moderation"
+          element={
+            <ProtectedRoute>
+              <CommunityModerationPage />
             </ProtectedRoute>
           }
         />

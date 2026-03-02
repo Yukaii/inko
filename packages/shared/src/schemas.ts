@@ -140,6 +140,7 @@ export const UserSchema = z.object({
   themeMode: ThemeModeSchema,
   typingMode: TypingModeSchema,
   ttsEnabled: z.boolean(),
+  canModerateCommunity: z.boolean().default(false),
   themes: ThemeConfigSchema,
   createdAt: z.number(),
 });
