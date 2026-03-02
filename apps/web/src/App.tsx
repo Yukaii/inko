@@ -4,7 +4,6 @@ import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { useKeyboardShortcuts } from "./hooks/useKeyboard";
 import { Layout } from "./components/Layout";
 import { PublicNavbar } from "./components/PublicNavbar";
-import { PwaUpdateBanner } from "./components/PwaUpdateBanner";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { applyNoIndexMetadata } from "./lib/seo";
@@ -79,7 +78,6 @@ function CommunityLayout({ children }: { children: React.ReactNode }) {
 export function App() {
   return (
     <AuthProvider>
-      <PwaUpdateBanner />
       <a
         href="#main-content"
         className="absolute left-1/2 top-[-100%] z-[10000] -translate-x-1/2 rounded-b-[10px] bg-accent-orange px-5 py-3 font-semibold text-text-on-accent transition-[top] focus:top-0"

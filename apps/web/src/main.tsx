@@ -5,12 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App";
 import "./i18n";
 import "./styles/theme.css";
-import { initPwaRegistration } from "./pwa";
 import { applyThemePreferences, loadThemePreferences } from "./theme/theme";
 
 const queryClient = new QueryClient();
 applyThemePreferences(loadThemePreferences());
-initPwaRegistration();
 
 window.__INKO_ENV__ = {
   apiUrl: import.meta.env.VITE_API_URL,

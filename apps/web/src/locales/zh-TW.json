@@ -78,11 +78,6 @@
     "shortcuts_help": "鍵盤快速鍵",
     "close_shortcuts_help": "關閉鍵盤快速鍵說明"
   },
-  "pwa": {
-    "update_available": "已有新版本可用。請重新整理以載入最新版本的應用程式。",
-    "refresh_now": "立即重新整理",
-    "refreshing": "重新整理中..."
-  },
   "landing": {
     "meta": {
       "title": "Inko | 用打字學語言",
