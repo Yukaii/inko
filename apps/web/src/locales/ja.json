@@ -66,6 +66,7 @@
     "dashboard": "ダッシュボード",
     "word_bank": "ワードバンク",
     "settings": "設定",
+    "my_submissions": "自分の投稿",
     "shortcuts": "ショートカット",
     "home": "ホーム",
     "decks": "デッキ",
@@ -78,15 +79,20 @@
     "refreshing": "更新中..."
   },
   "landing": {
+    "meta": {
+      "title": "Inko | タイピングで言語を学ぶ",
+      "description": "タイピング中心の練習、Anki デッキのインポート、コミュニティ共有、TTS、進捗管理で語彙を定着させます。"
+    },
     "nav": {
       "how_it_works": "使い方",
       "features": "特徴",
+      "community": "コミュニティ",
       "get_started": "始める"
     },
     "hero": {
       "badge": "記憶の未来",
       "title": "打って、覚える。",
-      "subtitle": "本当に覚えているか、タイピングで証明する。手を動かしてマッスルメモリーを構築し、二度と忘れない学習を。",
+      "subtitle": "Anki デッキを取り込み、タイピングで鍛え、仕上げたデッキを審査付きコミュニティライブラリへ共有できます。",
       "cta_primary": "学習を始める",
       "cta_secondary": "詳細を見る"
     },
@@ -94,22 +100,22 @@
       "title": "// 使い方",
       "subtitle": "忘れないための3つのステップ",
       "step1": {
-        "title": "デッキを作成",
-        "desc": "好きな科目のカスタムデッキを作成。用語と定義を追加します。"
+        "title": "作成または取り込み",
+        "desc": "ゼロから作るだけでなく、Anki パッケージやコミュニティデッキからも始められます。"
       },
       "step2": {
         "title": "答えをタイピング",
         "desc": "選択肢はありません。記憶から答えを呼び出し、実際に打ち込みます。"
       },
       "step3": {
-        "title": "スマートに復習",
-        "desc": "忘れる直前の最適なタイミングでアルゴリズムが復習をスケジュールします。"
+        "title": "復習して共有",
+        "desc": "最適なタイミングで復習し、仕上げたデッキはコミュニティ審査へ送れます。"
       }
     },
     "features": {
       "badge": "// 特徴",
       "title": "必要なすべてがここに",
-      "subtitle": "タイピング中心の練習、最適な復習タイミング、発音音声まで揃った学習ループ。",
+      "subtitle": "タイピング中心の練習、Anki 移行、コミュニティ公開まで一つの流れで完結します。",
       "typing_first": {
         "title": "タイピング重視",
         "desc": "選択肢もマッチングもなし。記憶から直接打ち込むことで、本物の神経回路を構築します。"
@@ -123,25 +129,25 @@
         "desc": "習得レベルや継続記録、弱点を視覚化。どこに集中すべきか一目でわかります。"
       },
       "custom_decks": {
-        "title": "カスタムデッキ",
-        "desc": "言語、コード、医学用語、歴史など、あらゆる科目のデッキを作成可能。あなたの知識を、あなたのやり方で。"
+        "title": "Anki インポートとマッピング",
+        "desc": "`.apkg`、`.colpkg`、`.csv`、貼り付けデータを読み込み、ノート欄を確認して正しく取り込めます。"
       },
       "tts_support": {
-        "title": "発音オーディオ",
-        "desc": "練習中に内蔵TTSで発音を再生。タイピングだけでなく、聞いて定着させる学習にも対応します。"
+        "title": "コミュニティデッキ",
+        "desc": "公開デッキを閲覧し、サンプルカードを確認し、自分の編集済みデッキも審査に送信できます。"
       },
       "practice_anywhere": {
-        "title": "どこでも練習",
-        "desc": "キーボードのあるデバイスなら何でも。通勤中、デスク、あるいは寝る前にも。"
+        "title": "発音とメディア",
+        "desc": "TTS と Anki 由来の音声を同じ学習ループで使い、聞く練習と入力練習をつなげます。"
       }
     },
     "cta": {
       "title": "タイピングで、すべてをマスターする。",
-      "subtitle": "一生忘れない知識への最短ルート。",
+      "subtitle": "既存デッキを持ち込み、磨き込み、良いものはコミュニティへ返す。",
       "button": "今すぐ始める"
     },
     "footer": {
-      "desc": "打って、覚える。能動的なタイピング練習を通じて、本物の想起力を養うフラッシュカードアプリ。",
+      "desc": "打って、覚える。Anki デッキを取り込み、学習セットを育て、審査付きコミュニティライブラリで共有できるフラッシュカードアプリ。",
       "product": "製品",
       "github": "GitHub",
       "rights": "© 2026 inko. all rights reserved.",
@@ -309,6 +315,29 @@
       "button": "デッキをダウンロード",
       "downloading": "ダウンロード中...",
       "error": "今はこのデッキをダウンロードできません。もう一度お試しください。"
+    },
+    "publish": {
+      "button": "公開申請",
+      "title": "デッキをコミュニティへ公開申請",
+      "description": "編集済みデッキをモデレーションキューに送り、公開ライブラリ向けに審査してもらいます。",
+      "deck": "デッキ",
+      "review_note": "コミュニティ投稿は公開前に審査されます。",
+      "submit": "審査に送信",
+      "submitting": "送信中...",
+      "submitted": "「{{title}}」を審査に送信しました。",
+      "submit_failed": "このデッキを送信できませんでした。もう一度試してください。",
+      "no_deck": "デッキが選択されていません。",
+      "empty_deck": "このデッキを公開するには少なくとも1枚のカードが必要です。",
+      "default_summary": "{{name}} をコミュニティ審査用に準備しました。",
+      "default_description": "ワードバンクから書き出したユーザー編集済みの {{language}} デッキを、コミュニティ向けに送信しました。",
+      "form": {
+        "title": "タイトル",
+        "summary": "概要",
+        "description": "説明",
+        "difficulty": "難易度",
+        "tags": "タグ",
+        "tags_placeholder": "community, curated, phrases"
+      }
     }
   },
   "settings": {
@@ -576,6 +605,60 @@
     "import_into_inko": "Inko にインポート",
     "note_types": "ノートタイプ",
     "sample_cards": "サンプルカード",
+    "detail": {
+      "seo_title": "{{title}} | Inko コミュニティ"
+    },
+    "library": {
+      "seo_title": "コミュニティデッキ | Inko",
+      "seo_description": "コミュニティ制作の言語デッキを閲覧し、ノートフィールドを確認してから Inko に取り込みます。",
+      "badge": "コミュニティライブラリ",
+      "title": "共有デッキを確認してからインポート。",
+      "subtitle": "ノートタイプ、フィールド構成、サンプルカードを確認してから、個人のワードバンクへ取り込みます。",
+      "open_importer": "インポーターを開く",
+      "search_placeholder": "デッキ、作者、タグを検索",
+      "all_languages": "すべての言語",
+      "empty": "この条件に一致する公開コミュニティデッキはまだありません。",
+      "updated": "更新日 {{date}}",
+      "view_deck": "デッキを見る"
+    },
+    "moderation": {
+      "seo_title": "コミュニティ審査 | Inko",
+      "badge": "モデレーション",
+      "title": "コミュニティデッキ投稿を審査する。",
+      "subtitle": "質の高いデッキ投稿を公開ライブラリへ承認し、低品質な投稿は審査メモ付きで却下します。",
+      "browse_library": "ライブラリを見る",
+      "open_importer": "インポーターを開く",
+      "source": "ソース",
+      "source_meta": "{{count}} 枚 • {{email}}",
+      "published_slug": "公開スラッグ",
+      "slug_placeholder": "submitted-deck",
+      "moderation_notes": "審査メモ",
+      "notes_placeholder": "承認または却下の理由",
+      "approve": "承認",
+      "reject": "却下",
+      "updated_feedback": "{{title}} を {{status}} に更新しました。",
+      "access_denied": "このアカウントではモデレーター権限が有効ではありません。",
+      "access_denied_help": "このキューを利用するには、API サーバーの `MODERATOR_EMAILS` にあなたのメールアドレスを追加してください。",
+      "empty": "{{status}} キューに投稿はありません。",
+      "catalog_note": "審査結果は公開コミュニティデッキ一覧へ直接反映されます。",
+      "status": {
+        "pending": "審査待ち",
+        "approved": "承認済み",
+        "rejected": "却下"
+      }
+    },
+    "submissions": {
+      "seo_title": "自分のコミュニティ投稿 | Inko",
+      "badge": "自分の投稿",
+      "title": "送信したデッキの状況を確認する。",
+      "subtitle": "審査ステータス、サンプルカード、モデレーターのメモを確認できます。",
+      "open_importer": "インポーターを開く",
+      "empty": "まだデッキを投稿していません。",
+      "source": "ソース",
+      "cards": "カード数",
+      "created": "作成日",
+      "moderation_notes": "審査メモ"
+    },
     "stats": {
       "downloads": "ダウンロード数",
       "rating": "評価",

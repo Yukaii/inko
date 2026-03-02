@@ -19,12 +19,12 @@ export function CommunityDeckDetailPage() {
   useEffect(() => {
     if (!deck) return;
     applyMetadata({
-      title: `${deck.title} | Inko Community`,
+      title: t("community.detail.seo_title", { title: deck.title }),
       description: deck.summary,
       path: `/community/decks/${deck.slug}`,
       robots: "index,follow",
     });
-  }, [deck]);
+  }, [deck, t]);
 
   if (!deck && !deckQuery.isLoading) {
     return <Navigate to="/community" replace />;

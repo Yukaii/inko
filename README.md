@@ -1,13 +1,18 @@
 # Inkō
 
-Inkō is a vocabulary learning app built around active recall across multiple channels: writing, typing, and listening. The goal is to help learners move beyond recognition and build durable recall for languages that rely on non-Latin scripts, especially Japanese, Chinese, and Korean.
+Inkō is a vocabulary learning app built around active recall across multiple channels: writing, typing, and listening. It now also supports importing Anki decks with field mapping, browsing shared community decks, and submitting curated decks back to a moderated public library.
 
 ## What Users Can Do
 
 - Create and manage vocabulary decks
+- Import `.apkg`, `.colpkg`, CSV, TSV, and pasted exports with explicit field mapping
+- Preserve imported pronunciation/audio URLs, including embedded Anki sound media
 - Start with seeded starter content
 - Practice from the dashboard into guided review flows
 - Train production rather than passive recognition
+- Browse community decks before importing them
+- Submit imported or user-edited decks to the community moderation queue
+- Review your own submission statuses from a dedicated submissions page
 - Use local magic-link auth, or enable social sign-in when configured
 
 For the product direction and learning model, see [docs/prd.md](/Users/yukai/Projects/Personal/inko/docs/prd.md).
@@ -15,8 +20,13 @@ For the product direction and learning model, see [docs/prd.md](/Users/yukai/Pro
 ## App Routes
 
 - `/login`
+- `/community`
+- `/community/decks/:slug`
+- `/community/submissions`
+- `/community/moderation`
 - `/dashboard`
 - `/word-bank`
+- `/imports/anki`
 - `/practice/:deckId`
 - `/settings`
 
