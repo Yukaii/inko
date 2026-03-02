@@ -88,6 +88,9 @@ export function LandingPage() {
             <a href="#features" className="hover:text-text-primary transition-colors">
               {t("landing.nav.features")}
             </a>
+            <Link to="/community" className="hover:text-text-primary transition-colors no-underline text-text-secondary">
+              Community
+            </Link>
           </div>
         </div>
         <div className="flex items-center gap-4">
