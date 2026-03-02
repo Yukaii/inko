@@ -4,7 +4,6 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { ArrowRight, Download, Layers, MessageSquare, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
-import { PublicNavbar } from "../components/PublicNavbar";
 import { useAuth } from "../hooks/useAuth";
 import { applyMetadata } from "../lib/seo";
 
@@ -72,9 +71,8 @@ export function CommunityDeckDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-page text-text-primary">
-      <PublicNavbar />
-      <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-10 md:px-10">
+    <div className="text-text-primary">
+      <div className="mx-auto flex max-w-5xl flex-col gap-8">
         <Link className="text-sm font-medium text-text-secondary no-underline hover:text-text-primary" to="/community">
           {t("community.back_to_library")}
         </Link>

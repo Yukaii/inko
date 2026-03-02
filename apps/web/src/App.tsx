@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { useKeyboardShortcuts } from "./hooks/useKeyboard";
 import { Layout } from "./components/Layout";
+import { PublicNavbar } from "./components/PublicNavbar";
 import { PwaUpdateBanner } from "./components/PwaUpdateBanner";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -50,6 +51,31 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
+function CommunityLayout({ children }: { children: React.ReactNode }) {
+  const { token, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <RouteFallback />;
+  }
+
+  if (token) {
+    return (
+      <Layout>
+        <Suspense fallback={<RouteFallback />}>{children}</Suspense>
+      </Layout>
+    );
+  }
+
+  return (
+    <>
+      <PublicNavbar />
+      <div className="px-4 pt-6 md:px-6">
+        <Suspense fallback={<RouteFallback />}>{children}</Suspense>
+      </div>
+    </>
+  );
+}
+
 export function App() {
   return (
     <AuthProvider>
@@ -66,17 +92,17 @@ export function App() {
         <Route
           path="/community"
           element={
-            <Suspense fallback={<RouteFallback />}>
+            <CommunityLayout>
               <CommunityDecksPage />
-            </Suspense>
+            </CommunityLayout>
           }
         />
         <Route
           path="/community/decks/:slug"
           element={
-            <Suspense fallback={<RouteFallback />}>
+            <CommunityLayout>
               <CommunityDeckDetailPage />
-            </Suspense>
+            </CommunityLayout>
           }
         />
         <Route
