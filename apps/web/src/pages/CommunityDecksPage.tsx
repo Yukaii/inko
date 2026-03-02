@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Download, Search, Star, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
+import { PublicNavbar } from "../components/PublicNavbar";
 import { applyMetadata } from "../lib/seo";
 
 export function CommunityDecksPage() {
@@ -33,8 +34,9 @@ export function CommunityDecksPage() {
   const languages = useMemo(() => ["all", ...new Set(decks.map((deck) => deck.language))], [decks]);
 
   return (
-    <div className="min-h-screen bg-bg-page px-6 py-10 text-text-primary md:px-10">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
+    <div className="min-h-screen bg-bg-page text-text-primary">
+      <PublicNavbar />
+      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10 md:px-10">
         <header className="grid gap-4 rounded-[28px] border border-[var(--border-subtle)] bg-[radial-gradient(circle_at_top_left,rgba(255,107,53,0.18),transparent_32%),linear-gradient(135deg,var(--bg-card),var(--bg-page))] p-8 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
           <div className="max-w-3xl">
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-accent-teal">{t("community.library.badge")}</p>

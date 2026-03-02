@@ -50,6 +50,44 @@ async function ensureUniqueSlug(ctx: any, initialSlug: string) {
   return slug;
 }
 
+async function buildDeckDetail(ctx: any, deck: any, viewerUserId?: string) {
+  const comments = await ctx.db
+    .query("community_deck_comments")
+    .withIndex("by_deck_created_at", (q: any) => q.eq("deckId", deck._id))
+    .order("desc")
+    .collect();
+  const viewerRating = viewerUserId
+    ? await ctx.db
+        .query("community_deck_ratings")
+        .withIndex("by_user_deck", (q: any) => q.eq("userId", viewerUserId).eq("deckId", deck._id))
+        .first()
+    : null;
+
+  return {
+    ...deck,
+    viewerRating: viewerRating?.rating,
+    comments: comments.map((comment: any) => ({
+      id: comment._id,
+      userId: comment.userId,
+      authorName: comment.authorName,
+      body: comment.body,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+    })),
+  };
+}
+
+async function recomputeDeckRating(ctx: any, deckId: any) {
+  const ratings = await ctx.db.query("community_deck_ratings").withIndex("by_deck", (q: any) => q.eq("deckId", deckId)).collect();
+  const ratingCount = ratings.length;
+  const rating = ratingCount === 0 ? 0 : ratings.reduce((sum: number, entry: any) => sum + entry.rating, 0) / ratingCount;
+  await ctx.db.patch(deckId, {
+    rating,
+    ratingCount,
+    updatedAt: Date.now(),
+  });
+}
+
 export const listPublishedDecks = query({
   args: {
     language: v.optional(languageValidator),
@@ -73,9 +111,14 @@ export const listPublishedDecks = query({
 });
 
 export const getPublishedDeckBySlug = query({
-  args: { slug: v.string() },
+  args: {
+    slug: v.string(),
+    viewerUserId: v.optional(v.id("users")),
+  },
   handler: async (ctx, args) => {
-    return await ctx.db.query("community_decks").withIndex("by_slug", (q) => q.eq("slug", args.slug)).first();
+    const deck = await ctx.db.query("community_decks").withIndex("by_slug", (q) => q.eq("slug", args.slug)).first();
+    if (!deck) return null;
+    return await buildDeckDetail(ctx, deck, args.viewerUserId);
   },
 });
 
@@ -178,6 +221,7 @@ export const reviewSubmission = mutation({
           authorName: submission.submitterEmail,
           downloads: 0,
           rating: 0,
+          ratingCount: 0,
           cardCount: submission.cardCount,
           tags: submission.tags,
           noteTypes: submission.noteTypes,
@@ -197,6 +241,7 @@ export const reviewSubmission = mutation({
           publishedByUserId: args.reviewerUserId,
           downloads: 0,
           rating: 0,
+          ratingCount: 0,
           cardCount: submission.cardCount,
           tags: submission.tags,
           noteTypes: submission.noteTypes,
@@ -223,6 +268,26 @@ export const reviewSubmission = mutation({
   },
 });
 
+export const deleteSubmission = mutation({
+  args: {
+    submissionId: v.id("community_deck_submissions"),
+    submitterUserId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const submission = await ctx.db.get(args.submissionId);
+    if (!submission) return { ok: false, reason: "not_found" as const };
+    if (submission.submitterUserId !== args.submitterUserId) {
+      return { ok: false, reason: "forbidden" as const };
+    }
+    if (submission.status === "approved" || submission.publishedDeckId) {
+      return { ok: false, reason: "published" as const };
+    }
+
+    await ctx.db.delete(args.submissionId);
+    return { ok: true as const };
+  },
+});
+
 export const incrementDeckDownloads = mutation({
   args: { deckId: v.id("community_decks") },
   handler: async (ctx, args) => {
@@ -233,5 +298,99 @@ export const incrementDeckDownloads = mutation({
       updatedAt: Date.now(),
     });
     return await ctx.db.get(args.deckId);
+  },
+});
+
+export const rateDeck = mutation({
+  args: {
+    deckId: v.id("community_decks"),
+    userId: v.id("users"),
+    rating: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const deck = await ctx.db.get(args.deckId);
+    if (!deck) return null;
+
+    const existing = await ctx.db
+      .query("community_deck_ratings")
+      .withIndex("by_user_deck", (q) => q.eq("userId", args.userId).eq("deckId", args.deckId))
+      .first();
+    const now = Date.now();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        rating: args.rating,
+        updatedAt: now,
+      });
+    } else {
+      await ctx.db.insert("community_deck_ratings", {
+        deckId: args.deckId,
+        userId: args.userId,
+        rating: args.rating,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    await recomputeDeckRating(ctx, args.deckId);
+    const updatedDeck = await ctx.db.get(args.deckId);
+    return updatedDeck ? await buildDeckDetail(ctx, updatedDeck, args.userId) : null;
+  },
+});
+
+export const addDeckComment = mutation({
+  args: {
+    deckId: v.id("community_decks"),
+    userId: v.id("users"),
+    authorName: v.string(),
+    body: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const deck = await ctx.db.get(args.deckId);
+    if (!deck) return null;
+
+    const now = Date.now();
+    await ctx.db.insert("community_deck_comments", {
+      deckId: args.deckId,
+      userId: args.userId,
+      authorName: args.authorName,
+      body: args.body.trim(),
+      createdAt: now,
+      updatedAt: now,
+    });
+    const updatedDeck = await ctx.db.get(args.deckId);
+    return updatedDeck ? await buildDeckDetail(ctx, updatedDeck, args.userId) : null;
+  },
+});
+
+export const deleteDeckComment = mutation({
+  args: {
+    deckId: v.id("community_decks"),
+    commentId: v.id("community_deck_comments"),
+    requesterUserId: v.id("users"),
+    allowModerator: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const deck = await ctx.db.get(args.deckId);
+    if (!deck) return { ok: false as const, reason: "deck_not_found" as const };
+
+    const comment = await ctx.db.get(args.commentId);
+    if (!comment || comment.deckId !== args.deckId) {
+      return { ok: false as const, reason: "comment_not_found" as const };
+    }
+
+    const canDelete = comment.userId === args.requesterUserId || args.allowModerator;
+    if (!canDelete) {
+      return { ok: false as const, reason: "forbidden" as const };
+    }
+
+    await ctx.db.delete(args.commentId);
+    const updatedDeck = await ctx.db.get(args.deckId);
+    if (!updatedDeck) return { ok: false as const, reason: "deck_not_found" as const };
+
+    return {
+      ok: true as const,
+      deck: await buildDeckDetail(ctx, updatedDeck, args.requesterUserId),
+    };
   },
 });

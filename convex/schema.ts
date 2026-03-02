@@ -236,6 +236,7 @@ export default defineSchema({
     publishedByUserId: v.optional(v.id("users")),
     downloads: v.number(),
     rating: v.number(),
+    ratingCount: v.number(),
     cardCount: v.number(),
     tags: v.array(v.string()),
     noteTypes: v.array(
@@ -261,6 +262,27 @@ export default defineSchema({
     .index("by_slug", ["slug"])
     .index("by_language", ["language"])
     .index("by_updated_at", ["updatedAt"]),
+
+  community_deck_ratings: defineTable({
+    deckId: v.id("community_decks"),
+    userId: v.id("users"),
+    rating: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_deck", ["deckId"])
+    .index("by_user_deck", ["userId", "deckId"]),
+
+  community_deck_comments: defineTable({
+    deckId: v.id("community_decks"),
+    userId: v.id("users"),
+    authorName: v.string(),
+    body: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_deck_created_at", ["deckId", "createdAt"])
+    .index("by_user", ["userId"]),
 
   community_deck_submissions: defineTable({
     submitterUserId: v.id("users"),

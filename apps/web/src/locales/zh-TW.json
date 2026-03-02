@@ -30,7 +30,9 @@
     "deleting": "刪除中...",
     "create": "建立",
     "new": "新增",
-    "save_changes": "儲存變更"
+    "save_changes": "儲存變更",
+    "switch_to_light": "切換到淺色模式",
+    "switch_to_dark": "切換到深色模式"
   },
   "errors": {
     "unknown": "發生預期外的錯誤。",
@@ -67,6 +69,8 @@
     "word_bank": "單字庫",
     "settings": "設定",
     "my_submissions": "我的提交",
+    "community_mode": "社群審核",
+    "community_moderation": "社群審核",
     "shortcuts": "快速鍵",
     "home": "首頁",
     "decks": "牌組",
@@ -606,7 +610,23 @@
     "note_types": "筆記類型",
     "sample_cards": "範例卡片",
     "detail": {
-      "seo_title": "{{title}} | Inko 社群"
+      "seo_title": "{{title}} | Inko 社群",
+      "rate_title": "為這個牌組評分",
+      "rate_copy": "留下快速評分，幫助其他學習者在匯入前判斷這個牌組的品質。",
+      "rate_value": "評 {{value}} 顆星",
+      "rate_prompt": "點一下星星即可留下評分。",
+      "your_rating": "你的評分：{{rating}}/5",
+      "sign_in_to_rate": "登入後才能評分。",
+      "comments_title": "留言",
+      "comments_count": "{{count}} 則留言",
+      "comment_placeholder": "這個牌組哪裡好用？下一位學習者需要知道什麼？",
+      "comment_help": "留言會公開顯示在這個社群牌組頁面。",
+      "post_comment": "送出留言",
+      "delete_comment": "刪除",
+      "remove_comment": "移除",
+      "comments_empty": "還沒有任何留言。你可以成為第一個補充背景的人。",
+      "sign_in_to_comment": "登入後才能留言。",
+      "sign_in_required": "登入後才能對社群牌組評分或留言。"
     },
     "library": {
       "seo_title": "社群牌組 | Inko",
@@ -657,7 +677,10 @@
       "source": "來源",
       "cards": "卡片數",
       "created": "建立時間",
-      "moderation_notes": "審核備註"
+      "moderation_notes": "審核備註",
+      "discard": "作廢",
+      "discard_help": "你可以從自己的佇列中作廢待審核或已被拒絕的提交。",
+      "published_locked": "已核准的提交會保留，因為它可能已經發布到社群牌組庫。"
     },
     "stats": {
       "downloads": "下載次數",

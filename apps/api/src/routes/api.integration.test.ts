@@ -216,11 +216,82 @@ function makeRepositoryMock(): Repository {
       authorName: "moderator@example.com",
       downloads: 10,
       rating: 4.8,
+      ratingCount: 12,
       cardCount: 12,
       updatedAt: Date.now(),
       tags: ["starter"],
       noteTypes: [{ name: "Basic", fields: ["Expression", "Meaning"] }],
       words: [{ target: "食べる", meaning: "to eat", tags: ["starter"] }],
+      comments: [],
+    })),
+    rateCommunityDeck: vi.fn(async (_userId: string, slug: string, input) => ({
+      id: "community_1",
+      slug,
+      title: "JLPT N5 Verbs",
+      summary: "Starter verbs",
+      description: "Deck description",
+      language: "ja" as const,
+      difficulty: "Beginner" as const,
+      authorName: "moderator@example.com",
+      downloads: 10,
+      rating: input.rating,
+      ratingCount: 13,
+      viewerRating: input.rating,
+      cardCount: 12,
+      updatedAt: Date.now(),
+      tags: ["starter"],
+      noteTypes: [{ name: "Basic", fields: ["Expression", "Meaning"] }],
+      words: [{ target: "食べる", meaning: "to eat", tags: ["starter"] }],
+      comments: [],
+    })),
+    addCommunityDeckComment: vi.fn(async (userId: string, slug: string, input) => ({
+      id: "community_1",
+      slug,
+      title: "JLPT N5 Verbs",
+      summary: "Starter verbs",
+      description: "Deck description",
+      language: "ja" as const,
+      difficulty: "Beginner" as const,
+      authorName: "moderator@example.com",
+      downloads: 10,
+      rating: 4.8,
+      ratingCount: 12,
+      viewerRating: 5,
+      cardCount: 12,
+      updatedAt: Date.now(),
+      tags: ["starter"],
+      noteTypes: [{ name: "Basic", fields: ["Expression", "Meaning"] }],
+      words: [{ target: "食べる", meaning: "to eat", tags: ["starter"] }],
+      comments: [
+        {
+          id: "comment_1",
+          userId,
+          authorName: "user",
+          body: input.body,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        },
+      ],
+    })),
+    deleteCommunityDeckComment: vi.fn(async (_userId: string, slug: string, _commentId: string) => ({
+      id: "community_1",
+      slug,
+      title: "JLPT N5 Verbs",
+      summary: "Starter verbs",
+      description: "Deck description",
+      language: "ja" as const,
+      difficulty: "Beginner" as const,
+      authorName: "moderator@example.com",
+      downloads: 10,
+      rating: 4.8,
+      ratingCount: 12,
+      viewerRating: 5,
+      cardCount: 12,
+      updatedAt: Date.now(),
+      tags: ["starter"],
+      noteTypes: [{ name: "Basic", fields: ["Expression", "Meaning"] }],
+      words: [{ target: "食べる", meaning: "to eat", tags: ["starter"] }],
+      comments: [],
     })),
     createCommunityDeckSubmission: vi.fn(async (userId: string, input) => ({
       id: "submission_1",
@@ -242,6 +313,7 @@ function makeRepositoryMock(): Repository {
       updatedAt: Date.now(),
     })),
     listMyCommunityDeckSubmissions: vi.fn(async () => []),
+    deleteMyCommunityDeckSubmission: vi.fn(async () => ({ ok: true })),
     listCommunityDeckSubmissions: vi.fn(async () => []),
     reviewCommunityDeckSubmission: vi.fn(async (_userId: string, submissionId: string, input) => ({
       id: submissionId,
@@ -511,6 +583,42 @@ describe("API integration", () => {
     await app.close();
   });
 
+  it("supports community ratings and comments for authenticated users", async () => {
+    const app = await buildServer({ repository: repo, mailer });
+    const accessToken = await issueAccessToken("user_1", "user@example.com");
+    const auth = { authorization: `Bearer ${accessToken}` };
+
+    const rateRes = await app.inject({
+      method: "POST",
+      url: "/api/community/decks/jlpt-n5-verbs/rating",
+      headers: auth,
+      payload: { rating: 5 },
+    });
+    expect(rateRes.statusCode).toBe(200);
+    expect(rateRes.json().viewerRating).toBe(5);
+    expect(rateRes.json().ratingCount).toBe(13);
+
+    const commentRes = await app.inject({
+      method: "POST",
+      url: "/api/community/decks/jlpt-n5-verbs/comments",
+      headers: auth,
+      payload: { body: "Great starter deck." },
+    });
+    expect(commentRes.statusCode).toBe(200);
+    expect(commentRes.json().comments).toHaveLength(1);
+    expect(commentRes.json().comments[0].body).toBe("Great starter deck.");
+
+    const deleteCommentRes = await app.inject({
+      method: "DELETE",
+      url: "/api/community/decks/jlpt-n5-verbs/comments/comment_1",
+      headers: auth,
+    });
+    expect(deleteCommentRes.statusCode).toBe(200);
+    expect(deleteCommentRes.json().comments).toHaveLength(0);
+
+    await app.close();
+  });
+
   it("rejects access to protected endpoints without bearer token", async () => {
     const app = await buildServer({ repository: repo, mailer, ttsService: tts });
 
@@ -668,6 +776,14 @@ describe("API integration", () => {
       headers: auth,
     });
     expect(mineRes.statusCode).toBe(200);
+
+    const deleteRes = await app.inject({
+      method: "DELETE",
+      url: "/api/community/submissions/submission_1",
+      headers: auth,
+    });
+    expect(deleteRes.statusCode).toBe(200);
+    expect(deleteRes.json().ok).toBe(true);
 
     const listRes = await app.inject({
       method: "GET",

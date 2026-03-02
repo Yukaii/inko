@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { PracticeSimulator } from "../components/PracticeSimulator";
-import { SUPPORTED_UI_LANGUAGES } from "../i18n";
+import { PublicNavbar } from "../components/PublicNavbar";
 import { applyMetadata } from "../lib/seo";
 import {
   Keyboard,
@@ -12,7 +12,6 @@ import {
   Layers,
   Volume2,
   Smartphone,
-  Globe,
 } from "lucide-react";
 
 const fadeInUp = {
@@ -44,11 +43,7 @@ function GetStartedLink({
 }
 
 export function LandingPage() {
-  const { t, i18n } = useTranslation();
-  const [showLangMenu, setShowLangMenu] = useState(false);
-  const langMenuRef = useRef<HTMLDivElement>(null);
-
-  const currentLang = SUPPORTED_UI_LANGUAGES.find((l) => i18n.language.startsWith(l.code)) || SUPPORTED_UI_LANGUAGES[0];
+  const { t } = useTranslation();
 
   useEffect(() => {
     applyMetadata({
@@ -60,92 +55,9 @@ export function LandingPage() {
     });
   }, [t]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
-        setShowLangMenu(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   return (
     <div className="min-h-screen bg-bg-page text-text-primary selection:bg-accent-orange/30">
-      {/* Nav Bar */}
-      <nav className="sticky top-0 z-50 flex items-center justify-between bg-[#1A1A1A]/90 px-6 py-4 backdrop-blur-md md:px-12">
-        <div className="flex items-center gap-10">
-          <Link
-            to="/"
-            className="font-display text-xl font-semibold text-accent-orange hover:opacity-80 transition-opacity"
-          >
-            inko
-          </Link>
-          <div className="hidden items-center gap-6 md:flex font-mono text-sm text-text-secondary">
-            <a href="#how-it-works" className="hover:text-text-primary transition-colors">
-              {t("landing.nav.how_it_works")}
-            </a>
-            <a href="#features" className="hover:text-text-primary transition-colors">
-              {t("landing.nav.features")}
-            </a>
-            <Link to="/community" className="hover:text-text-primary transition-colors no-underline text-text-secondary">
-              {t("landing.nav.community")}
-            </Link>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="relative" ref={langMenuRef}>
-            <button
-              type="button"
-              onClick={() => setShowLangMenu(!showLangMenu)}
-              title={t("common.change_language")}
-              className="flex items-center gap-2 rounded-full bg-accent-orange px-4 py-2 font-mono text-xs font-bold text-text-on-accent transition-transform hover:scale-105 active:scale-95 border-0"
-            >
-              <Globe className="h-3.5 w-3.5" />
-              <span className="min-w-[20px] text-left uppercase">{currentLang.short}</span>
-              <span className={`text-[8px] transition-transform duration-200 ${showLangMenu ? "rotate-180" : ""}`}>▼</span>
-            </button>
-            
-            <AnimatePresence>
-              {showLangMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                  transition={{ duration: 0.1 }}
-                  className="absolute right-0 mt-2 flex w-40 flex-col gap-1 overflow-hidden rounded-xl border border-white/10 bg-[#1A1A1A] p-1.5 shadow-2xl ring-1 ring-black/50"
-                >
-                  {SUPPORTED_UI_LANGUAGES.map((lang) => {
-                    const isActive = i18n.language.startsWith(lang.code);
-                    return (
-                      <button
-                        key={lang.code}
-                        type="button"
-                        onClick={() => {
-                          void i18n.changeLanguage(lang.code);
-                          setShowLangMenu(false);
-                        }}
-                        className={`flex w-full items-center rounded-lg px-3 py-2 text-left font-mono text-[11px] font-bold transition-all border-0 ${
-                          isActive 
-                            ? "bg-accent-teal text-text-on-accent" 
-                            : "text-white/80 hover:bg-white/10 hover:text-white"
-                        }`}
-                      >
-                        {lang.label}
-                      </button>
-                    );
-                  })}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-          <GetStartedLink
-            className="rounded-xl bg-accent-orange px-5 py-2 font-mono text-xs font-bold text-text-on-accent transition-transform hover:scale-105 active:scale-95 no-underline"
-          >
-            {t("landing.nav.get_started")}
-          </GetStartedLink>
-        </div>
-      </nav>
+      <PublicNavbar showAnchors />
 
       {/* Hero Section */}
       <section className="flex flex-col items-center pt-20 pb-16 px-6 text-center md:px-30">
@@ -349,7 +261,7 @@ export function LandingPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="mx-auto max-w-[1200px] flex flex-col items-center text-center gap-8 rounded-[24px] bg-gradient-to-t from-[#1A1A1A] to-[#2D2D2D] p-12 md:p-20 shadow-2xl shadow-black/50"
+          className="mx-auto flex max-w-[1200px] flex-col items-center gap-8 rounded-[24px] border border-[var(--border-subtle)] bg-[radial-gradient(circle_at_top,rgba(255,107,53,0.12),transparent_35%),linear-gradient(180deg,var(--bg-card),var(--bg-elevated))] p-12 text-center shadow-[0_24px_80px_rgba(0,0,0,0.12)] md:p-20"
         >
           <h2 className="font-display text-4xl md:text-[64px] font-bold leading-tight text-text-primary">
             {t("landing.cta.title")}
@@ -368,9 +280,9 @@ export function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-[#111] py-12 px-6 md:px-30">
+      <footer className="border-t border-[var(--border-subtle)] bg-[linear-gradient(180deg,var(--bg-page),var(--bg-card))] py-12 px-6 md:px-30">
         <div className="mx-auto max-w-6xl">
-          <div className="flex flex-col justify-between gap-12 md:flex-row md:gap-0 pb-12">
+          <div className="flex flex-col justify-between gap-12 rounded-[24px] border border-[var(--border-subtle)] bg-[color:color-mix(in_oklab,var(--bg-card)_82%,var(--bg-page))] px-8 py-10 md:flex-row md:gap-0">
             <div className="flex max-w-[300px] flex-col gap-4">
               <span className="font-display text-2xl font-bold text-accent-orange">
                 inko_
@@ -395,8 +307,8 @@ export function LandingPage() {
               </div>
             </div>
           </div>
-          <div className="h-[1px] w-full bg-[#2D2D2D] mb-6" />
-          <div className="flex flex-col sm:flex-row items-center justify-between font-mono text-xs text-[#555]">
+          <div className="mb-6 mt-6 h-[1px] w-full bg-[var(--border-subtle)]" />
+          <div className="flex flex-col items-center justify-between font-mono text-xs text-text-secondary sm:flex-row">
             <span>{t("landing.footer.rights")}</span>
             <span>{t("landing.footer.built_with")}</span>
           </div>
