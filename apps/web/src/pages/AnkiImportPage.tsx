@@ -7,7 +7,6 @@ import { LANGUAGE_LABELS, SUPPORTED_LANGUAGES } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { applyNoIndexMetadata } from "../lib/seo";
-import { COMMUNITY_DECKS, getCommunityDeck } from "./communityDecks";
 import {
   IMPORTABLE_FIELDS,
   buildWordsFromMapping,
@@ -62,7 +61,7 @@ export function AnkiImportPage() {
   const [selectedDeckId, setSelectedDeckId] = useState("");
   const [showCreateDeck, setShowCreateDeck] = useState(false);
   const [newDeck, setNewDeck] = useState<CreateDeckInput>({ name: "", language: "ja" });
-  const [communitySlug, setCommunitySlug] = useState(presetCommunitySlug ?? COMMUNITY_DECKS[0]?.slug ?? "");
+  const [communitySlug, setCommunitySlug] = useState(presetCommunitySlug ?? "");
   const [pastedText, setPastedText] = useState("");
   const [dataset, setDataset] = useState<ImportDataset | null>(null);
   const [packageData, setPackageData] = useState<AnkiPackageDataset | null>(null);
@@ -74,6 +73,17 @@ export function AnkiImportPage() {
   const decksQuery = useQuery({
     queryKey: ["decks"],
     queryFn: () => api.listDecks(token ?? ""),
+  });
+
+  const communityDecksQuery = useQuery({
+    queryKey: ["community-decks-importer"],
+    queryFn: () => api.listCommunityDecks(),
+  });
+
+  const selectedCommunityDeckQuery = useQuery({
+    queryKey: ["community-deck-importer", communitySlug],
+    queryFn: () => api.getCommunityDeck(communitySlug),
+    enabled: sourceMode === "community" && Boolean(communitySlug),
   });
 
   const createDeck = useMutation({
@@ -113,7 +123,7 @@ export function AnkiImportPage() {
     },
   });
 
-  const selectedCommunityDeck = getCommunityDeck(communitySlug);
+  const selectedCommunityDeck = selectedCommunityDeckQuery.data;
   const activeNoteType = useMemo(
     () => packageData?.noteTypes.find((noteType) => noteType.id === noteTypeId) ?? packageData?.noteTypes[0],
     [noteTypeId, packageData],
@@ -130,6 +140,11 @@ export function AnkiImportPage() {
     setCommunitySlug(presetCommunitySlug);
     setSourceMode("community");
   }, [presetCommunitySlug]);
+
+  useEffect(() => {
+    if (communitySlug || !communityDecksQuery.data?.length) return;
+    setCommunitySlug(communityDecksQuery.data[0].slug);
+  }, [communityDecksQuery.data, communitySlug]);
 
   useEffect(() => {
     if (!selectedCommunityDeck || sourceMode !== "community") return;
@@ -349,7 +364,7 @@ export function AnkiImportPage() {
           {sourceMode === "community" ? (
             <section className="rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-6">
               <div className="grid gap-4 md:grid-cols-2">
-                {COMMUNITY_DECKS.map((deck) => (
+                {(communityDecksQuery.data ?? []).map((deck) => (
                   <div
                     key={deck.slug}
                     className={`rounded-[20px] border p-5 ${deck.slug === communitySlug ? "border-accent-orange bg-bg-page" : "border-[var(--border-subtle)]"}`}

@@ -2,12 +2,18 @@ import {
   DefaultThemes,
   getDefaultEdgeTtsVoice,
   PRACTICE_SESSION_CARD_CAP_DEFAULT,
+  type CommunityDeckDetailDTO,
+  type CommunityDeckSummaryDTO,
+  type CommunityDeckSubmissionDTO,
+  type CommunitySubmissionStatus,
   type PracticeCardDTO,
+  type CreateCommunityDeckSubmissionInput,
   type CreateWordsBatchInput,
   type CreateDeckInput,
   type CreateWordInput,
   type DeleteWordsBatchInput,
   type LanguageCode,
+  type ReviewCommunityDeckSubmissionInput,
   type StartPracticeSessionInput,
   type SubmitPracticeCardInput,
   type ThemeConfig,
@@ -25,6 +31,7 @@ import {
 } from "@inko/shared";
 import { convex } from "../lib/convex";
 import { tracePractice } from "../lib/diagnostics";
+import { env } from "../lib/env";
 
 type ConvexUser = {
   _id: string;
@@ -59,6 +66,47 @@ type ConvexWord = {
   example?: string;
   audioUrl?: string;
   tags: string[];
+};
+
+type ConvexCommunityDeck = {
+  _id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  description: string;
+  language: LanguageCode;
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
+  authorName: string;
+  downloads: number;
+  rating: number;
+  cardCount: number;
+  tags: string[];
+  noteTypes: Array<{ name: string; fields: string[] }>;
+  words: CreateWordInput[];
+  updatedAt: number;
+};
+
+type ConvexCommunitySubmission = {
+  _id: string;
+  submitterUserId: string;
+  submitterEmail: string;
+  title: string;
+  summary: string;
+  description: string;
+  language: LanguageCode;
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
+  sourceKind: "apkg" | "colpkg" | "csv" | "tsv" | "community_clone" | "manual";
+  sourceName: string;
+  cardCount: number;
+  tags: string[];
+  noteTypes: Array<{ name: string; fields: string[] }>;
+  words: CreateWordInput[];
+  status: CommunitySubmissionStatus;
+  moderationNotes?: string;
+  reviewedByUserId?: string;
+  reviewedAt?: number;
+  createdAt: number;
+  updatedAt: number;
 };
 
 type WordChannelStats = {
@@ -183,6 +231,72 @@ function toWordDTO(word: ConvexWord) {
     audioUrl: word.audioUrl,
     tags: word.tags,
   };
+}
+
+function toCommunityDeckSummaryDTO(deck: ConvexCommunityDeck): CommunityDeckSummaryDTO {
+  return {
+    id: deck._id,
+    slug: deck.slug,
+    title: deck.title,
+    summary: deck.summary,
+    language: deck.language,
+    difficulty: deck.difficulty,
+    authorName: deck.authorName,
+    downloads: deck.downloads,
+    rating: deck.rating,
+    cardCount: deck.cardCount,
+    updatedAt: deck.updatedAt,
+    tags: deck.tags,
+  };
+}
+
+function toCommunityDeckDetailDTO(deck: ConvexCommunityDeck): CommunityDeckDetailDTO {
+  return {
+    ...toCommunityDeckSummaryDTO(deck),
+    description: deck.description,
+    noteTypes: deck.noteTypes,
+    words: deck.words,
+  };
+}
+
+function toCommunitySubmissionDTO(submission: ConvexCommunitySubmission): CommunityDeckSubmissionDTO {
+  return {
+    id: submission._id,
+    submitterUserId: submission.submitterUserId,
+    submitterEmail: submission.submitterEmail,
+    title: submission.title,
+    summary: submission.summary,
+    description: submission.description,
+    language: submission.language,
+    difficulty: submission.difficulty,
+    sourceKind: submission.sourceKind,
+    sourceName: submission.sourceName,
+    cardCount: submission.cardCount,
+    tags: submission.tags,
+    noteTypes: submission.noteTypes,
+    sampleWords: submission.words.slice(0, 8),
+    status: submission.status,
+    moderationNotes: submission.moderationNotes,
+    reviewedByUserId: submission.reviewedByUserId,
+    reviewedAt: submission.reviewedAt,
+    createdAt: submission.createdAt,
+    updatedAt: submission.updatedAt,
+  };
+}
+
+const moderatorEmails = new Set(
+  env.MODERATOR_EMAILS.split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean),
+);
+
+async function requireModerator(userId: string) {
+  const user = (await convex.query("users:getById", { userId })) as ConvexUser | null;
+  if (!user) throw new RepositoryError("User not found", 404);
+  if (!moderatorEmails.has(user.email.toLowerCase())) {
+    throw new RepositoryError("Forbidden", 403);
+  }
+  return user;
 }
 
 async function getPracticeQueueProgress(userId: string, deckId: string) {
@@ -500,6 +614,74 @@ export const repository = {
 
     await convex.mutation("decks:deleteDeck", { deckId });
     return { ok: true };
+  },
+
+  async listPublishedCommunityDecks(options?: { language?: LanguageCode; search?: string }) {
+    const decks = (await convex.query("community:listPublishedDecks", {
+      language: options?.language,
+      search: options?.search,
+    })) as ConvexCommunityDeck[];
+    return decks.map(toCommunityDeckSummaryDTO);
+  },
+
+  async getPublishedCommunityDeckBySlug(slug: string) {
+    const deck = (await convex.query("community:getPublishedDeckBySlug", {
+      slug,
+    })) as ConvexCommunityDeck | null;
+    if (!deck) throw new RepositoryError("Community deck not found", 404);
+    return toCommunityDeckDetailDTO(deck);
+  },
+
+  async createCommunityDeckSubmission(userId: string, input: CreateCommunityDeckSubmissionInput) {
+    const user = (await convex.query("users:getById", { userId })) as ConvexUser | null;
+    if (!user) throw new RepositoryError("User not found", 404);
+
+    const submission = (await convex.mutation("community:createSubmission", {
+      submitterUserId: userId,
+      submitterEmail: user.email,
+      ...input,
+      tags: input.tags ?? [],
+      noteTypes: input.noteTypes ?? [],
+      words: input.words.map((word) => ({
+        ...word,
+        tags: word.tags ?? [],
+      })),
+    })) as ConvexCommunitySubmission | null;
+
+    if (!submission) throw new Error("Failed to create community submission");
+    return toCommunitySubmissionDTO(submission);
+  },
+
+  async listMyCommunityDeckSubmissions(userId: string) {
+    const submissions = (await convex.query("community:listSubmissions", {
+      submitterUserId: userId,
+    })) as ConvexCommunitySubmission[];
+    return submissions.map(toCommunitySubmissionDTO);
+  },
+
+  async listCommunityDeckSubmissions(userId: string, status?: CommunitySubmissionStatus) {
+    await requireModerator(userId);
+    const submissions = (await convex.query("community:listSubmissions", {
+      status,
+    })) as ConvexCommunitySubmission[];
+    return submissions.map(toCommunitySubmissionDTO);
+  },
+
+  async reviewCommunityDeckSubmission(userId: string, submissionId: string, input: ReviewCommunityDeckSubmissionInput) {
+    await requireModerator(userId);
+
+    const reviewed = (await convex.mutation("community:reviewSubmission", {
+      submissionId,
+      reviewerUserId: userId,
+      status: input.status,
+      moderationNotes: input.moderationNotes,
+      slug: input.slug,
+    })) as { submission: ConvexCommunitySubmission | null } | null;
+
+    if (!reviewed?.submission) {
+      throw new RepositoryError("Community submission not found", 404);
+    }
+    return toCommunitySubmissionDTO(reviewed.submission);
   },
 
   async startPracticeSession(userId: string, input: StartPracticeSessionInput) {

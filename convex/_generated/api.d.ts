@@ -9,6 +9,7 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as community from "../community.js";
 import type * as dashboard from "../dashboard.js";
 import type * as decks from "../decks.js";
 import type * as http from "../http.js";
@@ -28,6 +29,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  community: typeof community;
   dashboard: typeof dashboard;
   decks: typeof decks;
   http: typeof http;

@@ -1,4 +1,8 @@
 import type {
+  CommunityDeckDetailDTO,
+  CommunityDeckSubmissionDTO,
+  CommunityDeckSummaryDTO,
+  CreateCommunityDeckSubmissionInput,
   CreateDeckInput,
   CreateWordsBatchInput,
   CreateWordInput,
@@ -14,6 +18,7 @@ import type {
   UpdateWordInput,
   UserDTO,
   WordDTO,
+  ReviewCommunityDeckSubmissionInput,
 } from "@inko/shared";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
@@ -182,6 +187,38 @@ export const api = {
   dashboardStats: (token: string) => request<DashboardStats>("/api/dashboard/stats", {}, token),
   dashboardRecentSessions: (token: string) =>
     request<DashboardRecentSessions>("/api/dashboard/recent-sessions", {}, token),
+
+  listCommunityDecks: (options?: { language?: string; search?: string }) => {
+    const params = new URLSearchParams();
+    if (options?.language) params.set("language", options.language);
+    if (options?.search) params.set("search", options.search);
+    const suffix = params.toString() ? `?${params.toString()}` : "";
+    return request<CommunityDeckSummaryDTO[]>(`/api/community/decks${suffix}`);
+  },
+
+  getCommunityDeck: (slug: string) => request<CommunityDeckDetailDTO>(`/api/community/decks/${slug}`),
+
+  submitCommunityDeck: (token: string, input: CreateCommunityDeckSubmissionInput) =>
+    request<CommunityDeckSubmissionDTO>("/api/community/submissions", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }, token),
+
+  listMyCommunitySubmissions: (token: string) =>
+    request<CommunityDeckSubmissionDTO[]>("/api/community/submissions/mine", {}, token),
+
+  listCommunitySubmissions: (token: string, options?: { status?: "pending" | "approved" | "rejected" }) => {
+    const params = new URLSearchParams();
+    if (options?.status) params.set("status", options.status);
+    const suffix = params.toString() ? `?${params.toString()}` : "";
+    return request<CommunityDeckSubmissionDTO[]>(`/api/community/submissions${suffix}`, {}, token);
+  },
+
+  reviewCommunitySubmission: (token: string, submissionId: string, input: ReviewCommunityDeckSubmissionInput) =>
+    request<CommunityDeckSubmissionDTO>(`/api/community/submissions/${submissionId}/review`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }, token),
 
   listDecks: (token: string) => request<DeckDTO[]>("/api/decks", {}, token),
 

@@ -1,12 +1,18 @@
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { ArrowRight, Download, Layers, Star } from "lucide-react";
+import { api } from "../api/client";
 import { applyMetadata } from "../lib/seo";
-import { getCommunityDeck } from "./communityDecks";
 
 export function CommunityDeckDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const deck = getCommunityDeck(slug);
+  const deckQuery = useQuery({
+    queryKey: ["community-deck", slug],
+    queryFn: () => api.getCommunityDeck(slug!),
+    enabled: Boolean(slug),
+  });
+  const deck = deckQuery.data;
 
   useEffect(() => {
     if (!deck) return;
@@ -18,8 +24,12 @@ export function CommunityDeckDetailPage() {
     });
   }, [deck]);
 
-  if (!deck) {
+  if (!deck && !deckQuery.isLoading) {
     return <Navigate to="/community" replace />;
+  }
+
+  if (!deck) {
+    return <div className="p-10 text-sm text-text-secondary">Loading deck…</div>;
   }
 
   return (
@@ -63,7 +73,7 @@ export function CommunityDeckDetailPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-text-secondary">Updated</span>
-                <span className="font-bold text-text-primary">{deck.updatedAt}</span>
+                <span className="font-bold text-text-primary">{new Date(deck.updatedAt).toLocaleDateString()}</span>
               </div>
             </div>
             <Link

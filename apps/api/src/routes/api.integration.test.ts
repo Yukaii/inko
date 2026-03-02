@@ -185,6 +185,80 @@ function makeRepositoryMock(): Repository {
     dashboardRecentSessions: vi.fn(async () => ({
       recentSessions: [],
     })),
+    listPublishedCommunityDecks: vi.fn(async () => [
+      {
+        id: "community_1",
+        slug: "jlpt-n5-verbs",
+        title: "JLPT N5 Verbs",
+        summary: "Starter verbs",
+        language: "ja" as const,
+        difficulty: "Beginner" as const,
+        authorName: "moderator@example.com",
+        downloads: 10,
+        rating: 4.8,
+        cardCount: 12,
+        updatedAt: Date.now(),
+        tags: ["starter"],
+      },
+    ]),
+    getPublishedCommunityDeckBySlug: vi.fn(async (slug: string) => ({
+      id: "community_1",
+      slug,
+      title: "JLPT N5 Verbs",
+      summary: "Starter verbs",
+      description: "Deck description",
+      language: "ja" as const,
+      difficulty: "Beginner" as const,
+      authorName: "moderator@example.com",
+      downloads: 10,
+      rating: 4.8,
+      cardCount: 12,
+      updatedAt: Date.now(),
+      tags: ["starter"],
+      noteTypes: [{ name: "Basic", fields: ["Expression", "Meaning"] }],
+      words: [{ target: "食べる", meaning: "to eat", tags: ["starter"] }],
+    })),
+    createCommunityDeckSubmission: vi.fn(async (userId: string, input) => ({
+      id: "submission_1",
+      submitterUserId: userId,
+      submitterEmail: "user@example.com",
+      title: input.title,
+      summary: input.summary,
+      description: input.description,
+      language: input.language,
+      difficulty: input.difficulty,
+      sourceKind: input.sourceKind,
+      sourceName: input.sourceName,
+      cardCount: input.words.length,
+      tags: input.tags,
+      noteTypes: input.noteTypes,
+      sampleWords: input.words.slice(0, 8),
+      status: "pending" as const,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    })),
+    listMyCommunityDeckSubmissions: vi.fn(async () => []),
+    listCommunityDeckSubmissions: vi.fn(async () => []),
+    reviewCommunityDeckSubmission: vi.fn(async (_userId: string, submissionId: string, input) => ({
+      id: submissionId,
+      submitterUserId: "user_1",
+      submitterEmail: "user@example.com",
+      title: "Submitted deck",
+      summary: "Starter verbs",
+      description: "Deck description",
+      language: "ja" as const,
+      difficulty: "Beginner" as const,
+      sourceKind: "apkg" as const,
+      sourceName: "starter.apkg",
+      cardCount: 2,
+      tags: ["starter"],
+      noteTypes: [{ name: "Basic", fields: ["Expression", "Meaning"] }],
+      sampleWords: [{ target: "食べる", meaning: "to eat", tags: ["starter"] }],
+      status: input.status,
+      moderationNotes: input.moderationNotes,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    })),
   } as unknown as Repository;
 }
 
@@ -532,6 +606,84 @@ describe("API integration", () => {
         token: body.devToken,
       }),
     );
+
+    await app.close();
+  });
+
+  it("serves published community deck endpoints", async () => {
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
+
+    const listRes = await app.inject({
+      method: "GET",
+      url: "/api/community/decks?language=ja&search=verbs",
+    });
+    expect(listRes.statusCode).toBe(200);
+    expect(listRes.json()[0].slug).toBe("jlpt-n5-verbs");
+
+    const detailRes = await app.inject({
+      method: "GET",
+      url: "/api/community/decks/jlpt-n5-verbs",
+    });
+    expect(detailRes.statusCode).toBe(200);
+    expect(detailRes.json().noteTypes[0].name).toBe("Basic");
+
+    await app.close();
+  });
+
+  it("supports authenticated community submission and moderation routes", async () => {
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
+    const accessToken = await issueAccessToken("user_1", "user@example.com");
+    const auth = { authorization: `Bearer ${accessToken}` };
+
+    const createRes = await app.inject({
+      method: "POST",
+      url: "/api/community/submissions",
+      headers: auth,
+      payload: {
+        title: "Submitted deck",
+        summary: "Starter verbs",
+        description: "Deck description",
+        language: "ja",
+        difficulty: "Beginner",
+        sourceKind: "apkg",
+        sourceName: "starter.apkg",
+        tags: ["starter"],
+        noteTypes: [{ name: "Basic", fields: ["Expression", "Meaning"] }],
+        words: [
+          { target: "食べる", meaning: "to eat", tags: ["starter"] },
+          { target: "飲む", meaning: "to drink", tags: ["starter"] },
+        ],
+      },
+    });
+    expect(createRes.statusCode).toBe(200);
+    expect(createRes.json().status).toBe("pending");
+
+    const mineRes = await app.inject({
+      method: "GET",
+      url: "/api/community/submissions/mine",
+      headers: auth,
+    });
+    expect(mineRes.statusCode).toBe(200);
+
+    const listRes = await app.inject({
+      method: "GET",
+      url: "/api/community/submissions?status=pending",
+      headers: auth,
+    });
+    expect(listRes.statusCode).toBe(200);
+
+    const reviewRes = await app.inject({
+      method: "POST",
+      url: "/api/community/submissions/submission_1/review",
+      headers: auth,
+      payload: {
+        status: "approved",
+        moderationNotes: "Looks good",
+        slug: "submitted-deck",
+      },
+    });
+    expect(reviewRes.statusCode).toBe(200);
+    expect(reviewRes.json().status).toBe("approved");
 
     await app.close();
   });
