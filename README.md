@@ -1,95 +1,18 @@
 # Inkō
 
-Monorepo for the Inkō web app.
+Inkō is a vocabulary learning app built around active recall across multiple channels: writing, typing, and listening. The goal is to help learners move beyond recognition and build durable recall for languages that rely on non-Latin scripts, especially Japanese, Chinese, and Korean.
 
-## Stack
+## What Users Can Do
 
-- `apps/web`: Vite + React + TypeScript
-- `apps/api`: Fastify + TypeScript
-- `convex/`: Convex schema and functions
-- `packages/shared`: shared zod schemas + scoring/scheduling logic
+- Create and manage vocabulary decks
+- Start with seeded starter content
+- Practice from the dashboard into guided review flows
+- Train production rather than passive recognition
+- Use local magic-link auth, or enable social sign-in when configured
 
-## Quick Start
+For the product direction and learning model, see [docs/prd.md](/Users/yukai/Projects/Personal/inko/docs/prd.md).
 
-1. Install deps:
-
-```bash
-bun install
-```
-
-2. Initialize Convex for this repo (first time only):
-
-```bash
-bun run convex:dev
-```
-
-This command is interactive the first time and writes local deployment config.
-If prompted, choose:
-- existing or new project (either works)
-- `dev deployment: local` for local-first development
-
-3. Start Convex in watch mode:
-
-```bash
-bun run convex:dev
-```
-
-4. Configure env files:
-
-```bash
-cp apps/api/.env.example apps/api/.env
-cp apps/web/.env.example apps/web/.env
-```
-
-5. Start API and web:
-
-```bash
-bun run dev
-```
-
-## Seed Starter Data
-
-After Convex is initialized and running, seed a default Japanese deck and starter words:
-
-```bash
-bun run seed:starter
-```
-
-To seed another email:
-
-```bash
-bunx convex run seed:seedStarterData '{"email":"you@example.com"}'
-```
-
-## Auth Flow (Local)
-
-- Request magic link from login page.
-- With `MAIL_PROVIDER=log` (default), token is returned for local/dev and can be pasted in login form.
-- With `MAIL_PROVIDER=resend`, magic link is sent via email and login page can auto-verify from `?token=...`.
-- OAuth sign-in is supported through Convex Auth for Google, GitHub, and Apple once the provider env vars are configured.
-
-## OAuth Provider Setup
-
-Convex Auth uses the Convex HTTP auth routes under your Convex site URL. Register these callback URLs with each provider:
-
-- Local: `http://127.0.0.1:3211/api/auth/callback/<provider>`
-- Production: `https://<your-convex-site>/api/auth/callback/<provider>`
-
-Environment variables:
-
-- repo/root `.env.local` for Convex Auth: `SITE_URL`, `JWT_PRIVATE_KEY`
-- optional social providers in repo/root `.env.local`: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `AUTH_APPLE_ID`, `AUTH_APPLE_SECRET`
-- `apps/api/.env`: `CONVEX_SITE_URL`
-- `apps/web/.env.local`: `VITE_CONVEX_URL`
-- `apps/web/.env.local`: `VITE_AUTH_GOOGLE_ENABLED=true`, `VITE_AUTH_GITHUB_ENABLED=true`, `VITE_AUTH_APPLE_ENABLED=true`
-
-Frontend visibility rule:
-
-- A provider button is shown on the login page only when its `VITE_AUTH_*_ENABLED` flag is set to `true`.
-- Keep the flag unset or set it to anything else to hide that provider from the UI.
-- These flags should match the backend/provider configuration so users never see a provider that is not actually available.
-
-## Implemented Routes
+## App Routes
 
 - `/login`
 - `/dashboard`
@@ -97,8 +20,61 @@ Frontend visibility rule:
 - `/practice/:deckId`
 - `/settings`
 
-## Production Deployment
+## Quick Start
 
-Deployment setup and production prep are documented in:
+1. Install dependencies:
 
-- `docs/deployment.md`
+```bash
+bun install
+```
+
+2. Copy local environment files:
+
+```bash
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
+```
+
+3. Start Convex local development:
+
+```bash
+bun run convex:dev
+```
+
+The first run is interactive and writes local deployment config. For local-first development, choose the local dev deployment when prompted.
+
+4. Start the app:
+
+```bash
+bun run dev
+```
+
+5. Optionally seed starter data:
+
+```bash
+bun run seed:starter
+```
+
+## Local Auth
+
+- With `MAIL_PROVIDER=log`, the login token is returned locally for development and can be pasted into the login form.
+- With `MAIL_PROVIDER=resend`, magic links are sent by email.
+- Google, GitHub, and Apple sign-in are supported when their provider credentials and frontend flags are configured.
+
+## Documentation
+
+The `README` is intentionally product- and usage-focused. Technical and implementation details live in the docs:
+
+- [docs/architecture.md](/Users/yukai/Projects/Personal/inko/docs/architecture.md): monorepo shape and request flow
+- [docs/frontend.md](/Users/yukai/Projects/Personal/inko/docs/frontend.md): web app structure and frontend commands
+- [docs/backend.md](/Users/yukai/Projects/Personal/inko/docs/backend.md): API, Convex, auth, and backend env details
+- [docs/deployment.md](/Users/yukai/Projects/Personal/inko/docs/deployment.md): production deployment setup
+- [docs/prd.md](/Users/yukai/Projects/Personal/inko/docs/prd.md): product requirements and UX intent
+- [docs/practice-queue-design.md](/Users/yukai/Projects/Personal/inko/docs/practice-queue-design.md): practice queue architecture
+
+## Common Commands
+
+- `bun run dev`
+- `bun run test`
+- `bun run lint`
+- `bun run build`
