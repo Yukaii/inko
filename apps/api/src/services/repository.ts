@@ -199,6 +199,7 @@ function toUserDTO(user: ConvexUser) {
     themeMode: user.themeMode ?? "dark",
     typingMode: user.typingMode ?? "language_specific",
     ttsEnabled: user.ttsEnabled ?? true,
+    canModerateCommunity: moderatorEmails.has(user.email.toLowerCase()),
     themes: user.themes ?? DefaultThemes,
     createdAt: user.createdAt,
   };

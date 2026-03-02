@@ -39,7 +39,7 @@ test("reads mixed note types from an apkg", async ({ page }) => {
   const noteTypeSelect = page.getByRole("combobox").nth(1);
   await expect(noteTypeSelect).toHaveValue("1001");
   await noteTypeSelect.selectOption({ label: "Travel Phrase (1 notes)" });
-  await expect(page.getByText("Source: mixed.apkg / Travel Phrase")).toBeVisible();
+  await expect(page.getByText(/Source: mixed\.apkg \/ Travel Phrase • 1 rows detected/)).toBeVisible();
   await expect(page.getByRole("table").getByText("Phrase")).toBeVisible();
   await expect(page.getByRole("table").getByText("Translation")).toBeVisible();
   await expect(page.getByRole("cell", { name: "ありがとうございます", exact: true })).toBeVisible();

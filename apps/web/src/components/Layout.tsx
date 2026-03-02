@@ -57,6 +57,15 @@ function LogoutIcon({ className }: { className?: string }) {
   );
 }
 
+function ShieldIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
+
 function GlobeIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -93,7 +102,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     refetchOnReconnect: false,
   });
 
-  const user = meQuery.data as { displayName: string; email: string; themeMode: ThemeMode; themes: ThemeConfig } | undefined;
+  const user = meQuery.data as { displayName: string; email: string; themeMode: ThemeMode; themes: ThemeConfig; canModerateCommunity?: boolean } | undefined;
 
   useEffect(() => {
     const me = meQuery.data as { themeMode: ThemeMode; themes: ThemeConfig } | undefined;
@@ -319,6 +328,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <SettingsIcon className="h-4 w-4" />
                   {t("auth.settings")}
                 </NavLink>
+                {user?.canModerateCommunity ? (
+                  <NavLink
+                    to="/community/moderation"
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
+                    onClick={() => setShowProfileMenu(false)}
+                  >
+                    <ShieldIcon className="h-4 w-4" />
+                    Community moderation
+                  </NavLink>
+                ) : null}
                 <button
                   type="button"
                   className="flex w-full items-center gap-2 rounded-lg bg-transparent px-3 py-2 text-sm text-[var(--danger-text)] transition-colors hover:bg-[var(--danger-bg)]"

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowRight, FileArchive, FileSpreadsheet, Layers, Upload } from "lucide-react";
-import type { CreateDeckInput, LanguageCode } from "@inko/shared";
+import { ArrowRight, FileArchive, FileSpreadsheet, Layers, Send, Upload } from "lucide-react";
+import type { CreateCommunityDeckSubmissionInput, CreateDeckInput, LanguageCode } from "@inko/shared";
 import { LANGUAGE_LABELS, SUPPORTED_LANGUAGES } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
@@ -19,6 +19,14 @@ import {
 } from "./ankiImportUtils";
 
 type SourceMode = "community" | "upload" | "paste";
+
+type SubmissionForm = {
+  title: string;
+  summary: string;
+  description: string;
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
+  tags: string;
+};
 
 function chunkWords<T>(items: T[], size: number) {
   const chunks: T[][] = [];
@@ -69,6 +77,13 @@ export function AnkiImportPage() {
   const [mapping, setMapping] = useState<ImportableField[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [submissionForm, setSubmissionForm] = useState<SubmissionForm>({
+    title: "",
+    summary: "",
+    description: "",
+    difficulty: "Beginner",
+    tags: "",
+  });
 
   const decksQuery = useQuery({
     queryKey: ["decks"],
@@ -84,6 +99,12 @@ export function AnkiImportPage() {
     queryKey: ["community-deck-importer", communitySlug],
     queryFn: () => api.getCommunityDeck(communitySlug),
     enabled: sourceMode === "community" && Boolean(communitySlug),
+  });
+
+  const mySubmissionsQuery = useQuery({
+    queryKey: ["community-submissions", "mine"],
+    queryFn: () => api.listMyCommunitySubmissions(token ?? ""),
+    enabled: Boolean(token),
   });
 
   const createDeck = useMutation({
@@ -123,6 +144,61 @@ export function AnkiImportPage() {
     },
   });
 
+  const submitDeck = useMutation({
+    mutationFn: async () => {
+      if (!dataset) throw new Error("Load and map a deck before submitting it.");
+      const words = buildWordsFromMapping(dataset, mapping).slice(0, 5000);
+      if (words.length === 0) throw new Error("Map target and meaning before submitting.");
+
+      const sourceKind: CreateCommunityDeckSubmissionInput["sourceKind"] =
+        sourceMode === "upload"
+          ? (/\.(apkg)$/i.test(dataset.sourceName) ? "apkg" : /\.(colpkg)$/i.test(dataset.sourceName) ? "colpkg" : /\.(tsv)$/i.test(dataset.sourceName) ? "tsv" : "csv")
+          : sourceMode === "community"
+            ? "community_clone"
+            : "manual";
+
+      return await api.submitCommunityDeck(token ?? "", {
+        title: submissionForm.title.trim(),
+        summary: submissionForm.summary.trim(),
+        description: submissionForm.description.trim(),
+        language:
+          selectedDeckId
+            ? (decksQuery.data ?? []).find((deck) => deck.id === selectedDeckId)?.language ??
+              selectedCommunityDeck?.language ??
+              "ja"
+            : selectedCommunityDeck?.language ?? "ja",
+        difficulty: submissionForm.difficulty,
+        sourceKind,
+        sourceName: dataset.sourceName,
+        tags: submissionForm.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+        noteTypes:
+          packageData?.noteTypes.map((noteType) => ({
+            name: noteType.name,
+            fields: noteType.headers,
+          })) ??
+          [
+            {
+              name: "Mapped import",
+              fields: dataset.headers,
+            },
+          ],
+        words,
+      });
+    },
+    onMutate: () => {
+      setError(null);
+      setStatus("Submitting deck for moderation...");
+    },
+    onSuccess: async (submission) => {
+      setStatus(`Submitted "${submission.title}" for moderation.`);
+      await queryClient.invalidateQueries({ queryKey: ["community-submissions", "mine"] });
+    },
+    onError: (mutationError) => {
+      setStatus(null);
+      setError(mutationError instanceof Error ? mutationError.message : "Submission failed.");
+    },
+  });
+
   const selectedCommunityDeck = selectedCommunityDeckQuery.data;
   const activeNoteType = useMemo(
     () => packageData?.noteTypes.find((noteType) => noteType.id === noteTypeId) ?? packageData?.noteTypes[0],
@@ -130,6 +206,8 @@ export function AnkiImportPage() {
   );
   const previewRows = dataset?.rows.slice(0, 6) ?? [];
   const importedWordsCount = dataset ? buildWordsFromMapping(dataset, mapping).length : 0;
+  const currentDeckLanguage =
+    (decksQuery.data ?? []).find((deck) => deck.id === selectedDeckId)?.language ?? selectedCommunityDeck?.language ?? "ja";
 
   useEffect(() => {
     applyNoIndexMetadata("Import Anki Decks | Inko");
@@ -164,6 +242,19 @@ export function AnkiImportPage() {
     setPackageData(null);
     setMapping(inferFieldMapping(nextDataset.headers));
   }, [selectedCommunityDeck, sourceMode]);
+
+  useEffect(() => {
+    if (!dataset) return;
+    setSubmissionForm((current) => ({
+      ...current,
+      title: current.title || dataset.sourceName.replace(/\.(apkg|colpkg|csv|tsv|txt)$/i, ""),
+      summary: current.summary || `Imported ${dataset.rows.length} notes prepared for Inko community review.`,
+      description:
+        current.description ||
+        `Converted from ${dataset.sourceName} with explicit field mapping in Inko. Includes ${buildWordsFromMapping(dataset, mapping).length} mapped notes ready for moderation.`,
+      tags: current.tags || [currentDeckLanguage, sourceMode].filter(Boolean).join(", "),
+    }));
+  }, [currentDeckLanguage, dataset, mapping, sourceMode]);
 
   useEffect(() => {
     if (!activeNoteType) return;
@@ -478,12 +569,110 @@ export function AnkiImportPage() {
                   </button>
                 </div>
               </section>
+
+              <section className="rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-sm font-bold text-text-primary">6. Submit to community</div>
+                    <div className="mt-1 text-sm text-text-secondary">
+                      Send this mapped deck to the moderation queue for approval into the public library.
+                    </div>
+                  </div>
+                  <Link to="/community/moderation" className="text-sm font-medium text-accent-orange no-underline">
+                    Open moderation queue
+                  </Link>
+                </div>
+                <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">Title</label>
+                      <input
+                        className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none"
+                        value={submissionForm.title}
+                        onChange={(event) => setSubmissionForm((current) => ({ ...current, title: event.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">Summary</label>
+                      <input
+                        className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none"
+                        value={submissionForm.summary}
+                        onChange={(event) => setSubmissionForm((current) => ({ ...current, summary: event.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">Description</label>
+                      <textarea
+                        className="mt-2 min-h-32 w-full rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none"
+                        value={submissionForm.description}
+                        onChange={(event) => setSubmissionForm((current) => ({ ...current, description: event.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">Difficulty</label>
+                      <select
+                        className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none"
+                        value={submissionForm.difficulty}
+                        onChange={(event) => setSubmissionForm((current) => ({ ...current, difficulty: event.target.value as SubmissionForm["difficulty"] }))}
+                      >
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">Tags</label>
+                      <input
+                        className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none"
+                        value={submissionForm.tags}
+                        onChange={(event) => setSubmissionForm((current) => ({ ...current, tags: event.target.value }))}
+                        placeholder="anki, jlpt, verbs"
+                      />
+                    </div>
+                    <div className="rounded-2xl bg-bg-page p-4 text-sm text-text-secondary">
+                      <div>Language: <span className="font-semibold text-text-primary">{currentDeckLanguage.toUpperCase()}</span></div>
+                      <div className="mt-1">Mapped notes: <span className="font-semibold text-text-primary">{importedWordsCount}</span></div>
+                      <div className="mt-1">Source: <span className="font-semibold text-text-primary">{dataset.sourceName}</span></div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => submitDeck.mutate()}
+                      disabled={!submissionForm.title.trim() || !submissionForm.summary.trim() || !submissionForm.description.trim() || submitDeck.isPending}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-accent-orange px-5 py-3 text-sm font-bold text-text-on-accent disabled:opacity-60"
+                    >
+                      <Send size={16} />
+                      {submitDeck.isPending ? "Submitting..." : "Submit to community"}
+                    </button>
+                  </div>
+                </div>
+              </section>
             </>
           ) : (
             <section className="rounded-[24px] border border-dashed border-[var(--border-subtle)] bg-bg-card p-8 text-sm leading-6 text-text-secondary">
               Upload a file, paste a note export, or choose a community deck to generate the mapping table and preview.
             </section>
           )}
+
+          {mySubmissionsQuery.data?.length ? (
+            <section className="rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-6">
+              <div className="text-sm font-bold text-text-primary">My recent submissions</div>
+              <div className="mt-4 grid gap-3">
+                {mySubmissionsQuery.data.slice(0, 4).map((submission) => (
+                  <div key={submission.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-bg-page px-4 py-3 text-sm">
+                    <div>
+                      <div className="font-semibold text-text-primary">{submission.title}</div>
+                      <div className="text-text-secondary">{submission.cardCount} cards • {submission.sourceName}</div>
+                    </div>
+                    <div className="rounded-full border border-[var(--border-subtle)] px-3 py-1 text-xs font-medium text-text-secondary">
+                      {submission.status}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
       </section>
     </div>
