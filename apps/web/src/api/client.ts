@@ -1,4 +1,5 @@
 import type {
+  CreateCommunityDeckCommentInput,
   CommunityDeckDetailDTO,
   CommunityDeckSubmissionDTO,
   CommunityDeckSummaryDTO,
@@ -9,6 +10,8 @@ import type {
   DeckDTO,
   DeleteWordsBatchInput,
   PracticeCardDTO,
+  RateCommunityDeckInput,
+  ReviewCommunityDeckSubmissionInput,
   SessionSummaryDTO,
   SubmitPracticeCardInput,
   TypingMode,
@@ -18,7 +21,6 @@ import type {
   UpdateWordInput,
   UserDTO,
   WordDTO,
-  ReviewCommunityDeckSubmissionInput,
 } from "@inko/shared";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
@@ -196,7 +198,24 @@ export const api = {
     return request<CommunityDeckSummaryDTO[]>(`/api/community/decks${suffix}`);
   },
 
-  getCommunityDeck: (slug: string) => request<CommunityDeckDetailDTO>(`/api/community/decks/${slug}`),
+  getCommunityDeck: (slug: string, token?: string) => request<CommunityDeckDetailDTO>(`/api/community/decks/${slug}`, {}, token),
+
+  rateCommunityDeck: (token: string, slug: string, input: RateCommunityDeckInput) =>
+    request<CommunityDeckDetailDTO>(
+      `/api/community/decks/${slug}/rating`,
+      { method: "POST", body: JSON.stringify(input) },
+      token,
+    ),
+
+  addCommunityDeckComment: (token: string, slug: string, input: CreateCommunityDeckCommentInput) =>
+    request<CommunityDeckDetailDTO>(
+      `/api/community/decks/${slug}/comments`,
+      { method: "POST", body: JSON.stringify(input) },
+      token,
+    ),
+
+  deleteCommunityDeckComment: (token: string, slug: string, commentId: string) =>
+    request<CommunityDeckDetailDTO>(`/api/community/decks/${slug}/comments/${commentId}`, { method: "DELETE" }, token),
 
   submitCommunityDeck: (token: string, input: CreateCommunityDeckSubmissionInput) =>
     request<CommunityDeckSubmissionDTO>("/api/community/submissions", {
@@ -206,6 +225,9 @@ export const api = {
 
   listMyCommunitySubmissions: (token: string) =>
     request<CommunityDeckSubmissionDTO[]>("/api/community/submissions/mine", {}, token),
+
+  deleteMyCommunitySubmission: (token: string, submissionId: string) =>
+    request<{ ok: boolean }>(`/api/community/submissions/${submissionId}`, { method: "DELETE" }, token),
 
   listCommunitySubmissions: (token: string, options?: { status?: "pending" | "approved" | "rejected" }) => {
     const params = new URLSearchParams();

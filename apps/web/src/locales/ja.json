@@ -30,7 +30,9 @@
     "deleting": "削除中...",
     "create": "作成",
     "new": "新規",
-    "save_changes": "変更を保存"
+    "save_changes": "変更を保存",
+    "switch_to_light": "ライトモードに切り替え",
+    "switch_to_dark": "ダークモードに切り替え"
   },
   "errors": {
     "unknown": "予期せぬエラーが発生しました。",
@@ -67,6 +69,8 @@
     "word_bank": "ワードバンク",
     "settings": "設定",
     "my_submissions": "自分の投稿",
+    "community_mode": "コミュニティ審査",
+    "community_moderation": "コミュニティ審査",
     "shortcuts": "ショートカット",
     "home": "ホーム",
     "decks": "デッキ",
@@ -606,7 +610,23 @@
     "note_types": "ノートタイプ",
     "sample_cards": "サンプルカード",
     "detail": {
-      "seo_title": "{{title}} | Inko コミュニティ"
+      "seo_title": "{{title}} | Inko コミュニティ",
+      "rate_title": "このデッキを評価",
+      "rate_copy": "インポート前に他の学習者が品質を判断しやすいよう、短い評価を残せます。",
+      "rate_value": "{{value}} つ星で評価",
+      "rate_prompt": "星を選んで評価を追加します。",
+      "your_rating": "あなたの評価: {{rating}}/5",
+      "sign_in_to_rate": "評価するにはサインインしてください。",
+      "comments_title": "コメント",
+      "comments_count": "{{count}} 件のコメント",
+      "comment_placeholder": "良かった点や、次の学習者が知っておくべきことを書いてください。",
+      "comment_help": "コメントはこのコミュニティデッキのページで公開表示されます。",
+      "post_comment": "コメントを投稿",
+      "delete_comment": "削除",
+      "remove_comment": "削除する",
+      "comments_empty": "まだコメントはありません。最初のひとことを残してください。",
+      "sign_in_to_comment": "コメントするにはサインインしてください。",
+      "sign_in_required": "コミュニティデッキの評価やコメントにはサインインが必要です。"
     },
     "library": {
       "seo_title": "コミュニティデッキ | Inko",
@@ -657,7 +677,10 @@
       "source": "ソース",
       "cards": "カード数",
       "created": "作成日",
-      "moderation_notes": "審査メモ"
+      "moderation_notes": "審査メモ",
+      "discard": "取り下げる",
+      "discard_help": "自分のキューでは、審査待ちまたは却下済みの投稿を取り下げられます。",
+      "published_locked": "承認済みの投稿は、すでにコミュニティライブラリへ公開されている可能性があるため、ここでは取り下げできません。"
     },
     "stats": {
       "downloads": "ダウンロード数",

@@ -167,7 +167,7 @@ export function PracticeSimulator() {
   const progress = (typed.length / card.answer.length) * 100;
 
   return (
-    <div className="relative flex h-[400px] w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-[#1a1a1a] bg-bg-page shadow-2xl md:h-[500px]">
+    <div className="relative flex h-[400px] w-full flex-col items-center justify-center overflow-hidden rounded-b-xl border border-t-0 border-[#1a1a1a] bg-bg-page shadow-2xl md:h-[500px]">
       {/* Top Bar Simulator */}
       <div className="absolute inset-x-0 top-0 flex items-center justify-between px-6 py-4 opacity-60">
         <div className="flex items-center gap-3">

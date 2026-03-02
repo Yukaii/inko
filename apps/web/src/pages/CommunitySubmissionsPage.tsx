@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
@@ -9,6 +9,7 @@ import { applyNoIndexMetadata } from "../lib/seo";
 export function CommunitySubmissionsPage() {
   const { t } = useTranslation();
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     applyNoIndexMetadata(t("community.submissions.seo_title"));
@@ -18,6 +19,12 @@ export function CommunitySubmissionsPage() {
     queryKey: ["community-submissions", "mine"],
     queryFn: () => api.listMyCommunitySubmissions(token ?? ""),
     enabled: Boolean(token),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: (submissionId: string) => api.deleteMyCommunitySubmission(token ?? "", submissionId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["community-submissions", "mine"] });
+    },
   });
 
   const submissions = submissionsQuery.data ?? [];
@@ -63,8 +70,20 @@ export function CommunitySubmissionsPage() {
                 <h2 className="mt-2 text-2xl font-bold [font-family:var(--font-display)] text-text-primary">{submission.title}</h2>
                 <p className="mt-2 text-sm text-text-secondary">{submission.summary}</p>
               </div>
-              <div className="rounded-full bg-bg-page px-3 py-1 text-xs font-medium text-text-secondary">
-                {t(`community.moderation.status.${submission.status}`)}
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="rounded-full bg-bg-page px-3 py-1 text-xs font-medium text-text-secondary">
+                  {t(`community.moderation.status.${submission.status}`)}
+                </div>
+                {submission.status !== "approved" ? (
+                  <button
+                    type="button"
+                    disabled={deleteMutation.isPending}
+                    onClick={() => deleteMutation.mutate(submission.id)}
+                    className="rounded-full border border-[var(--border-subtle)] px-3 py-1 text-xs font-medium text-text-secondary transition hover:border-accent-orange hover:text-accent-orange disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {t("community.submissions.discard")}
+                  </button>
+                ) : null}
               </div>
             </div>
 
@@ -110,6 +129,16 @@ export function CommunitySubmissionsPage() {
                   <div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-bg-card px-3 py-2 text-sm text-text-secondary">
                     <div className="text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">{t("community.submissions.moderation_notes")}</div>
                     <div className="mt-2 text-text-primary">{submission.moderationNotes}</div>
+                  </div>
+                ) : null}
+                {submission.status !== "approved" ? (
+                  <div className="mt-4 text-xs leading-5 text-text-secondary">{t("community.submissions.discard_help")}</div>
+                ) : (
+                  <div className="mt-4 text-xs leading-5 text-text-secondary">{t("community.submissions.published_locked")}</div>
+                )}
+                {deleteMutation.error ? (
+                  <div className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                    {(deleteMutation.error as Error).message}
                   </div>
                 ) : null}
               </div>

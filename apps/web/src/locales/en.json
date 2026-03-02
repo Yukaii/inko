@@ -30,7 +30,9 @@
     "deleting": "Deleting...",
     "create": "Create",
     "new": "New",
-    "save_changes": "Save Changes"
+    "save_changes": "Save Changes",
+    "switch_to_light": "Switch to light mode",
+    "switch_to_dark": "Switch to dark mode"
   },
   "errors": {
     "unknown": "An unexpected error occurred.",
@@ -67,6 +69,8 @@
     "word_bank": "Word Bank",
     "settings": "Settings",
     "my_submissions": "My submissions",
+    "community_mode": "Community moderation",
+    "community_moderation": "Community moderation",
     "shortcuts": "Shortcuts",
     "home": "Home",
     "decks": "Decks",
@@ -608,7 +612,23 @@
     "note_types": "Note types",
     "sample_cards": "Sample cards",
     "detail": {
-      "seo_title": "{{title}} | Inko Community"
+      "seo_title": "{{title}} | Inko Community",
+      "rate_title": "Rate this deck",
+      "rate_copy": "Leave a quick score to help other learners judge deck quality before importing.",
+      "rate_value": "Rate {{value}} stars",
+      "rate_prompt": "Tap a star to add your rating.",
+      "your_rating": "Your rating: {{rating}}/5",
+      "sign_in_to_rate": "Sign in to leave a rating.",
+      "comments_title": "Comments",
+      "comments_count": "{{count}} comments",
+      "comment_placeholder": "What worked well? What should the next learner know?",
+      "comment_help": "Comments are public on this community deck page.",
+      "post_comment": "Post comment",
+      "delete_comment": "Delete",
+      "remove_comment": "Remove",
+      "comments_empty": "No comments yet. Be the first to leave context for the next learner.",
+      "sign_in_to_comment": "Sign in to write a comment.",
+      "sign_in_required": "Sign in to rate or comment on community decks."
     },
     "library": {
       "seo_title": "Community Decks | Inko",
@@ -659,7 +679,10 @@
       "source": "Source",
       "cards": "Cards",
       "created": "Created",
-      "moderation_notes": "Moderation notes"
+      "moderation_notes": "Moderation notes",
+      "discard": "Discard",
+      "discard_help": "You can discard pending or rejected submissions from your own queue.",
+      "published_locked": "Approved submissions stay locked here because they may already be published in the community library."
     },
     "stats": {
       "downloads": "Downloads",

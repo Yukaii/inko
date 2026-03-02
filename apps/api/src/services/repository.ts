@@ -2,10 +2,12 @@ import {
   DefaultThemes,
   getDefaultEdgeTtsVoice,
   PRACTICE_SESSION_CARD_CAP_DEFAULT,
+  type CommunityDeckCommentDTO,
   type CommunityDeckDetailDTO,
   type CommunityDeckSummaryDTO,
   type CommunityDeckSubmissionDTO,
   type CommunitySubmissionStatus,
+  type CreateCommunityDeckCommentInput,
   type PracticeCardDTO,
   type CreateCommunityDeckSubmissionInput,
   type CreateWordsBatchInput,
@@ -13,6 +15,7 @@ import {
   type CreateWordInput,
   type DeleteWordsBatchInput,
   type LanguageCode,
+  type RateCommunityDeckInput,
   type ReviewCommunityDeckSubmissionInput,
   type StartPracticeSessionInput,
   type SubmitPracticeCardInput,
@@ -79,10 +82,22 @@ type ConvexCommunityDeck = {
   authorName: string;
   downloads: number;
   rating: number;
+  ratingCount: number;
   cardCount: number;
   tags: string[];
   noteTypes: Array<{ name: string; fields: string[] }>;
   words: CreateWordInput[];
+  updatedAt: number;
+  viewerRating?: number;
+  comments?: ConvexCommunityComment[];
+};
+
+type ConvexCommunityComment = {
+  id: string;
+  userId: string;
+  authorName: string;
+  body: string;
+  createdAt: number;
   updatedAt: number;
 };
 
@@ -199,7 +214,7 @@ function toUserDTO(user: ConvexUser) {
     themeMode: user.themeMode ?? "dark",
     typingMode: user.typingMode ?? "language_specific",
     ttsEnabled: user.ttsEnabled ?? true,
-    canModerateCommunity: moderatorEmails.has(user.email.toLowerCase()),
+    canModerateCommunity: canModerateCommunity(user),
     themes: user.themes ?? DefaultThemes,
     createdAt: user.createdAt,
   };
@@ -245,9 +260,21 @@ function toCommunityDeckSummaryDTO(deck: ConvexCommunityDeck): CommunityDeckSumm
     authorName: deck.authorName,
     downloads: deck.downloads,
     rating: deck.rating,
+    ratingCount: deck.ratingCount ?? 0,
     cardCount: deck.cardCount,
     updatedAt: deck.updatedAt,
     tags: deck.tags,
+  };
+}
+
+function toCommunityCommentDTO(comment: ConvexCommunityComment): CommunityDeckCommentDTO {
+  return {
+    id: comment.id,
+    userId: comment.userId,
+    authorName: comment.authorName,
+    body: comment.body,
+    createdAt: comment.createdAt,
+    updatedAt: comment.updatedAt,
   };
 }
 
@@ -257,6 +284,8 @@ function toCommunityDeckDetailDTO(deck: ConvexCommunityDeck): CommunityDeckDetai
     description: deck.description,
     noteTypes: deck.noteTypes,
     words: deck.words,
+    viewerRating: deck.viewerRating,
+    comments: (deck.comments ?? []).map(toCommunityCommentDTO),
   };
 }
 
@@ -291,10 +320,14 @@ const moderatorEmails = new Set(
     .filter(Boolean),
 );
 
+function canModerateCommunity(user: Pick<ConvexUser, "email">) {
+  return moderatorEmails.has(user.email.toLowerCase());
+}
+
 async function requireModerator(userId: string) {
   const user = (await convex.query("users:getById", { userId })) as ConvexUser | null;
   if (!user) throw new RepositoryError("User not found", 404);
-  if (!moderatorEmails.has(user.email.toLowerCase())) {
+  if (!canModerateCommunity(user)) {
     throw new RepositoryError("Forbidden", 403);
   }
   return user;
@@ -636,12 +669,81 @@ export const repository = {
     return decks.map(toCommunityDeckSummaryDTO);
   },
 
-  async getPublishedCommunityDeckBySlug(slug: string) {
+  async getPublishedCommunityDeckBySlug(slug: string, viewerUserId?: string) {
+    const deck = (await convex.query("community:getPublishedDeckBySlug", {
+      slug,
+      viewerUserId,
+    })) as ConvexCommunityDeck | null;
+    if (!deck) throw new RepositoryError("Community deck not found", 404);
+    return toCommunityDeckDetailDTO(deck);
+  },
+
+  async rateCommunityDeck(userId: string, slug: string, input: RateCommunityDeckInput) {
     const deck = (await convex.query("community:getPublishedDeckBySlug", {
       slug,
     })) as ConvexCommunityDeck | null;
     if (!deck) throw new RepositoryError("Community deck not found", 404);
-    return toCommunityDeckDetailDTO(deck);
+
+    const ratedDeck = (await convex.mutation("community:rateDeck", {
+      deckId: deck._id,
+      userId,
+      rating: input.rating,
+    })) as ConvexCommunityDeck | null;
+    if (!ratedDeck) throw new RepositoryError("Community deck not found", 404);
+    return toCommunityDeckDetailDTO(ratedDeck);
+  },
+
+  async addCommunityDeckComment(userId: string, slug: string, input: CreateCommunityDeckCommentInput) {
+    const deck = (await convex.query("community:getPublishedDeckBySlug", {
+      slug,
+    })) as ConvexCommunityDeck | null;
+    if (!deck) throw new RepositoryError("Community deck not found", 404);
+
+    const user = (await convex.query("users:getById", { userId })) as ConvexUser | null;
+    if (!user) throw new RepositoryError("User not found", 404);
+
+    const fallbackName = (user.email.split("@")[0] ?? "learner").replace(/[._-]+/g, " ").trim() || "learner";
+    const commentedDeck = (await convex.mutation("community:addDeckComment", {
+      deckId: deck._id,
+      userId,
+      authorName: user.displayName ?? fallbackName.slice(0, 60),
+      body: input.body.trim(),
+    })) as ConvexCommunityDeck | null;
+    if (!commentedDeck) throw new RepositoryError("Community deck not found", 404);
+    return toCommunityDeckDetailDTO(commentedDeck);
+  },
+
+  async deleteCommunityDeckComment(userId: string, slug: string, commentId: string) {
+    const deck = (await convex.query("community:getPublishedDeckBySlug", {
+      slug,
+    })) as ConvexCommunityDeck | null;
+    if (!deck) throw new RepositoryError("Community deck not found", 404);
+
+    const user = (await convex.query("users:getById", { userId })) as ConvexUser | null;
+    if (!user) throw new RepositoryError("User not found", 404);
+
+    const result = (await convex.mutation("community:deleteDeckComment", {
+      deckId: deck._id,
+      commentId,
+      requesterUserId: userId,
+      allowModerator: canModerateCommunity(user),
+    })) as {
+      ok: boolean;
+      reason?: "deck_not_found" | "comment_not_found" | "forbidden";
+      deck?: ConvexCommunityDeck;
+    };
+
+    if (!result.ok) {
+      if (result.reason === "deck_not_found" || result.reason === "comment_not_found") {
+        throw new RepositoryError("Community comment not found", 404);
+      }
+      if (result.reason === "forbidden") {
+        throw new RepositoryError("Forbidden", 403);
+      }
+      throw new RepositoryError("Failed to delete community comment", 500);
+    }
+
+    return toCommunityDeckDetailDTO(result.deck!);
   },
 
   async createCommunityDeckSubmission(userId: string, input: CreateCommunityDeckSubmissionInput) {
@@ -669,6 +771,24 @@ export const repository = {
       submitterUserId: userId,
     })) as ConvexCommunitySubmission[];
     return submissions.map(toCommunitySubmissionDTO);
+  },
+
+  async deleteMyCommunityDeckSubmission(userId: string, submissionId: string) {
+    const result = (await convex.mutation("community:deleteSubmission", {
+      submissionId,
+      submitterUserId: userId,
+    })) as { ok: boolean; reason?: "not_found" | "forbidden" | "published" };
+
+    if (!result.ok) {
+      if (result.reason === "not_found") throw new RepositoryError("Community submission not found", 404);
+      if (result.reason === "forbidden") throw new RepositoryError("Forbidden", 403);
+      if (result.reason === "published") {
+        throw new RepositoryError("Approved submissions cannot be discarded", 409);
+      }
+      throw new RepositoryError("Failed to delete community submission", 500);
+    }
+
+    return { ok: true };
   },
 
   async listCommunityDeckSubmissions(userId: string, status?: CommunitySubmissionStatus) {
