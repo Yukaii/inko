@@ -13,6 +13,9 @@ const WordBankPage = lazy(() => import("./pages/WordBankPage").then((m) => ({ de
 const PracticePage = lazy(() => import("./pages/PracticePage").then((m) => ({ default: m.PracticePage })));
 const SessionDetailsPage = lazy(() => import("./pages/SessionDetailsPage").then((m) => ({ default: m.SessionDetailsPage })));
 const SettingsPage = lazy(() => import("./pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+const CommunityDecksPage = lazy(() => import("./pages/CommunityDecksPage").then((m) => ({ default: m.CommunityDecksPage })));
+const CommunityDeckDetailPage = lazy(() => import("./pages/CommunityDeckDetailPage").then((m) => ({ default: m.CommunityDeckDetailPage })));
+const AnkiImportPage = lazy(() => import("./pages/AnkiImportPage").then((m) => ({ default: m.AnkiImportPage })));
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth();
@@ -59,6 +62,22 @@ export function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route
+          path="/community"
+          element={
+            <Suspense fallback={<RouteFallback />}>
+              <CommunityDecksPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/community/decks/:slug"
+          element={
+            <Suspense fallback={<RouteFallback />}>
+              <CommunityDeckDetailPage />
+            </Suspense>
+          }
+        />
+        <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
@@ -103,6 +122,14 @@ export function App() {
           element={
             <ProtectedRoute>
               <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/imports/anki"
+          element={
+            <ProtectedRoute>
+              <AnkiImportPage />
             </ProtectedRoute>
           }
         />

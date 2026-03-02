@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Pencil, Trash2, ChevronLeft, ChevronRight, Search, BookOpen, ArrowLeft, Download } from "lucide-react";
@@ -635,6 +635,17 @@ export function WordBankPage() {
 
         <div className="flex h-full flex-col gap-8 overflow-y-visible p-5 pb-16 md:overflow-y-auto md:p-10 md:pb-10">
           <header className="flex flex-col gap-1">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-card px-3 py-2">
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-text-primary">Import Anki decks with field mapping or community templates.</div>
+              </div>
+              <Link
+                to="/imports/anki"
+                className="inline-flex items-center gap-2 rounded-lg bg-accent-orange px-3 py-2 text-sm font-bold text-text-on-accent no-underline"
+              >
+                Import Anki deck
+              </Link>
+            </div>
             {selectedDeckId ? (
               <button
                 type="button"
