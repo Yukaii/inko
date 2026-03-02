@@ -78,11 +78,6 @@
     "shortcuts_help": "Keyboard Shortcuts",
     "close_shortcuts_help": "Close keyboard shortcuts help"
   },
-  "pwa": {
-    "update_available": "A new version is ready. Hard refresh to load the latest app.",
-    "refresh_now": "Refresh now",
-    "refreshing": "Refreshing..."
-  },
   "landing": {
     "meta": {
       "title": "Inko | Learn Languages by Typing",
