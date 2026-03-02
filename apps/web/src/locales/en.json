@@ -217,6 +217,12 @@
       "practice": "Practice",
       "manage": "Manage",
       "new_deck": "New Deck",
+      "import": "Import",
+      "import_anki": "Import Anki",
+      "import_anki_deck": "Import Anki deck",
+      "create_or_import_title": "Create or import a deck",
+      "create_or_import_desc": "Start a new deck here, or bring in an Anki deck with field mapping.",
+      "dismiss_actions_help": "Dismiss deck actions help",
       "edit_deck": "Edit deck",
       "delete_deck": "Delete deck",
       "manage_deck": "Manage {{name}}",
@@ -433,5 +439,150 @@
   },
   "shortcuts": {
     "go_to_page_sequence": "Go to page (g then d/w/s)"
+  },
+  "importer": {
+    "seo_title": "Import Anki Decks | Inko",
+    "badge": "Importer",
+    "title": "Import Anki decks with explicit field mapping.",
+    "subtitle": "Upload an `.apkg`, `.colpkg`, `.csv`, or tab-separated note export, inspect the extracted fields, and import only the columns you want.",
+    "empty_state": "Upload a file, paste a note export, or choose a community deck to generate the mapping table and preview.",
+    "actions": {
+      "browse_community": "Browse community decks",
+      "back_to_word_bank": "Back to word bank",
+      "import_cards": "Import cards",
+      "importing": "Importing...",
+      "submit_community": "Submit to community",
+      "submitting": "Submitting..."
+    },
+    "checklist": {
+      "title": "Import checklist",
+      "load_source": "Load a source deck",
+      "choose_destination": "Choose destination deck",
+      "map_required": "Map target + meaning",
+      "confirm_cards": "Confirm importable cards"
+    },
+    "steps": {
+      "pick_source": "1. Pick a source",
+      "destination_deck": "2. Destination deck",
+      "note_type": "3. Note type",
+      "field_mapping": "4. Field mapping",
+      "preview": "5. Preview",
+      "submit_community": "6. Submit to community"
+    },
+    "source_modes": {
+      "upload": "Upload deck export",
+      "paste": "Paste CSV / TSV",
+      "community": "Use community deck"
+    },
+    "destination": {
+      "choose_deck": "Choose a deck",
+      "blocked": "Import is blocked until you choose or create a destination deck.",
+      "hide_new_deck": "Hide new deck form",
+      "create_new": "Create a new destination deck",
+      "deck_name_placeholder": "Deck name",
+      "create_deck": "Create deck"
+    },
+    "upload": {
+      "title": "Drop an Anki package or note export here",
+      "support": "Supports `.apkg`, `.colpkg`, `.csv`, `.tsv`, and text exports with a header row.",
+      "drop_now": "Drop the file to upload it."
+    },
+    "paste": {
+      "placeholder": "Front\tReading\tMeaning\tExample\n食べる\tたべる\tto eat\t私は寿司を食べる。",
+      "parse": "Parse pasted notes"
+    },
+    "community": {
+      "review_public_page": "Review public page"
+    },
+    "mapping": {
+      "source_summary": "Source: {{sourceName}} • {{count}} rows detected",
+      "cards_ready": "{{count}} cards will import with the current mapping",
+      "column": "Column {{index}}",
+      "untitled_column": "Column {{index}}"
+    },
+    "preview": {
+      "required_prefix": "Required: map at least one column to",
+      "required_joiner": "and one to"
+    },
+    "fields": {
+      "target": "Target",
+      "reading": "Reading",
+      "meaning": "Meaning",
+      "romanization": "Romanization",
+      "example": "Example",
+      "audio_url": "Audio URL",
+      "tags": "Tags",
+      "skip": "Skip"
+    },
+    "difficulty": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "submission": {
+      "subtitle": "Send this mapped deck to the moderation queue for approval into the public library.",
+      "open_moderation": "Open moderation queue",
+      "title_label": "Title",
+      "summary_label": "Summary",
+      "description_label": "Description",
+      "difficulty_label": "Difficulty",
+      "tags_label": "Tags",
+      "tags_placeholder": "anki, jlpt, verbs",
+      "language": "Language",
+      "mapped_notes": "Mapped notes",
+      "source": "Source",
+      "recent_title": "My recent submissions",
+      "recent_meta": "{{count}} cards • {{sourceName}}",
+      "default_summary": "Imported {{count}} notes prepared for Inko community review.",
+      "default_description": "Converted from {{sourceName}} with explicit field mapping in Inko. Includes {{count}} mapped notes ready for moderation.",
+      "status": {
+        "pending": "pending",
+        "approved": "approved",
+        "rejected": "rejected"
+      }
+    },
+    "status": {
+      "reading_file": "Reading file...",
+      "uploading_audio": "Uploading {{count}} audio file for import...",
+      "uploading_audio_other": "Uploading {{count}} audio files for import...",
+      "loaded_note_types": "Loaded {{count}} note type from {{fileName}}.",
+      "loaded_note_types_other": "Loaded {{count}} note types from {{fileName}}.",
+      "loaded_rows": "Loaded {{count}} rows from {{fileName}}.",
+      "parsed_rows": "Parsed {{count}} rows from pasted content.",
+      "importing_notes": "Importing notes...",
+      "imported_cards": "Imported {{count}} cards into your deck.",
+      "submitting_moderation": "Submitting deck for moderation...",
+      "submitted_for_moderation": "Submitted \"{{title}}\" for moderation."
+    },
+    "errors": {
+      "choose_destination_deck": "Choose a destination deck first.",
+      "map_target_meaning": "Map at least target and meaning to import notes.",
+      "import_failed": "Import failed.",
+      "load_before_submit": "Load and map a deck before submitting it.",
+      "map_before_submit": "Map target and meaning before submitting.",
+      "submission_failed": "Submission failed.",
+      "invalid_file": "This file does not contain a usable header row and note rows.",
+      "read_failed": "Failed to read this file.",
+      "invalid_paste": "Paste a CSV or TSV export with a header row."
+    },
+    "next_step": {
+      "start_loading": "Start by loading a deck export or choosing a community deck.",
+      "choose_destination": "Choose or create a destination deck before importing.",
+      "map_target_meaning": "Map at least one column to Target and one to Meaning.",
+      "no_cards": "Current mapping does not produce any importable cards.",
+      "ready": "Ready to import or submit this deck."
+    }
+  },
+  "community": {
+    "back_to_library": "Back to community library",
+    "import_into_inko": "Import into Inko",
+    "note_types": "Note types",
+    "sample_cards": "Sample cards",
+    "stats": {
+      "downloads": "Downloads",
+      "rating": "Rating",
+      "cards": "Cards",
+      "updated": "Updated"
+    }
   }
 }

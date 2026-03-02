@@ -217,6 +217,12 @@
       "practice": "練習",
       "manage": "管理",
       "new_deck": "新しいデッキ",
+      "import": "インポート",
+      "import_anki": "Anki をインポート",
+      "import_anki_deck": "Anki デッキをインポート",
+      "create_or_import_title": "デッキを作成またはインポート",
+      "create_or_import_desc": "ここで新しいデッキを作成するか、フィールドマッピング付きで Anki デッキを取り込みます。",
+      "dismiss_actions_help": "デッキ操作の案内を閉じる",
       "edit_deck": "デッキを編集",
       "delete_deck": "デッキを削除",
       "manage_deck": "{{name}} を管理",
@@ -433,5 +439,148 @@
   },
   "shortcuts": {
     "go_to_page_sequence": "ページ移動 (g の後に d/w/s)"
+  },
+  "importer": {
+    "seo_title": "Ankiデッキをインポート | Inko",
+    "badge": "インポーター",
+    "title": "Ankiデッキを明示的なフィールドマッピングでインポート。",
+    "subtitle": "`.apkg`、`.colpkg`、`.csv`、またはタブ区切りのノート書き出しをアップロードし、抽出されたフィールドを確認して、必要な列だけを取り込みます。",
+    "empty_state": "ファイルをアップロードするか、ノート書き出しを貼り付けるか、コミュニティデッキを選択してマッピング表とプレビューを生成してください。",
+    "actions": {
+      "browse_community": "コミュニティデッキを見る",
+      "back_to_word_bank": "ワードバンクに戻る",
+      "import_cards": "カードをインポート",
+      "importing": "インポート中...",
+      "submit_community": "コミュニティへ送信",
+      "submitting": "送信中..."
+    },
+    "checklist": {
+      "title": "インポートチェックリスト",
+      "load_source": "ソースデッキを読み込む",
+      "choose_destination": "保存先デッキを選ぶ",
+      "map_required": "Target と Meaning を割り当てる",
+      "confirm_cards": "インポート対象カードを確認する"
+    },
+    "steps": {
+      "pick_source": "1. ソースを選択",
+      "destination_deck": "2. 保存先デッキ",
+      "note_type": "3. ノートタイプ",
+      "field_mapping": "4. フィールドマッピング",
+      "preview": "5. プレビュー",
+      "submit_community": "6. コミュニティへ送信"
+    },
+    "source_modes": {
+      "upload": "デッキ書き出しをアップロード",
+      "paste": "CSV / TSV を貼り付け",
+      "community": "コミュニティデッキを使う"
+    },
+    "destination": {
+      "choose_deck": "デッキを選択",
+      "blocked": "保存先デッキを選択または作成するまでインポートできません。",
+      "hide_new_deck": "新規デッキフォームを隠す",
+      "create_new": "新しい保存先デッキを作成",
+      "deck_name_placeholder": "デッキ名",
+      "create_deck": "デッキを作成"
+    },
+    "upload": {
+      "title": "Ankiパッケージまたはノート書き出しをここにドロップ",
+      "support": "`.apkg`、`.colpkg`、`.csv`、`.tsv`、およびヘッダー行付きのテキスト書き出しに対応しています。",
+      "drop_now": "アップロードするにはファイルをドロップしてください。"
+    },
+    "paste": {
+      "placeholder": "Front\tReading\tMeaning\tExample\n食べる\tたべる\tto eat\t私は寿司を食べる。",
+      "parse": "貼り付けたノートを解析"
+    },
+    "community": {
+      "review_public_page": "公開ページを確認"
+    },
+    "mapping": {
+      "source_summary": "ソース: {{sourceName}} • {{count}} 行を検出",
+      "cards_ready": "現在のマッピングで {{count}} 枚のカードをインポートできます",
+      "column": "列 {{index}}",
+      "untitled_column": "列 {{index}}"
+    },
+    "preview": {
+      "required_prefix": "必須: 少なくとも1列を",
+      "required_joiner": "に、もう1列を"
+    },
+    "fields": {
+      "target": "Target",
+      "reading": "Reading",
+      "meaning": "Meaning",
+      "romanization": "Romanization",
+      "example": "Example",
+      "audio_url": "音声URL",
+      "tags": "Tags",
+      "skip": "スキップ"
+    },
+    "difficulty": {
+      "beginner": "初級",
+      "intermediate": "中級",
+      "advanced": "上級"
+    },
+    "submission": {
+      "subtitle": "このマッピング済みデッキをモデレーションキューに送り、公開ライブラリへの承認を依頼します。",
+      "open_moderation": "モデレーションキューを開く",
+      "title_label": "タイトル",
+      "summary_label": "概要",
+      "description_label": "説明",
+      "difficulty_label": "難易度",
+      "tags_label": "タグ",
+      "tags_placeholder": "anki, jlpt, verbs",
+      "language": "言語",
+      "mapped_notes": "マッピング済みノート",
+      "source": "ソース",
+      "recent_title": "最近の送信",
+      "recent_meta": "{{count}} 枚 • {{sourceName}}",
+      "default_summary": "{{count}} 件のノートを Inko コミュニティ審査向けに準備しました。",
+      "default_description": "{{sourceName}} から Inko の明示的なフィールドマッピングで変換しました。審査可能な {{count}} 件のマッピング済みノートを含みます。",
+      "status": {
+        "pending": "審査待ち",
+        "approved": "承認済み",
+        "rejected": "却下"
+      }
+    },
+    "status": {
+      "reading_file": "ファイルを読み込み中...",
+      "uploading_audio": "インポート用の音声ファイルを {{count}} 件アップロード中...",
+      "loaded_note_types": "{{fileName}} から {{count}} 件のノートタイプを読み込みました。",
+      "loaded_rows": "{{fileName}} から {{count}} 行を読み込みました。",
+      "parsed_rows": "貼り付け内容から {{count}} 行を解析しました。",
+      "importing_notes": "ノートをインポート中...",
+      "imported_cards": "{{count}} 枚のカードをデッキにインポートしました。",
+      "submitting_moderation": "モデレーションへ送信中...",
+      "submitted_for_moderation": "「{{title}}」をモデレーションに送信しました。"
+    },
+    "errors": {
+      "choose_destination_deck": "先に保存先デッキを選択してください。",
+      "map_target_meaning": "ノートを取り込むには、少なくとも Target と Meaning を割り当ててください。",
+      "import_failed": "インポートに失敗しました。",
+      "load_before_submit": "送信する前にデッキを読み込み、マッピングしてください。",
+      "map_before_submit": "送信する前に Target と Meaning を割り当ててください。",
+      "submission_failed": "送信に失敗しました。",
+      "invalid_file": "このファイルには使用可能なヘッダー行とノート行が含まれていません。",
+      "read_failed": "このファイルを読み取れませんでした。",
+      "invalid_paste": "ヘッダー行を含む CSV または TSV の書き出しを貼り付けてください。"
+    },
+    "next_step": {
+      "start_loading": "まずデッキ書き出しを読み込むか、コミュニティデッキを選んでください。",
+      "choose_destination": "インポート前に保存先デッキを選択または作成してください。",
+      "map_target_meaning": "少なくとも1列を Target に、もう1列を Meaning に割り当ててください。",
+      "no_cards": "現在のマッピングではインポート可能なカードが生成されません。",
+      "ready": "このデッキはインポートまたは送信できます。"
+    }
+  },
+  "community": {
+    "back_to_library": "コミュニティライブラリに戻る",
+    "import_into_inko": "Inko にインポート",
+    "note_types": "ノートタイプ",
+    "sample_cards": "サンプルカード",
+    "stats": {
+      "downloads": "ダウンロード数",
+      "rating": "評価",
+      "cards": "カード数",
+      "updated": "更新日"
+    }
   }
 }

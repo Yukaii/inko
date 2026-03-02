@@ -334,8 +334,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary"
                     onClick={() => setShowProfileMenu(false)}
                   >
-                    <ShieldIcon className="h-4 w-4" />
-                    Community moderation
+                    <ShieldIcon className="h-[18px] w-[18px] shrink-0" />
+                    {t("nav.community_moderation")}
                   </NavLink>
                 ) : null}
                 <button

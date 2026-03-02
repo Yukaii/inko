@@ -543,6 +543,17 @@ export const repository = {
     return createdWords.map(toWordDTO);
   },
 
+  async storeImportedAudio(userId: string, input: { filename: string; contentType: string; bytes: Uint8Array }) {
+    const user = (await convex.query("users:getById", { userId })) as ConvexUser | null;
+    if (!user) throw new RepositoryError("User not found", 404);
+
+    return await convex.action("importMediaNode:storeImportedAudio", {
+      filename: input.filename,
+      contentType: input.contentType,
+      base64Data: Buffer.from(input.bytes).toString("base64"),
+    }) as { audioUrl: string };
+  },
+
   async updateWord(userId: string, wordId: string, input: UpdateWordInput) {
     const existingWord = (await convex.query("words:getById", { wordId })) as ConvexWord | null;
     if (!existingWord) throw new RepositoryError("Word not found", 404);

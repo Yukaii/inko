@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, FileArchive, FileSpreadsheet, Layers, Send, Upload } from "lucide-react";
-import type { CreateCommunityDeckSubmissionInput, CreateDeckInput, LanguageCode } from "@inko/shared";
+import { useTranslation } from "react-i18next";
+import type { CreateCommunityDeckSubmissionInput, CreateDeckInput, CreateWordInput, LanguageCode } from "@inko/shared";
 import { LANGUAGE_LABELS, SUPPORTED_LANGUAGES } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
@@ -10,6 +11,7 @@ import { applyNoIndexMetadata } from "../lib/seo";
 import {
   IMPORTABLE_FIELDS,
   buildWordsFromMapping,
+  extractPrimaryAnkiSoundReference,
   inferFieldMapping,
   parseAnkiPackage,
   parseDelimitedImport,
@@ -39,9 +41,11 @@ function chunkWords<T>(items: T[], size: number) {
 function MappingSelect({
   value,
   onChange,
+  fieldLabels,
 }: {
   value: ImportableField;
   onChange: (next: ImportableField) => void;
+  fieldLabels: Record<ImportableField, string>;
 }) {
   return (
     <select
@@ -51,7 +55,7 @@ function MappingSelect({
     >
       {IMPORTABLE_FIELDS.map((field) => (
         <option key={field} value={field}>
-          {field === "skip" ? "Skip" : field}
+          {fieldLabels[field]}
         </option>
       ))}
     </select>
@@ -59,6 +63,7 @@ function MappingSelect({
 }
 
 export function AnkiImportPage() {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -77,6 +82,7 @@ export function AnkiImportPage() {
   const [mapping, setMapping] = useState<ImportableField[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDragActive, setIsDragActive] = useState(false);
   const [submissionForm, setSubmissionForm] = useState<SubmissionForm>({
     title: "",
     summary: "",
@@ -84,6 +90,16 @@ export function AnkiImportPage() {
     difficulty: "Beginner",
     tags: "",
   });
+  const fieldLabels: Record<ImportableField, string> = {
+    target: t("importer.fields.target"),
+    reading: t("importer.fields.reading"),
+    meaning: t("importer.fields.meaning"),
+    romanization: t("importer.fields.romanization"),
+    example: t("importer.fields.example"),
+    audioUrl: t("importer.fields.audio_url"),
+    tags: t("importer.fields.tags"),
+    skip: t("importer.fields.skip"),
+  };
 
   const decksQuery = useQuery({
     queryKey: ["decks"],
@@ -117,11 +133,59 @@ export function AnkiImportPage() {
     },
   });
 
+  async function resolveImportedAudioUrls(words: CreateWordInput[]) {
+    const mediaFiles = packageData?.mediaFiles;
+    if (!mediaFiles?.size) {
+      return words.map((word) => {
+        const soundReference = extractPrimaryAnkiSoundReference(word.audioUrl);
+        return soundReference ? { ...word, audioUrl: undefined } : word;
+      });
+    }
+
+    const uploadEntries = new Map<string, { filename: string; contentType: string; blob: Blob }>();
+    for (const word of words) {
+      const soundReference = extractPrimaryAnkiSoundReference(word.audioUrl);
+      if (!soundReference) continue;
+      const media = mediaFiles.get(soundReference);
+      if (media) uploadEntries.set(soundReference, media);
+    }
+
+    if (uploadEntries.size === 0) {
+      return words.map((word) => {
+        const soundReference = extractPrimaryAnkiSoundReference(word.audioUrl);
+        return soundReference ? { ...word, audioUrl: undefined } : word;
+      });
+    }
+
+    setStatus(t("importer.status.uploading_audio", { count: uploadEntries.size }));
+    const uploadedByReference = new Map<string, string>();
+    for (const uploadBatch of chunkWords(Array.from(uploadEntries.entries()), 4)) {
+      const batchResults = await Promise.all(
+        uploadBatch.map(async ([soundReference, media]) => {
+          const uploaded = await api.uploadImportedAudio(token ?? "", media.blob, media.filename);
+          return [soundReference, uploaded.audioUrl] as const;
+        }),
+      );
+      for (const [soundReference, audioUrl] of batchResults) {
+        uploadedByReference.set(soundReference, audioUrl);
+      }
+    }
+
+    return words.map((word) => {
+      const soundReference = extractPrimaryAnkiSoundReference(word.audioUrl);
+      if (!soundReference) return word;
+      return {
+        ...word,
+        audioUrl: uploadedByReference.get(soundReference),
+      };
+    });
+  }
+
   const importWords = useMutation({
     mutationFn: async () => {
-      if (!selectedDeckId || !dataset) throw new Error("Choose a destination deck first.");
-      const words = buildWordsFromMapping(dataset, mapping);
-      if (words.length === 0) throw new Error("Map at least target and meaning to import notes.");
+      if (!selectedDeckId || !dataset) throw new Error(t("importer.errors.choose_destination_deck"));
+      const words = await resolveImportedAudioUrls(buildWordsFromMapping(dataset, mapping));
+      if (words.length === 0) throw new Error(t("importer.errors.map_target_meaning"));
 
       let imported = 0;
       for (const batch of chunkWords(words, 500)) {
@@ -132,23 +196,23 @@ export function AnkiImportPage() {
     },
     onMutate: () => {
       setError(null);
-      setStatus("Importing notes...");
+      setStatus(t("importer.status.importing_notes"));
     },
     onSuccess: async (imported) => {
-      setStatus(`Imported ${imported} cards into your deck.`);
+      setStatus(t("importer.status.imported_cards", { count: imported }));
       await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
     },
     onError: (mutationError) => {
       setStatus(null);
-      setError(mutationError instanceof Error ? mutationError.message : "Import failed.");
+      setError(mutationError instanceof Error ? mutationError.message : t("importer.errors.import_failed"));
     },
   });
 
   const submitDeck = useMutation({
     mutationFn: async () => {
-      if (!dataset) throw new Error("Load and map a deck before submitting it.");
-      const words = buildWordsFromMapping(dataset, mapping).slice(0, 5000);
-      if (words.length === 0) throw new Error("Map target and meaning before submitting.");
+      if (!dataset) throw new Error(t("importer.errors.load_before_submit"));
+      const words = (await resolveImportedAudioUrls(buildWordsFromMapping(dataset, mapping))).slice(0, 5000);
+      if (words.length === 0) throw new Error(t("importer.errors.map_before_submit"));
 
       const sourceKind: CreateCommunityDeckSubmissionInput["sourceKind"] =
         sourceMode === "upload"
@@ -187,15 +251,15 @@ export function AnkiImportPage() {
     },
     onMutate: () => {
       setError(null);
-      setStatus("Submitting deck for moderation...");
+      setStatus(t("importer.status.submitting_moderation"));
     },
     onSuccess: async (submission) => {
-      setStatus(`Submitted "${submission.title}" for moderation.`);
+      setStatus(t("importer.status.submitted_for_moderation", { title: submission.title }));
       await queryClient.invalidateQueries({ queryKey: ["community-submissions", "mine"] });
     },
     onError: (mutationError) => {
       setStatus(null);
-      setError(mutationError instanceof Error ? mutationError.message : "Submission failed.");
+      setError(mutationError instanceof Error ? mutationError.message : t("importer.errors.submission_failed"));
     },
   });
 
@@ -208,10 +272,31 @@ export function AnkiImportPage() {
   const importedWordsCount = dataset ? buildWordsFromMapping(dataset, mapping).length : 0;
   const currentDeckLanguage =
     (decksQuery.data ?? []).find((deck) => deck.id === selectedDeckId)?.language ?? selectedCommunityDeck?.language ?? "ja";
+  const hasDestinationDeck = Boolean(selectedDeckId);
+  const hasMappedTarget = mapping.includes("target");
+  const hasMappedMeaning = mapping.includes("meaning");
+  const isMappingValid = hasMappedTarget && hasMappedMeaning && importedWordsCount > 0;
+  const canImport = hasDestinationDeck && Boolean(dataset) && isMappingValid && !importWords.isPending;
+  const canSubmitCommunity =
+    Boolean(dataset) &&
+    isMappingValid &&
+    Boolean(submissionForm.title.trim()) &&
+    Boolean(submissionForm.summary.trim()) &&
+    Boolean(submissionForm.description.trim()) &&
+    !submitDeck.isPending;
+  const nextStepMessage = !dataset
+    ? t("importer.next_step.start_loading")
+    : !hasDestinationDeck
+      ? t("importer.next_step.choose_destination")
+      : !hasMappedTarget || !hasMappedMeaning
+        ? t("importer.next_step.map_target_meaning")
+        : importedWordsCount === 0
+          ? t("importer.next_step.no_cards")
+          : t("importer.next_step.ready");
 
   useEffect(() => {
-    applyNoIndexMetadata("Import Anki Decks | Inko");
-  }, []);
+    applyNoIndexMetadata(t("importer.seo_title"));
+  }, [t]);
 
   useEffect(() => {
     if (!presetCommunitySlug) return;
@@ -248,13 +333,16 @@ export function AnkiImportPage() {
     setSubmissionForm((current) => ({
       ...current,
       title: current.title || dataset.sourceName.replace(/\.(apkg|colpkg|csv|tsv|txt)$/i, ""),
-      summary: current.summary || `Imported ${dataset.rows.length} notes prepared for Inko community review.`,
+      summary: current.summary || t("importer.submission.default_summary", { count: dataset.rows.length }),
       description:
         current.description ||
-        `Converted from ${dataset.sourceName} with explicit field mapping in Inko. Includes ${buildWordsFromMapping(dataset, mapping).length} mapped notes ready for moderation.`,
+        t("importer.submission.default_description", {
+          sourceName: dataset.sourceName,
+          count: buildWordsFromMapping(dataset, mapping).length,
+        }),
       tags: current.tags || [currentDeckLanguage, sourceMode].filter(Boolean).join(", "),
     }));
-  }, [currentDeckLanguage, dataset, mapping, sourceMode]);
+  }, [currentDeckLanguage, dataset, mapping, sourceMode, t]);
 
   useEffect(() => {
     if (!activeNoteType) return;
@@ -268,7 +356,7 @@ export function AnkiImportPage() {
 
   async function handleFileUpload(file: File) {
     setError(null);
-    setStatus("Reading file...");
+    setStatus(t("importer.status.reading_file"));
 
     try {
       if (/\.(apkg|colpkg)$/i.test(file.name)) {
@@ -279,35 +367,44 @@ export function AnkiImportPage() {
           ...current,
           name: current.name || nextPackage.suggestedDeckName,
         }));
-        setStatus(`Loaded ${nextPackage.noteTypes.length} note type${nextPackage.noteTypes.length === 1 ? "" : "s"} from ${file.name}.`);
+        setStatus(t("importer.status.loaded_note_types", { count: nextPackage.noteTypes.length, fileName: file.name }));
         return;
       }
 
       const text = await file.text();
       const nextDataset = parseDelimitedImport(file.name, text);
       if (!nextDataset) {
-        throw new Error("This file does not contain a usable header row and note rows.");
+        throw new Error(t("importer.errors.invalid_file"));
       }
       setPackageData(null);
       setDataset(nextDataset);
       setMapping(inferFieldMapping(nextDataset.headers));
-      setStatus(`Loaded ${nextDataset.rows.length} rows from ${file.name}.`);
+      setStatus(t("importer.status.loaded_rows", { count: nextDataset.rows.length, fileName: file.name }));
     } catch (uploadError) {
       setStatus(null);
-      setError(uploadError instanceof Error ? uploadError.message : "Failed to read this file.");
+      setError(uploadError instanceof Error ? uploadError.message : t("importer.errors.read_failed"));
+    }
+  }
+
+  function handleDrop(event: React.DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    setIsDragActive(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      void handleFileUpload(file);
     }
   }
 
   function handleParsePaste() {
     const nextDataset = parseDelimitedImport("Pasted notes", pastedText);
     if (!nextDataset) {
-      setError("Paste a CSV or TSV export with a header row.");
+      setError(t("importer.errors.invalid_paste"));
       return;
     }
     setPackageData(null);
     setDataset(nextDataset);
     setMapping(inferFieldMapping(nextDataset.headers));
-    setStatus(`Parsed ${nextDataset.rows.length} rows from pasted content.`);
+    setStatus(t("importer.status.parsed_rows", { count: nextDataset.rows.length }));
     setError(null);
   }
 
@@ -315,35 +412,57 @@ export function AnkiImportPage() {
     <div className="mx-auto flex max-w-7xl flex-col gap-8 p-5 md:p-10">
       <header className="grid gap-5 rounded-[28px] border border-[var(--border-subtle)] bg-[radial-gradient(circle_at_top_left,rgba(0,212,170,0.18),transparent_34%),linear-gradient(135deg,var(--bg-card),var(--bg-page))] p-8 md:grid-cols-[minmax(0,1fr)_auto]">
         <div>
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-accent-teal">Importer</p>
-          <h1 className="m-0 text-4xl font-bold [font-family:var(--font-display)] md:text-5xl">Import Anki decks with explicit field mapping.</h1>
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-accent-teal">{t("importer.badge")}</p>
+          <h1 className="m-0 text-4xl font-bold [font-family:var(--font-display)] md:text-5xl">{t("importer.title")}</h1>
           <p className="mt-4 max-w-3xl text-sm leading-6 text-text-secondary md:text-base">
-            Upload an `.apkg`, `.colpkg`, `.csv`, or tab-separated note export, inspect the extracted fields, and import only the columns you want.
+            {t("importer.subtitle")}
           </p>
         </div>
         <div className="flex flex-col gap-3">
           <Link to="/community" className="rounded-2xl border border-[var(--border-subtle)] px-4 py-3 text-sm font-medium text-text-primary no-underline">
-            Browse community decks
+            {t("importer.actions.browse_community")}
           </Link>
           <button
             type="button"
             onClick={() => navigate("/word-bank")}
             className="rounded-2xl bg-accent-orange px-4 py-3 text-sm font-bold text-text-on-accent"
           >
-            Back to word bank
+            {t("importer.actions.back_to_word_bank")}
           </button>
         </div>
       </header>
 
       <section className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="flex flex-col gap-5 rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-5">
+          <div className="rounded-2xl bg-bg-page p-4">
+            <div className="text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">{t("importer.checklist.title")}</div>
+            <div className="mt-3 grid gap-2 text-sm">
+              {[
+                { label: t("importer.checklist.load_source"), done: Boolean(dataset) },
+                { label: t("importer.checklist.choose_destination"), done: hasDestinationDeck },
+                { label: t("importer.checklist.map_required"), done: hasMappedTarget && hasMappedMeaning },
+                { label: t("importer.checklist.confirm_cards"), done: importedWordsCount > 0 },
+              ].map((item) => (
+                <div key={item.label} className={`flex items-center gap-2 ${item.done ? "text-text-primary" : "text-text-secondary"}`}>
+                  <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${item.done ? "bg-accent-teal/15 text-accent-teal" : "bg-bg-card text-text-secondary"}`}>
+                    {item.done ? "✓" : "•"}
+                  </span>
+                  <span>{item.label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-bg-card px-3 py-2 text-sm text-text-secondary">
+              {nextStepMessage}
+            </div>
+          </div>
+
           <div>
-            <div className="text-sm font-bold text-text-primary">1. Pick a source</div>
+            <div className="text-sm font-bold text-text-primary">{t("importer.steps.pick_source")}</div>
             <div className="mt-3 flex flex-col gap-2">
               {[
-                { id: "upload", label: "Upload deck export", icon: FileArchive },
-                { id: "paste", label: "Paste CSV / TSV", icon: FileSpreadsheet },
-                { id: "community", label: "Use community deck", icon: Layers },
+                { id: "upload", label: t("importer.source_modes.upload"), icon: FileArchive },
+                { id: "paste", label: t("importer.source_modes.paste"), icon: FileSpreadsheet },
+                { id: "community", label: t("importer.source_modes.community"), icon: Layers },
               ].map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -359,31 +478,34 @@ export function AnkiImportPage() {
           </div>
 
           <div>
-            <div className="text-sm font-bold text-text-primary">2. Destination deck</div>
+            <div className="text-sm font-bold text-text-primary">{t("importer.steps.destination_deck")}</div>
             <select
               className="mt-3 w-full rounded-2xl border border-[var(--border-subtle)] bg-bg-page px-4 py-3 text-sm text-text-primary outline-none"
               value={selectedDeckId}
               onChange={(event) => setSelectedDeckId(event.target.value)}
             >
-              <option value="">Choose a deck</option>
+              <option value="">{t("importer.destination.choose_deck")}</option>
               {(decksQuery.data ?? []).map((deck) => (
                 <option key={deck.id} value={deck.id}>
                   {deck.name} ({deck.language.toUpperCase()})
                 </option>
               ))}
             </select>
+            {!hasDestinationDeck && dataset ? (
+              <p className="mt-2 mb-0 text-xs text-accent-orange">{t("importer.destination.blocked")}</p>
+            ) : null}
             <button
               type="button"
               onClick={() => setShowCreateDeck((current) => !current)}
               className="mt-3 inline-flex items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm font-medium text-text-primary"
             >
-              {showCreateDeck ? "Hide new deck form" : "Create a new destination deck"}
+              {showCreateDeck ? t("importer.destination.hide_new_deck") : t("importer.destination.create_new")}
             </button>
             {showCreateDeck ? (
               <div className="mt-3 flex flex-col gap-3 rounded-2xl bg-bg-page p-4">
                 <input
                   className="rounded-xl border border-[var(--border-subtle)] bg-transparent px-3 py-2 text-sm text-text-primary outline-none"
-                  placeholder="Deck name"
+                  placeholder={t("importer.destination.deck_name_placeholder")}
                   value={newDeck.name}
                   onChange={(event) => setNewDeck((current) => ({ ...current, name: event.target.value }))}
                 />
@@ -404,30 +526,63 @@ export function AnkiImportPage() {
                   disabled={!newDeck.name.trim() || createDeck.isPending}
                   className="rounded-xl bg-accent-orange px-3 py-2 text-sm font-bold text-text-on-accent disabled:opacity-60"
                 >
-                  Create deck
+                  {createDeck.isPending ? t("common.creating") : t("importer.destination.create_deck")}
                 </button>
               </div>
             ) : null}
           </div>
 
-          {status ? <p className="m-0 rounded-2xl bg-accent-teal/10 px-4 py-3 text-sm text-accent-teal">{status}</p> : null}
-          {error ? <p className="m-0 rounded-2xl bg-[rgba(255,107,53,0.12)] px-4 py-3 text-sm text-accent-orange">{error}</p> : null}
+          {status ? (
+            <p className="m-0 overflow-hidden break-words rounded-2xl bg-accent-teal/10 px-4 py-3 text-sm text-accent-teal [overflow-wrap:anywhere]">
+              {status}
+            </p>
+          ) : null}
+          {error ? (
+            <p className="m-0 overflow-hidden break-words rounded-2xl bg-[rgba(255,107,53,0.12)] px-4 py-3 text-sm text-accent-orange [overflow-wrap:anywhere]">
+              {error}
+            </p>
+          ) : null}
         </aside>
 
         <div className="flex flex-col gap-6">
           {sourceMode === "upload" ? (
             <section className="rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-6">
-              <label className="flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-[20px] border border-dashed border-[var(--border-subtle)] bg-bg-page px-6 text-center">
+              <label
+                className={`flex min-h-56 cursor-pointer flex-col items-center justify-center rounded-[20px] border border-dashed px-6 text-center transition-colors ${
+                  isDragActive
+                    ? "border-accent-orange bg-accent-orange/5"
+                    : "border-[var(--border-subtle)] bg-bg-page"
+                }`}
+                onDragEnter={(event) => {
+                  event.preventDefault();
+                  setIsDragActive(true);
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  if (!isDragActive) setIsDragActive(true);
+                }}
+                onDragLeave={(event) => {
+                  event.preventDefault();
+                  if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+                  setIsDragActive(false);
+                }}
+                onDrop={handleDrop}
+              >
                 <Upload size={28} className="text-accent-orange" />
-                <div className="mt-4 text-lg font-bold text-text-primary">Drop an Anki package or note export here</div>
-                <div className="mt-2 text-sm text-text-secondary">Supports `.apkg`, `.colpkg`, `.csv`, `.tsv`, and text exports with a header row.</div>
+                <div className="mt-4 text-lg font-bold text-text-primary">{t("importer.upload.title")}</div>
+                <div className="mt-2 text-sm text-text-secondary">
+                  {isDragActive ? t("importer.upload.drop_now") : t("importer.upload.support")}
+                </div>
                 <input
                   type="file"
                   accept=".apkg,.colpkg,.csv,.tsv,.txt,text/csv,text/plain"
                   className="hidden"
                   onChange={(event) => {
                     const file = event.target.files?.[0];
-                    if (file) void handleFileUpload(file);
+                    if (file) {
+                      void handleFileUpload(file);
+                      event.target.value = "";
+                    }
                   }}
                 />
               </label>
@@ -440,14 +595,14 @@ export function AnkiImportPage() {
                 className="min-h-60 w-full rounded-[20px] border border-[var(--border-subtle)] bg-bg-page p-4 font-mono text-sm text-text-primary outline-none"
                 value={pastedText}
                 onChange={(event) => setPastedText(event.target.value)}
-                placeholder={"Front\tReading\tMeaning\tExample\n食べる\tたべる\tto eat\t私は寿司を食べる。"}
+                placeholder={t("importer.paste.placeholder")}
               />
               <button
                 type="button"
                 onClick={handleParsePaste}
                 className="mt-4 rounded-2xl bg-accent-orange px-4 py-3 text-sm font-bold text-text-on-accent"
               >
-                Parse pasted notes
+                {t("importer.paste.parse")}
               </button>
             </section>
           ) : null}
@@ -466,7 +621,7 @@ export function AnkiImportPage() {
                       <div className="mt-2 text-sm leading-6 text-text-secondary">{deck.summary}</div>
                     </button>
                     <Link to={`/community/decks/${deck.slug}`} className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-accent-orange no-underline">
-                      Review public page
+                      {t("importer.community.review_public_page")}
                       <ArrowRight size={14} />
                     </Link>
                   </div>
@@ -477,7 +632,7 @@ export function AnkiImportPage() {
 
           {packageData && packageData.noteTypes.length > 1 ? (
             <section className="rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-6">
-              <div className="text-sm font-bold text-text-primary">3. Note type</div>
+              <div className="text-sm font-bold text-text-primary">{t("importer.steps.note_type")}</div>
               <select
                 className="mt-3 rounded-2xl border border-[var(--border-subtle)] bg-bg-page px-4 py-3 text-sm text-text-primary outline-none"
                 value={activeNoteType?.id ?? ""}
@@ -497,23 +652,24 @@ export function AnkiImportPage() {
               <section className="rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-6">
                 <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                   <div>
-                    <div className="text-sm font-bold text-text-primary">4. Field mapping</div>
+                    <div className="text-sm font-bold text-text-primary">{t("importer.steps.field_mapping")}</div>
                     <div className="mt-1 text-sm text-text-secondary">
-                      Source: {dataset.sourceName} • {dataset.rows.length} rows detected
+                      {t("importer.mapping.source_summary", { sourceName: dataset.sourceName, count: dataset.rows.length })}
                     </div>
                   </div>
                   <div className="rounded-full bg-bg-page px-3 py-1 text-sm text-text-secondary">
-                    {importedWordsCount} cards will import with the current mapping
+                    {t("importer.mapping.cards_ready", { count: importedWordsCount })}
                   </div>
                 </div>
-                <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {dataset.headers.map((header, index) => (
                     <div key={`${header}-${index}`} className="rounded-2xl bg-bg-page p-4">
-                      <div className="text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">Column {index + 1}</div>
-                      <div className="mt-2 text-sm font-semibold text-text-primary">{header || `Column ${index + 1}`}</div>
+                      <div className="text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">{t("importer.mapping.column", { index: index + 1 })}</div>
+                      <div className="mt-2 break-words text-sm font-semibold text-text-primary">{header || t("importer.mapping.untitled_column", { index: index + 1 })}</div>
                       <div className="mt-3">
                         <MappingSelect
                           value={mapping[index] ?? "skip"}
+                          fieldLabels={fieldLabels}
                           onChange={(next) =>
                             setMapping((current) => {
                               const copy = [...current];
@@ -529,15 +685,15 @@ export function AnkiImportPage() {
               </section>
 
               <section className="rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-6">
-                <div className="text-sm font-bold text-text-primary">5. Preview</div>
-                <div className="mt-4 overflow-hidden rounded-[20px] border border-[var(--border-subtle)]">
-                  <table className="w-full border-collapse text-sm">
+                <div className="text-sm font-bold text-text-primary">{t("importer.steps.preview")}</div>
+                <div className="mt-4 overflow-x-auto rounded-[20px] border border-[var(--border-subtle)]">
+                  <table className="w-full min-w-[720px] border-collapse text-sm">
                     <thead className="bg-bg-page text-left text-text-secondary">
                       <tr>
                         {dataset.headers.map((header, index) => (
-                          <th key={`${header}-${index}`} className="px-4 py-3">
-                            <div>{header || `Column ${index + 1}`}</div>
-                            <div className="mt-1 text-[11px] uppercase tracking-[0.12em] text-accent-teal">{mapping[index] ?? "skip"}</div>
+                          <th key={`${header}-${index}`} className="max-w-56 px-4 py-3 align-top">
+                            <div className="break-words">{header || t("importer.mapping.untitled_column", { index: index + 1 })}</div>
+                            <div className="mt-1 text-[11px] uppercase tracking-[0.12em] text-accent-teal">{fieldLabels[mapping[index] ?? "skip"]}</div>
                           </th>
                         ))}
                       </tr>
@@ -546,8 +702,8 @@ export function AnkiImportPage() {
                       {previewRows.map((row, rowIndex) => (
                         <tr key={`preview-${rowIndex}`} className="border-t border-[var(--border-subtle)]">
                           {dataset.headers.map((_, colIndex) => (
-                            <td key={`cell-${rowIndex}-${colIndex}`} className="px-4 py-3 text-text-primary">
-                              {row[colIndex] || "-"}
+                            <td key={`cell-${rowIndex}-${colIndex}`} className="max-w-56 px-4 py-3 align-top text-text-primary">
+                              <div className="max-h-32 overflow-hidden break-words whitespace-pre-wrap">{row[colIndex] || "-"}</div>
                             </td>
                           ))}
                         </tr>
@@ -557,35 +713,38 @@ export function AnkiImportPage() {
                 </div>
                 <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div className="text-sm text-text-secondary">
-                    Required: map at least one column to <span className="font-semibold text-text-primary">target</span> and one to <span className="font-semibold text-text-primary">meaning</span>.
+                    {t("importer.preview.required_prefix")} <span className="font-semibold text-text-primary">{fieldLabels.target}</span> {t("importer.preview.required_joiner")} <span className="font-semibold text-text-primary">{fieldLabels.meaning}</span>.
                   </div>
                   <button
                     type="button"
                     onClick={() => importWords.mutate()}
-                    disabled={!selectedDeckId || importWords.isPending}
+                    disabled={!canImport}
                     className="rounded-2xl bg-accent-orange px-5 py-3 text-sm font-bold text-text-on-accent disabled:opacity-60"
                   >
-                    {importWords.isPending ? "Importing..." : "Import cards"}
+                    {importWords.isPending ? t("importer.actions.importing") : t("importer.actions.import_cards")}
                   </button>
                 </div>
+                {!canImport ? (
+                  <div className="mt-3 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-4 py-3 text-sm text-text-secondary">
+                    {nextStepMessage}
+                  </div>
+                ) : null}
               </section>
 
               <section className="rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-6">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <div className="text-sm font-bold text-text-primary">6. Submit to community</div>
+                    <div className="text-sm font-bold text-text-primary">{t("importer.steps.submit_community")}</div>
                     <div className="mt-1 text-sm text-text-secondary">
-                      Send this mapped deck to the moderation queue for approval into the public library.
+                      {t("importer.submission.subtitle")}
                     </div>
                   </div>
-                  <Link to="/community/moderation" className="text-sm font-medium text-accent-orange no-underline">
-                    Open moderation queue
-                  </Link>
+                  <Link to="/community/moderation" className="text-sm font-medium text-accent-orange no-underline">{t("importer.submission.open_moderation")}</Link>
                 </div>
                 <div className="mt-5 grid gap-4 lg:grid-cols-2">
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">Title</label>
+                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">{t("importer.submission.title_label")}</label>
                       <input
                         className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none"
                         value={submissionForm.title}
@@ -593,7 +752,7 @@ export function AnkiImportPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">Summary</label>
+                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">{t("importer.submission.summary_label")}</label>
                       <input
                         className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none"
                         value={submissionForm.summary}
@@ -601,7 +760,7 @@ export function AnkiImportPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">Description</label>
+                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">{t("importer.submission.description_label")}</label>
                       <textarea
                         className="mt-2 min-h-32 w-full rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none"
                         value={submissionForm.description}
@@ -611,62 +770,73 @@ export function AnkiImportPage() {
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">Difficulty</label>
+                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">{t("importer.submission.difficulty_label")}</label>
                       <select
                         className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none"
                         value={submissionForm.difficulty}
                         onChange={(event) => setSubmissionForm((current) => ({ ...current, difficulty: event.target.value as SubmissionForm["difficulty"] }))}
                       >
-                        <option value="Beginner">Beginner</option>
-                        <option value="Intermediate">Intermediate</option>
-                        <option value="Advanced">Advanced</option>
+                        <option value="Beginner">{t("importer.difficulty.beginner")}</option>
+                        <option value="Intermediate">{t("importer.difficulty.intermediate")}</option>
+                        <option value="Advanced">{t("importer.difficulty.advanced")}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">Tags</label>
+                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-text-secondary">{t("importer.submission.tags_label")}</label>
                       <input
                         className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none"
                         value={submissionForm.tags}
                         onChange={(event) => setSubmissionForm((current) => ({ ...current, tags: event.target.value }))}
-                        placeholder="anki, jlpt, verbs"
+                        placeholder={t("importer.submission.tags_placeholder")}
                       />
                     </div>
                     <div className="rounded-2xl bg-bg-page p-4 text-sm text-text-secondary">
-                      <div>Language: <span className="font-semibold text-text-primary">{currentDeckLanguage.toUpperCase()}</span></div>
-                      <div className="mt-1">Mapped notes: <span className="font-semibold text-text-primary">{importedWordsCount}</span></div>
-                      <div className="mt-1">Source: <span className="font-semibold text-text-primary">{dataset.sourceName}</span></div>
+                      <div className="break-words [overflow-wrap:anywhere]">
+                        {t("importer.submission.language")}: <span className="font-semibold text-text-primary">{currentDeckLanguage.toUpperCase()}</span>
+                      </div>
+                      <div className="mt-1 break-words [overflow-wrap:anywhere]">
+                        {t("importer.submission.mapped_notes")}: <span className="font-semibold text-text-primary">{importedWordsCount}</span>
+                      </div>
+                      <div className="mt-1 break-words [overflow-wrap:anywhere]">
+                        {t("importer.submission.source")}: <span className="font-semibold text-text-primary">{dataset.sourceName}</span>
+                      </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => submitDeck.mutate()}
-                      disabled={!submissionForm.title.trim() || !submissionForm.summary.trim() || !submissionForm.description.trim() || submitDeck.isPending}
+                      disabled={!canSubmitCommunity}
                       className="inline-flex items-center justify-center gap-2 rounded-2xl bg-accent-orange px-5 py-3 text-sm font-bold text-text-on-accent disabled:opacity-60"
                     >
                       <Send size={16} />
-                      {submitDeck.isPending ? "Submitting..." : "Submit to community"}
+                      {submitDeck.isPending ? t("importer.actions.submitting") : t("importer.actions.submit_community")}
                     </button>
+                    {!canSubmitCommunity ? (
+                      <div className="rounded-xl border border-[var(--border-subtle)] bg-bg-card px-3 py-2 text-sm text-text-secondary">
+                        {nextStepMessage}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </section>
             </>
           ) : (
             <section className="rounded-[24px] border border-dashed border-[var(--border-subtle)] bg-bg-card p-8 text-sm leading-6 text-text-secondary">
-              Upload a file, paste a note export, or choose a community deck to generate the mapping table and preview.
+              {t("importer.empty_state")}
             </section>
           )}
 
           {mySubmissionsQuery.data?.length ? (
             <section className="rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-6">
-              <div className="text-sm font-bold text-text-primary">My recent submissions</div>
+              <div className="text-sm font-bold text-text-primary">{t("importer.submission.recent_title")}</div>
               <div className="mt-4 grid gap-3">
                 {mySubmissionsQuery.data.slice(0, 4).map((submission) => (
                   <div key={submission.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-bg-page px-4 py-3 text-sm">
                     <div>
                       <div className="font-semibold text-text-primary">{submission.title}</div>
-                      <div className="text-text-secondary">{submission.cardCount} cards • {submission.sourceName}</div>
+                      <div className="text-text-secondary">{t("importer.submission.recent_meta", { count: submission.cardCount, sourceName: submission.sourceName })}</div>
                     </div>
                     <div className="rounded-full border border-[var(--border-subtle)] px-3 py-1 text-xs font-medium text-text-secondary">
-                      {submission.status}
+                      {t(`importer.submission.status.${submission.status}`)}
                     </div>
                   </div>
                 ))}

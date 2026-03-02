@@ -220,6 +220,35 @@ export const api = {
       body: JSON.stringify(input),
     }, token),
 
+  uploadImportedAudio: async (token: string, blob: Blob, filename: string) => {
+    const headers = new Headers();
+    if (token) {
+      headers.set("authorization", `Bearer ${token}`);
+    }
+
+    const formData = new FormData();
+    formData.append("file", blob, filename);
+
+    const res = await fetch(`${API_BASE}/api/imports/audio`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+
+    if (!res.ok) {
+      let errorMessage = res.statusText;
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        errorMessage = await res.text() || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    return await res.json() as { audioUrl: string };
+  },
+
   listDecks: (token: string) => request<DeckDTO[]>("/api/decks", {}, token),
 
   createDeck: (token: string, input: CreateDeckInput) =>
