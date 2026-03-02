@@ -1,4 +1,8 @@
-# Inkō
+<p align="center">
+  <img src="apps/web/public/logo.svg" alt="Inkō Logo" width="120" height="120">
+</p>
+
+<h1 align="center">Inkō</h1>
 
 Inkō is a vocabulary learning app built around active recall across multiple channels: writing, typing, and listening. It now also supports importing Anki decks with field mapping, browsing shared community decks, and submitting curated decks back to a moderated public library.
 
