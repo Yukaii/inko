@@ -13,6 +13,7 @@ import type * as community from "../community.js";
 import type * as dashboard from "../dashboard.js";
 import type * as decks from "../decks.js";
 import type * as http from "../http.js";
+import type * as importMediaNode from "../importMediaNode.js";
 import type * as practice from "../practice.js";
 import type * as practiceQueue from "../practiceQueue.js";
 import type * as seed from "../seed.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   dashboard: typeof dashboard;
   decks: typeof decks;
   http: typeof http;
+  importMediaNode: typeof importMediaNode;
   practice: typeof practice;
   practiceQueue: typeof practiceQueue;
   seed: typeof seed;

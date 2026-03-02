@@ -79,6 +79,10 @@ export function WordBankPage() {
   const [selectedWordIds, setSelectedWordIds] = useState<Set<string>>(new Set());
   const [showMobileAddModal, setShowMobileAddModal] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [showDeckActionsHint, setShowDeckActionsHint] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return window.localStorage.getItem("inko_word_bank_hide_deck_actions_hint") !== "1";
+  });
 
   const decksQuery = useQuery({
     queryKey: ["decks"],
@@ -352,6 +356,12 @@ export function WordBankPage() {
   };
 
   const modalRef = useRef<HTMLDialogElement>(null);
+  const dismissDeckActionsHint = () => {
+    setShowDeckActionsHint(false);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("inko_word_bank_hide_deck_actions_hint", "1");
+    }
+  };
 
   return (
     <div className="relative -m-5 flex min-h-full overflow-visible bg-bg-page md:-m-10 md:h-screen md:overflow-hidden">
@@ -365,14 +375,58 @@ export function WordBankPage() {
           <section className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h2 className="m-0 text-xs font-bold uppercase tracking-[0.12em] text-text-secondary">{t("word_bank.decks.title")}</h2>
-              <button 
-                type="button" 
-                onClick={() => setShowNewDeckModal(true)}
-                className="text-accent-orange text-[11px] font-bold uppercase hover:underline bg-transparent p-0 border-0 cursor-pointer"
-              >
-                + {t("common.new")}
-              </button>
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/imports/anki"
+                  className="text-[11px] font-bold uppercase text-text-secondary hover:text-text-primary no-underline"
+                >
+                  {t("word_bank.decks.import")}
+                </Link>
+                <button 
+                  type="button" 
+                  onClick={() => setShowNewDeckModal(true)}
+                  className="text-accent-orange text-[11px] font-bold uppercase hover:underline bg-transparent p-0 border-0 cursor-pointer"
+                >
+                  + {t("common.new")}
+                </button>
+              </div>
             </div>
+
+            {showDeckActionsHint ? (
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-bg-page p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-text-primary">{t("word_bank.decks.create_or_import_title")}</div>
+                    <div className="mt-1 text-xs leading-5 text-text-secondary">
+                      {t("word_bank.decks.create_or_import_desc")}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={dismissDeckActionsHint}
+                    className="rounded-md border-0 bg-transparent px-1 py-0.5 text-sm text-text-secondary cursor-pointer"
+                    aria-label={t("word_bank.decks.dismiss_actions_help")}
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowNewDeckModal(true)}
+                    className="flex-1 rounded-lg bg-bg-elevated px-3 py-2 text-xs font-bold text-text-primary border-0 cursor-pointer"
+                  >
+                    + {t("common.new")}
+                  </button>
+                  <Link
+                    to="/imports/anki"
+                    className="flex-1 rounded-lg bg-accent-orange px-3 py-2 text-center text-xs font-bold text-text-on-accent no-underline"
+                  >
+                    {t("word_bank.decks.import_anki")}
+                  </Link>
+                </div>
+              </div>
+            ) : null}
             
             <nav className="flex flex-col gap-1" ref={deckGridRef} onKeyDown={handleDeckKeyDown}>
               {decks.map((deck, index) => (
@@ -635,17 +689,6 @@ export function WordBankPage() {
 
         <div className="flex h-full flex-col gap-8 overflow-y-visible p-5 pb-16 md:overflow-y-auto md:p-10 md:pb-10">
           <header className="flex flex-col gap-1">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-card px-3 py-2">
-              <div className="min-w-0">
-                <div className="text-sm font-bold text-text-primary">Import Anki decks with field mapping or community templates.</div>
-              </div>
-              <Link
-                to="/imports/anki"
-                className="inline-flex items-center gap-2 rounded-lg bg-accent-orange px-3 py-2 text-sm font-bold text-text-on-accent no-underline"
-              >
-                Import Anki deck
-              </Link>
-            </div>
             {selectedDeckId ? (
               <button
                 type="button"
@@ -678,6 +721,27 @@ export function WordBankPage() {
                  <button onClick={() => setShowNewDeckModal(true)} className="w-full py-3 border border-dashed border-accent-orange text-accent-orange rounded-xl bg-transparent font-medium cursor-pointer">
                    + {t("word_bank.decks.new_deck")}
                  </button>
+                 <Link
+                   to="/imports/anki"
+                   className="w-full py-3 bg-accent-orange text-text-on-accent rounded-xl font-medium text-center no-underline"
+                 >
+                   {t("word_bank.decks.import_anki_deck")}
+                 </Link>
+              </div>
+              <div className="hidden md:flex mt-6 flex-wrap items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowNewDeckModal(true)}
+                  className="rounded-xl border border-dashed border-accent-orange bg-transparent px-4 py-3 text-sm font-medium text-accent-orange cursor-pointer"
+                >
+                  + {t("word_bank.decks.new_deck")}
+                </button>
+                <Link
+                  to="/imports/anki"
+                  className="rounded-xl bg-accent-orange px-4 py-3 text-sm font-medium text-text-on-accent no-underline"
+                >
+                  {t("word_bank.decks.import_anki_deck")}
+                </Link>
               </div>
             </div>
           ) : (

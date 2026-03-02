@@ -1,5 +1,6 @@
 import Fastify, { type FastifyError } from "fastify";
 import cors from "@fastify/cors";
+import multipart from "@fastify/multipart";
 import sensible from "@fastify/sensible";
 import { ErrorCode } from "@inko/shared";
 import { env } from "./lib/env";
@@ -11,6 +12,7 @@ import { deckRoutes } from "./routes/decks";
 import { practiceRoutes } from "./routes/practice";
 import { dashboardRoutes } from "./routes/dashboard";
 import { communityRoutes } from "./routes/community";
+import { importRoutes } from "./routes/imports";
 import { ttsRoutes } from "./routes/tts";
 import { repository, type Repository } from "./services/repository";
 
@@ -52,9 +54,16 @@ export async function buildServer(options?: { repository?: Repository; mailer?: 
     credentials: true,
   });
   await app.register(sensible);
+  await app.register(multipart, {
+    limits: {
+      files: 1,
+      fileSize: 10 * 1024 * 1024,
+    },
+  });
 
   await app.register(async (instance) => authRoutes(instance, repo, mailer));
   await app.register(async (instance) => deckRoutes(instance, repo));
+  await app.register(async (instance) => importRoutes(instance, repo));
   await app.register(async (instance) => practiceRoutes(instance, repo));
   await app.register(async (instance) => dashboardRoutes(instance, repo));
   await app.register(async (instance) => communityRoutes(instance, repo));

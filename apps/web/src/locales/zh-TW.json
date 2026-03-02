@@ -217,6 +217,12 @@
       "practice": "練習",
       "manage": "管理",
       "new_deck": "新增牌組",
+      "import": "匯入",
+      "import_anki": "匯入 Anki",
+      "import_anki_deck": "匯入 Anki 牌組",
+      "create_or_import_title": "建立或匯入牌組",
+      "create_or_import_desc": "你可以在這裡建立新牌組，或透過欄位對應匯入 Anki 牌組。",
+      "dismiss_actions_help": "關閉牌組操作提示",
       "edit_deck": "編輯牌組",
       "delete_deck": "刪除牌組",
       "manage_deck": "管理 {{name}}",
@@ -433,5 +439,148 @@
   },
   "shortcuts": {
     "go_to_page_sequence": "前往頁面（先按 g 再按 d/w/s）"
+  },
+  "importer": {
+    "seo_title": "匯入 Anki 牌組 | Inko",
+    "badge": "匯入工具",
+    "title": "以明確欄位對應匯入 Anki 牌組。",
+    "subtitle": "上傳 `.apkg`、`.colpkg`、`.csv` 或 tab 分隔的筆記匯出，檢查擷取到的欄位，然後只匯入你要的欄位。",
+    "empty_state": "上傳檔案、貼上筆記匯出內容，或選擇一個社群牌組，即可產生欄位對應表與預覽。",
+    "actions": {
+      "browse_community": "瀏覽社群牌組",
+      "back_to_word_bank": "返回單字庫",
+      "import_cards": "匯入卡片",
+      "importing": "匯入中...",
+      "submit_community": "提交到社群",
+      "submitting": "提交中..."
+    },
+    "checklist": {
+      "title": "匯入檢查清單",
+      "load_source": "載入來源牌組",
+      "choose_destination": "選擇目標牌組",
+      "map_required": "對應 Target 與 Meaning",
+      "confirm_cards": "確認可匯入卡片"
+    },
+    "steps": {
+      "pick_source": "1. 選擇來源",
+      "destination_deck": "2. 目標牌組",
+      "note_type": "3. 筆記類型",
+      "field_mapping": "4. 欄位對應",
+      "preview": "5. 預覽",
+      "submit_community": "6. 提交到社群"
+    },
+    "source_modes": {
+      "upload": "上傳牌組匯出",
+      "paste": "貼上 CSV / TSV",
+      "community": "使用社群牌組"
+    },
+    "destination": {
+      "choose_deck": "選擇牌組",
+      "blocked": "在你選擇或建立目標牌組之前，無法開始匯入。",
+      "hide_new_deck": "隱藏新牌組表單",
+      "create_new": "建立新的目標牌組",
+      "deck_name_placeholder": "牌組名稱",
+      "create_deck": "建立牌組"
+    },
+    "upload": {
+      "title": "將 Anki 套件或筆記匯出拖放到這裡",
+      "support": "支援 `.apkg`、`.colpkg`、`.csv`、`.tsv`，以及含有標題列的文字匯出。",
+      "drop_now": "把檔案放開即可上傳。"
+    },
+    "paste": {
+      "placeholder": "Front\tReading\tMeaning\tExample\n食べる\tたべる\tto eat\t私は寿司を食べる。",
+      "parse": "解析貼上的筆記"
+    },
+    "community": {
+      "review_public_page": "查看公開頁面"
+    },
+    "mapping": {
+      "source_summary": "來源：{{sourceName}} • 偵測到 {{count}} 列",
+      "cards_ready": "依目前對應可匯入 {{count}} 張卡片",
+      "column": "欄 {{index}}",
+      "untitled_column": "欄 {{index}}"
+    },
+    "preview": {
+      "required_prefix": "必要條件：至少將一欄對應到",
+      "required_joiner": "，並將另一欄對應到"
+    },
+    "fields": {
+      "target": "Target",
+      "reading": "Reading",
+      "meaning": "Meaning",
+      "romanization": "Romanization",
+      "example": "Example",
+      "audio_url": "音訊 URL",
+      "tags": "Tags",
+      "skip": "略過"
+    },
+    "difficulty": {
+      "beginner": "初階",
+      "intermediate": "中階",
+      "advanced": "進階"
+    },
+    "submission": {
+      "subtitle": "將這個已對應的牌組送進審核佇列，通過後即可進入公開社群庫。",
+      "open_moderation": "開啟審核佇列",
+      "title_label": "標題",
+      "summary_label": "摘要",
+      "description_label": "描述",
+      "difficulty_label": "難度",
+      "tags_label": "標籤",
+      "tags_placeholder": "anki, jlpt, verbs",
+      "language": "語言",
+      "mapped_notes": "已對應筆記",
+      "source": "來源",
+      "recent_title": "我最近的提交",
+      "recent_meta": "{{count}} 張卡片 • {{sourceName}}",
+      "default_summary": "已準備 {{count}} 筆筆記送交 Inko 社群審核。",
+      "default_description": "由 {{sourceName}} 透過 Inko 的明確欄位對應轉換而來，包含 {{count}} 筆可送審的對應筆記。",
+      "status": {
+        "pending": "待審核",
+        "approved": "已通過",
+        "rejected": "已拒絕"
+      }
+    },
+    "status": {
+      "reading_file": "讀取檔案中...",
+      "uploading_audio": "正在上傳 {{count}} 個匯入用音訊檔...",
+      "loaded_note_types": "已從 {{fileName}} 載入 {{count}} 種筆記類型。",
+      "loaded_rows": "已從 {{fileName}} 載入 {{count}} 列。",
+      "parsed_rows": "已從貼上內容解析 {{count}} 列。",
+      "importing_notes": "匯入筆記中...",
+      "imported_cards": "已將 {{count}} 張卡片匯入你的牌組。",
+      "submitting_moderation": "正在提交牌組至審核...",
+      "submitted_for_moderation": "已將「{{title}}」送交審核。"
+    },
+    "errors": {
+      "choose_destination_deck": "請先選擇目標牌組。",
+      "map_target_meaning": "匯入筆記前，至少要對應 Target 與 Meaning。",
+      "import_failed": "匯入失敗。",
+      "load_before_submit": "提交前請先載入並對應牌組。",
+      "map_before_submit": "提交前請先對應 Target 與 Meaning。",
+      "submission_failed": "提交失敗。",
+      "invalid_file": "這個檔案不包含可用的標題列與筆記資料列。",
+      "read_failed": "讀取這個檔案失敗。",
+      "invalid_paste": "請貼上含有標題列的 CSV 或 TSV 匯出內容。"
+    },
+    "next_step": {
+      "start_loading": "先載入一份牌組匯出，或選擇一個社群牌組。",
+      "choose_destination": "匯入前請先選擇或建立目標牌組。",
+      "map_target_meaning": "至少將一欄對應到 Target，另一欄對應到 Meaning。",
+      "no_cards": "目前的欄位對應不會產生任何可匯入卡片。",
+      "ready": "可以匯入或提交這個牌組了。"
+    }
+  },
+  "community": {
+    "back_to_library": "返回社群牌組庫",
+    "import_into_inko": "匯入到 Inko",
+    "note_types": "筆記類型",
+    "sample_cards": "範例卡片",
+    "stats": {
+      "downloads": "下載次數",
+      "rating": "評分",
+      "cards": "卡片數",
+      "updated": "更新時間"
+    }
   }
 }
