@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
+import { authQueryKey } from "../lib/queryKeys";
 import { BookOpen, ChevronRight, Clock, Flame, Play, Star, Target, TrendingUp } from "lucide-react";
 
 function clampProgress(value: number, max: number) {
@@ -111,25 +112,25 @@ export function DashboardPage() {
   const [focusedDeckIndex, setFocusedDeckIndex] = useState(-1);
 
   const statsQuery = useQuery({
-    queryKey: ["dashboard", "stats"],
+    queryKey: authQueryKey(token, "dashboard", "stats"),
     queryFn: () => api.dashboardStats(token ?? ""),
     enabled: Boolean(token),
     staleTime: 30_000,
   });
   const sessionsQuery = useQuery({
-    queryKey: ["dashboard", "recent-sessions"],
+    queryKey: authQueryKey(token, "dashboard", "recent-sessions"),
     queryFn: () => api.dashboardRecentSessions(token ?? ""),
     enabled: Boolean(token),
     staleTime: 30_000,
   });
   const meQuery = useQuery({
-    queryKey: ["me"],
+    queryKey: authQueryKey(token, "me"),
     queryFn: () => api.me(token ?? ""),
     enabled: Boolean(token),
     staleTime: 60_000,
   });
   const decksQuery = useQuery({
-    queryKey: ["decks"],
+    queryKey: authQueryKey(token, "decks"),
     queryFn: () => api.listDecks(token ?? ""),
     enabled: Boolean(token),
     staleTime: 30_000,

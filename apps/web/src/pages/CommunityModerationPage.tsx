@@ -7,6 +7,7 @@ import type { CommunityDeckSubmissionDTO } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { applyNoIndexMetadata } from "../lib/seo";
+import { authQueryKey } from "../lib/queryKeys";
 
 type ReviewDraft = {
   slug: string;
@@ -132,7 +133,7 @@ export function CommunityModerationPage() {
   }, [t]);
 
   const submissionsQuery = useQuery({
-    queryKey: ["community-submissions", status],
+    queryKey: authQueryKey(token, "community-submissions", status),
     queryFn: () => api.listCommunitySubmissions(token ?? "", { status }),
     enabled: Boolean(token),
     retry: false,
@@ -152,7 +153,7 @@ export function CommunityModerationPage() {
         title: submission.title,
         status: t(`community.moderation.status.${submission.status}`),
       }));
-      await queryClient.invalidateQueries({ queryKey: ["community-submissions"] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "community-submissions") });
       await queryClient.invalidateQueries({ queryKey: ["community-decks"] });
     },
   });

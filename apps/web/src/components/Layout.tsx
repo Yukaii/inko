@@ -6,6 +6,7 @@ import type { ThemeConfig, ThemeMode } from "@inko/shared";
 import { registerShortcut, getShortcutsList } from "../hooks/useKeyboard";
 import { useAuth } from "../hooks/useAuth";
 import { api } from "../api/client";
+import { authQueryKey } from "../lib/queryKeys";
 import { applyThemePreferences, saveThemePreferences } from "../theme/theme";
 import { SUPPORTED_UI_LANGUAGES } from "../i18n";
 
@@ -115,7 +116,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const currentLangLabel = SUPPORTED_UI_LANGUAGES.find((l) => i18n.language.startsWith(l.code))?.label || t("common.language_english");
 
   const meQuery = useQuery({
-    queryKey: ["me"],
+    queryKey: authQueryKey(token, "me"),
     queryFn: () => api.me(token ?? ""),
     enabled: Boolean(token),
     staleTime: Number.POSITIVE_INFINITY,

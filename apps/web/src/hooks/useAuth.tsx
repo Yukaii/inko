@@ -1,5 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { isAuthScopedQueryKey } from "../lib/queryKeys";
 
 type AuthSource = "magic-link" | "oauth";
 
@@ -17,9 +19,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 function AuthStateProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [token, setTokenState] = useState<string | null>(() => localStorage.getItem("inko_token"));
   const [, setSourceState] = useState<AuthSource | null>(() => "magic-link");
   const [isLoading, setIsLoading] = useState(true);
+  const previousTokenRef = useRef<string | null>(token);
 
   const setToken = (nextToken: string | null, nextSource: AuthSource = "magic-link") => {
     setTokenState(nextToken);
@@ -37,6 +41,16 @@ function AuthStateProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     setToken(null);
   };
+
+  useEffect(() => {
+    const previousToken = previousTokenRef.current;
+    if (previousToken !== token) {
+      queryClient.removeQueries({
+        predicate: (query) => isAuthScopedQueryKey(query.queryKey),
+      });
+      previousTokenRef.current = token;
+    }
+  }, [queryClient, token]);
 
   useEffect(() => {
     const url = new URL(window.location.href);

@@ -998,6 +998,11 @@ export const repository = {
             updated_at: now,
           }).execute();
         }
+      } else {
+        await trx
+          .deleteFrom("community_decks")
+          .where("source_submission_id", "=", submissionId)
+          .execute();
       }
 
       return updatedSubmission;
