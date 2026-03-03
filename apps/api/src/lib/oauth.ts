@@ -2,6 +2,7 @@ import { jwtVerify, SignJWT } from "jose";
 import { env } from "./env";
 
 const secret = new TextEncoder().encode(env.JWT_SECRET);
+export const OAUTH_SESSION_COOKIE_NAME = "inko_oauth_session";
 
 export type OAuthProvider = "github" | "google";
 
@@ -187,10 +188,9 @@ export async function exchangeOAuthCodeForIdentity(
   return await exchangeGoogleCode(request, code);
 }
 
-export function buildFrontendOAuthSuccessUrl(accessToken: string, redirectTo: string) {
+export function buildFrontendOAuthSuccessUrl(redirectTo: string) {
   const url = new URL(env.FRONTEND_URL);
   url.pathname = redirectTo;
-  url.searchParams.set("accessToken", accessToken);
   return url.toString();
 }
 
@@ -198,4 +198,41 @@ export function buildFrontendOAuthErrorUrl(message: string) {
   const url = new URL(env.MAGIC_LINK_LOGIN_URL);
   url.searchParams.set("error", message);
   return url.toString();
+}
+
+function isSecureRequest(request: { headers: Record<string, string | string[] | undefined> }) {
+  const forwardedProto = request.headers["x-forwarded-proto"];
+  const proto = typeof forwardedProto === "string" ? forwardedProto : "http";
+  return proto === "https";
+}
+
+export function parseCookies(cookieHeader?: string) {
+  if (!cookieHeader) return new Map<string, string>();
+
+  return new Map(
+    cookieHeader
+      .split(";")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .map((part) => {
+        const separatorIndex = part.indexOf("=");
+        if (separatorIndex === -1) return [part, ""];
+        return [part.slice(0, separatorIndex), decodeURIComponent(part.slice(separatorIndex + 1))];
+      }),
+  );
+}
+
+export function buildOAuthSessionCookie(
+  request: { headers: Record<string, string | string[] | undefined> },
+  accessToken: string,
+) {
+  const secure = isSecureRequest(request) ? "; Secure" : "";
+  return `${OAUTH_SESSION_COOKIE_NAME}=${encodeURIComponent(accessToken)}; Path=/; HttpOnly; Max-Age=300; SameSite=Lax${secure}`;
+}
+
+export function buildExpiredOAuthSessionCookie(
+  request: { headers: Record<string, string | string[] | undefined> },
+) {
+  const secure = isSecureRequest(request) ? "; Secure" : "";
+  return `${OAUTH_SESSION_COOKIE_NAME}=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax${secure}`;
 }

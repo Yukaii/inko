@@ -325,7 +325,7 @@ export const CreateCommunityDeckSubmissionSchema = z.object({
   sourceName: z.string().min(1).max(200),
   tags: z.array(z.string().min(1)).max(24).default([]),
   noteTypes: z.array(CommunityDeckNoteTypeSchema).max(32).default([]),
-  words: z.array(CreateWordSchema).min(1).max(5000),
+  words: z.array(CreateWordSchema).min(1).max(20000),
 });
 
 export const ReviewCommunityDeckSubmissionSchema = z.object({

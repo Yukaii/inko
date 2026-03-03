@@ -24,6 +24,5 @@ export function getDb() {
 export async function closeDb() {
   await db?.destroy();
   db = null;
-  await pool?.end();
   pool = null;
 }

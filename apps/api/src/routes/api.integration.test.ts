@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Repository } from "../services/repository";
 import { RepositoryError } from "../services/repository";
 import { buildServer } from "../server";
-import { createMagicToken, issueAccessToken } from "../lib/auth";
+import { createInMemoryMagicTokenStore, issueAccessToken } from "../lib/auth";
 import type { Mailer } from "../lib/mailer";
 import type { TtsService } from "../lib/tts";
 import { DefaultThemes, PRACTICE_SESSION_CARD_CAP_DEFAULT } from "@inko/shared";
@@ -344,6 +344,7 @@ describe("API integration", () => {
   let sendMagicLink: ReturnType<typeof vi.fn>;
   let tts: TtsService;
   let synthesizeWordAudio: ReturnType<typeof vi.fn>;
+  let magicTokenStore: ReturnType<typeof createInMemoryMagicTokenStore>;
 
   beforeEach(() => {
     repo = makeRepositoryMock();
@@ -361,13 +362,14 @@ describe("API integration", () => {
       kind: "log",
       sendMagicLink,
     };
+    magicTokenStore = createInMemoryMagicTokenStore();
   });
 
   it("supports auth verify and /api/me", async () => {
-    const app = await buildServer({ repository: repo, mailer });
+    const app = await buildServer({ repository: repo, mailer, magicTokenStore, skipMigrations: true });
 
     const email = "user@example.com";
-    const token = createMagicToken(email);
+    const token = await magicTokenStore.create(email);
 
     const verifyRes = await app.inject({
       method: "POST",
@@ -393,8 +395,28 @@ describe("API integration", () => {
     await app.close();
   });
 
+  it("exchanges the temporary oauth cookie for a bearer token", async () => {
+    const app = await buildServer({ repository: repo, mailer, magicTokenStore, skipMigrations: true });
+    const accessToken = await issueAccessToken("user_1", "user@example.com");
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/oauth/exchange",
+      headers: {
+        cookie: `inko_oauth_session=${encodeURIComponent(accessToken)}`,
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().accessToken).toBe(accessToken);
+    expect(res.json().user.id).toBe("user_1");
+    expect(res.headers["set-cookie"]).toContain("inko_oauth_session=;");
+
+    await app.close();
+  });
+
   it("updates profile name and theme preferences via /api/me", async () => {
-    const app = await buildServer({ repository: repo, mailer });
+    const app = await buildServer({ repository: repo, mailer, magicTokenStore, skipMigrations: true });
     const accessToken = await issueAccessToken("user_1", "user@example.com");
 
     const res = await app.inject({
@@ -425,7 +447,7 @@ describe("API integration", () => {
   });
 
   it("supports deck-word-practice flow via authenticated API", async () => {
-    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts, magicTokenStore, skipMigrations: true });
     const accessToken = await issueAccessToken("user_1", "user@example.com");
     const auth = { authorization: `Bearer ${accessToken}` };
 
@@ -584,7 +606,7 @@ describe("API integration", () => {
   });
 
   it("supports community ratings and comments for authenticated users", async () => {
-    const app = await buildServer({ repository: repo, mailer });
+    const app = await buildServer({ repository: repo, mailer, magicTokenStore, skipMigrations: true });
     const accessToken = await issueAccessToken("user_1", "user@example.com");
     const auth = { authorization: `Bearer ${accessToken}` };
 
@@ -620,7 +642,7 @@ describe("API integration", () => {
   });
 
   it("rejects access to protected endpoints without bearer token", async () => {
-    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts, magicTokenStore, skipMigrations: true });
 
     const protectedRequests = [
       app.inject({ method: "GET", url: "/api/me" }),
@@ -642,7 +664,7 @@ describe("API integration", () => {
   });
 
   it("rejects protected endpoints with invalid bearer token", async () => {
-    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts, magicTokenStore, skipMigrations: true });
 
     const res = await app.inject({
       method: "GET",
@@ -657,7 +679,7 @@ describe("API integration", () => {
   });
 
   it("returns bad request when practice submit is missing wordId query param", async () => {
-    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts, magicTokenStore, skipMigrations: true });
     const accessToken = await issueAccessToken("user_1", "user@example.com");
 
     const res = await app.inject({
@@ -684,7 +706,7 @@ describe("API integration", () => {
       throw new RepositoryError("Forbidden", 403);
     });
 
-    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts, magicTokenStore, skipMigrations: true });
     const accessToken = await issueAccessToken("user_1", "user@example.com");
 
     const res = await app.inject({
@@ -699,7 +721,7 @@ describe("API integration", () => {
   });
 
   it("sends magic link email and returns devToken with log mailer", async () => {
-    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts, magicTokenStore, skipMigrations: true });
 
     const res = await app.inject({
       method: "POST",
@@ -723,7 +745,7 @@ describe("API integration", () => {
   });
 
   it("serves published community deck endpoints", async () => {
-    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts, magicTokenStore, skipMigrations: true });
 
     const listRes = await app.inject({
       method: "GET",
@@ -743,7 +765,7 @@ describe("API integration", () => {
   });
 
   it("supports authenticated community submission and moderation routes", async () => {
-    const app = await buildServer({ repository: repo, mailer, ttsService: tts });
+    const app = await buildServer({ repository: repo, mailer, ttsService: tts, magicTokenStore, skipMigrations: true });
     const accessToken = await issueAccessToken("user_1", "user@example.com");
     const auth = { authorization: `Bearer ${accessToken}` };
 

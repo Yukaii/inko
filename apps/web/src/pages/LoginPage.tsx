@@ -78,15 +78,8 @@ export function LoginPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const accessToken = params.get("accessToken");
     const oauthError = params.get("error");
     const token = params.get("token");
-
-    if (accessToken) {
-      setToken(accessToken, "magic-link");
-      navigate("/dashboard", { replace: true });
-      return;
-    }
 
     if (oauthError) {
       setMessage(oauthError);

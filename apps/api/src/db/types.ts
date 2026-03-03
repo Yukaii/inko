@@ -173,6 +173,13 @@ export interface CommunityDeckSubmissionsTable {
   updated_at: TimestampMs;
 }
 
+export interface MagicLinkTokensTable {
+  token: string;
+  email: string;
+  expires_at: TimestampMs;
+  created_at: TimestampMs;
+}
+
 export interface Database {
   users: UsersTable;
   decks: DecksTable;
@@ -186,4 +193,5 @@ export interface Database {
   community_deck_comments: CommunityDeckCommentsTable;
   community_deck_ratings: CommunityDeckRatingsTable;
   community_deck_submissions: CommunityDeckSubmissionsTable;
+  magic_link_tokens: MagicLinkTokensTable;
 }

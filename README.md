@@ -55,10 +55,10 @@ cp apps/web/.env.example apps/web/.env
 bun run db:migrate
 ```
 
-For a local database, you can use:
+If you also want local object storage for imported audio and cached TTS:
 
 ```bash
-docker compose up -d postgres
+docker compose up -d garage
 ```
 
 4. Start the app:
@@ -73,7 +73,7 @@ bun run dev
 
 - With `MAIL_PROVIDER=log`, the login token is returned locally for development and can be pasted into the login form.
 - With `MAIL_PROVIDER=resend`, magic links are sent by email.
-- Google, GitHub, and Apple sign-in are supported when their provider credentials and frontend flags are configured.
+- Google and GitHub sign-in are supported when their provider credentials and frontend flags are configured.
 
 ## Documentation
 

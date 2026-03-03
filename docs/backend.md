@@ -44,15 +44,20 @@ Local bootstrap:
 
 - Use your existing local PostgreSQL instance
 - Start Garage with `docker compose up -d garage`
-- Create a Garage bucket and key, then copy the S3 credentials into `apps/api/.env`
+- Garage bootstraps the single local node, `inko-media` bucket, and `inko-app` key automatically
+- Use these local compose credentials in `apps/api/.env`:
+  - `OBJECT_STORAGE_ACCESS_KEY_ID=GKb599967dd3416890fee1b9bf`
+  - `OBJECT_STORAGE_SECRET_ACCESS_KEY=68af3881281301775c8a62b05c2cd30e40d7572bb8fa33b0c8945538a60c658d`
 - Run `bun run db:migrate`
 - Then start the API or run tests
 
 Auth notes:
 
 - The app now uses API-issued JWTs and email magic links only.
+- Magic-link tokens are stored in PostgreSQL.
 - Convex/OIDC verification and frontend Convex auth providers have been removed.
 - Optional OAuth providers are now first-party API flows:
   - `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`
   - `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`
   - frontend button gates remain `VITE_AUTH_GITHUB_ENABLED=true` and `VITE_AUTH_GOOGLE_ENABLED=true`
+- OAuth completion now uses a short-lived HTTP-only cookie handoff instead of putting the JWT in the redirect URL.

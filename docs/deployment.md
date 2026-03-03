@@ -55,6 +55,7 @@ Notes:
 - Template currently pins GitHub repo id for `Yukaii/inko`. If you fork/rename repo, update `spec.services[API].spec.source.repo` in `zeabur.yml`.
 - API reads `DATABASE_URL` from Zeabur's `${POSTGRES_CONNECTION_STRING}` exposed variable.
 - API reads object storage from the Garage S3-compatible endpoint.
+- `GARAGE_RPC_SECRET` must be a valid 64-character hexadecimal string.
 
 ## 3. GitHub Action for CLI deploy
 
@@ -86,12 +87,12 @@ This workflow is `workflow_dispatch` (manual trigger) to avoid accidental produc
 
 - Garage stores metadata at `/var/lib/garage/meta` and objects at `/var/lib/garage/data`
 - API talks to Garage through the S3-compatible endpoint at `https://<GARAGE_DOMAIN>.zeabur.app`
-- Before audio upload/TTS caching will work, create the application bucket and S3 key in Garage, then set:
+- Garage now auto-bootstraps its single-node layout, imports the application key, and ensures the configured bucket exists on startup
+- Set these template variables before deploy:
   - `OBJECT_STORAGE_ACCESS_KEY_ID`
   - `OBJECT_STORAGE_SECRET_ACCESS_KEY`
   - `OBJECT_STORAGE_BUCKET`
-- The current template does not automate Garage key provisioning
-- Use a Zeabur shell inside the Garage service to run the initial `garage bucket create ...` and `garage key create ...` commands
+- Reusing the same access key ID and secret on redeploy is intentional; the bootstrap path is idempotent
 
 ## 6. Frontend on Zeabur (recommended when GitHub Actions quota is limited)
 
@@ -137,6 +138,7 @@ Runs on PRs and pushes to `main`:
 - API `MAIL_FROM` configured with verified sender domain
 - API `FRONTEND_URL` matches frontend domain
 - API `API_PUBLIC_URL` matches API domain
+- OAuth provider envs configured when GitHub or Google login is enabled
 - API object storage envs point at Garage and valid bucket/key
 - frontend `VITE_API_URL` points to API domain
 - CORS requests from frontend domain succeed
