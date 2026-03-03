@@ -1397,9 +1397,9 @@ export const repository = {
         sessionId: session.sessionId,
         deckId: session.deckId,
         deckName: session.deckName ?? undefined,
-        cardsCompleted: session.cardsCompleted,
-        startedAt: session.startedAt as number,
-        finishedAt: (session.finishedAt as number | null) ?? undefined,
+        cardsCompleted: asNumber(session.cardsCompleted),
+        startedAt: asNumber(session.startedAt),
+        finishedAt: session.finishedAt == null ? undefined : asNumber(session.finishedAt),
       })),
     };
   },
