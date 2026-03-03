@@ -12,6 +12,7 @@ Design docs:
 Common commands:
 
 - `docker compose up -d postgres`
+- `docker compose up -d garage`
 - `bun run --filter @inko/api dev`
 - `bun run db:migrate`
 - `bun run --filter @inko/api test`
@@ -29,10 +30,22 @@ Database envs:
 
 - `apps/api/.env`: `DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/inko`
 - optional: `DATABASE_POOL_MAX=10`
+- `API_PUBLIC_URL=http://localhost:4000`
+
+Object storage envs:
+
+- `OBJECT_STORAGE_ENDPOINT=http://127.0.0.1:3900`
+- `OBJECT_STORAGE_REGION=garage`
+- `OBJECT_STORAGE_BUCKET=inko-media`
+- `OBJECT_STORAGE_ACCESS_KEY_ID=<garage key id>`
+- `OBJECT_STORAGE_SECRET_ACCESS_KEY=<garage secret>`
+- `OBJECT_STORAGE_FORCE_PATH_STYLE=true`
 
 Local bootstrap:
 
 - Start Postgres with `docker compose up -d postgres`
+- Start Garage with `docker compose up -d garage`
+- Create a Garage bucket and key, then copy the S3 credentials into `apps/api/.env`
 - Run `bun run db:migrate`
 - Then start the API or run tests
 

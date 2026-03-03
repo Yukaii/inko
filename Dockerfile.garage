@@ -1,0 +1,11 @@
+FROM dxflrs/garage:v1.1.0
+
+WORKDIR /app
+
+COPY scripts/garage/run.sh /app/run.sh
+
+RUN chmod +x /app/run.sh
+
+EXPOSE 3900 3901 3902 3903
+
+CMD ["/app/run.sh"]

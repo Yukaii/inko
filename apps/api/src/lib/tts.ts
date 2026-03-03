@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { EdgeTTS } from "node-edge-tts";
+import { buildTtsObjectKey, getObject, hasObject, putObject } from "./object-storage";
 
 export type TtsAudioResult = {
   audio: Buffer;
@@ -48,6 +49,26 @@ export function getVoiceForLanguage(language: LanguageCode) {
 
 export const ttsService: TtsService = {
   async synthesizeWordAudio(input) {
+    const key = buildTtsObjectKey({
+      userId: input.userId,
+      deckId: input.deckId,
+      wordId: input.wordId,
+      voice: input.voice ?? "en-US-EmmaNeural",
+      rate: input.rate ?? "default",
+    });
+
+    if (await hasObject(key)) {
+      const existing = await getObject(key);
+      if (existing) {
+        return {
+          audio: existing.body,
+          contentType: existing.contentType,
+          fileName: `${sanitizeFileName(input.targetHint ?? input.wordId)}.mp3`,
+          audioUrl: "stored",
+        };
+      }
+    }
+
     const workdir = await mkdtemp(join(tmpdir(), "inko-tts-"));
     const outputPath = join(workdir, `${sanitizeFileName(input.targetHint ?? input.wordId)}.mp3`);
     const edgeTts = new EdgeTTS({
@@ -60,12 +81,18 @@ export const ttsService: TtsService = {
     await edgeTts.ttsPromise(input.targetHint ?? input.wordId, outputPath);
     const audio = await readFile(outputPath);
     await rm(workdir, { recursive: true, force: true });
+    await putObject({
+      key,
+      body: audio,
+      contentType: "audio/mpeg",
+      cacheControl: "public, max-age=31536000, immutable",
+    });
 
     return {
       audio,
       contentType: "audio/mpeg",
       fileName: `${sanitizeFileName(input.targetHint ?? input.wordId)}.mp3`,
-      audioUrl: "generated-inline",
+      audioUrl: "stored",
     };
   },
 };
