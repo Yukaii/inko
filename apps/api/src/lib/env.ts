@@ -13,6 +13,10 @@ const EnvSchema = z.object({
   MAIL_PROVIDER: z.enum(["log", "resend"]).default("log"),
   RESEND_API_KEY: z.string().min(1).optional(),
   MAIL_FROM: z.string().min(1).default("Inkō <no-reply@localhost>"),
+  AUTH_GOOGLE_ID: z.string().min(1).optional(),
+  AUTH_GOOGLE_SECRET: z.string().min(1).optional(),
+  AUTH_GITHUB_ID: z.string().min(1).optional(),
+  AUTH_GITHUB_SECRET: z.string().min(1).optional(),
   PRACTICE_TRACE_SLOW_MS: z.coerce.number().int().nonnegative().default(1000),
   MODERATOR_EMAILS: z.string().default(""),
 });

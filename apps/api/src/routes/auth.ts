@@ -12,6 +12,14 @@ import {
   issueAccessToken,
 } from "../lib/auth";
 import type { Mailer } from "../lib/mailer";
+import {
+  buildFrontendOAuthErrorUrl,
+  buildFrontendOAuthSuccessUrl,
+  buildOAuthAuthorizationUrl,
+  exchangeOAuthCodeForIdentity,
+  verifyOAuthState,
+  type OAuthProvider,
+} from "../lib/oauth";
 import { repository, type Repository } from "../services/repository";
 import { requireAuth } from "../plugins/auth";
 
@@ -51,6 +59,63 @@ export async function authRoutes(app: FastifyInstance, repo: Repository = reposi
     const accessToken = await issueAccessToken(user.id, user.email);
 
     return { accessToken, user };
+  });
+
+  app.get("/api/auth/:provider/start", async (request, reply) => {
+    const { provider } = request.params as { provider: OAuthProvider };
+    const { redirectTo } = request.query as { redirectTo?: string };
+
+    if (provider !== "github" && provider !== "google") {
+      return reply.status(404).send({
+        statusCode: 404,
+        error: "Not Found",
+        message: "OAuth provider not found",
+      });
+    }
+
+    try {
+      const url = await buildOAuthAuthorizationUrl(provider, request, redirectTo);
+      return reply.redirect(url);
+    } catch (error) {
+      app.log.warn({ err: error, provider }, "failed to start oauth flow");
+      return reply.redirect(buildFrontendOAuthErrorUrl("OAuth is not configured"));
+    }
+  });
+
+  app.get("/api/auth/:provider/callback", async (request, reply) => {
+    const { provider } = request.params as { provider: OAuthProvider };
+    const { code, state, error } = request.query as {
+      code?: string;
+      state?: string;
+      error?: string;
+    };
+
+    if (provider !== "github" && provider !== "google") {
+      return reply.redirect(buildFrontendOAuthErrorUrl("Unknown OAuth provider"));
+    }
+
+    if (error) {
+      return reply.redirect(buildFrontendOAuthErrorUrl(error));
+    }
+
+    if (!code || !state) {
+      return reply.redirect(buildFrontendOAuthErrorUrl("Missing OAuth callback parameters"));
+    }
+
+    try {
+      const verifiedState = await verifyOAuthState(state);
+      if (verifiedState.provider !== provider) {
+        throw new Error("OAuth state/provider mismatch");
+      }
+
+      const identity = await exchangeOAuthCodeForIdentity(provider, request, code);
+      const user = await repo.getOrCreateUser(identity.email);
+      const accessToken = await issueAccessToken(user.id, user.email);
+      return reply.redirect(buildFrontendOAuthSuccessUrl(accessToken, verifiedState.redirectTo));
+    } catch (oauthError) {
+      app.log.warn({ err: oauthError, provider }, "oauth callback failed");
+      return reply.redirect(buildFrontendOAuthErrorUrl("OAuth login failed"));
+    }
   });
 
   app.post("/api/auth/logout", async () => {
