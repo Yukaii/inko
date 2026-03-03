@@ -3,7 +3,7 @@
 Backend is split between:
 
 - `apps/api` - Fastify HTTP API
-- `convex` - data schema + queries/mutations/actions
+- PostgreSQL - primary application database
 
 Design docs:
 
@@ -11,11 +11,12 @@ Design docs:
 
 Common commands:
 
+- `docker compose up -d postgres`
 - `bun run --filter @inko/api dev`
+- `bun run db:migrate`
 - `bun run --filter @inko/api test`
 - `bun run --filter @inko/api lint`
 - `bun run --filter @inko/api build`
-- `bun run convex:dev` (Convex local dev/watch)
 
 Mail provider envs (`apps/api`):
 
@@ -24,14 +25,18 @@ Mail provider envs (`apps/api`):
 - `RESEND_API_KEY=<required when MAIL_PROVIDER=resend>`
 - `MAGIC_LINK_LOGIN_URL=<optional override, defaults to ${FRONTEND_URL}/login>`
 
-OAuth-related envs:
+Database envs:
 
-- `apps/api/.env`: `CONVEX_SITE_URL=<Convex site origin used for OIDC token verification>`
-- repo/root `.env.local` for Convex Auth: `SITE_URL`, `JWT_PRIVATE_KEY`
-- optional social providers in repo/root `.env.local`: `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `AUTH_APPLE_ID`, `AUTH_APPLE_SECRET`
-- `apps/web/.env.local`: `VITE_AUTH_GOOGLE_ENABLED=true`, `VITE_AUTH_GITHUB_ENABLED=true`, `VITE_AUTH_APPLE_ENABLED=true`
+- `apps/api/.env`: `DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/inko`
+- optional: `DATABASE_POOL_MAX=10`
 
-Provider visibility:
+Local bootstrap:
 
-- The login page only renders a provider button when the corresponding `VITE_AUTH_*_ENABLED` flag is exactly `true`.
-- Treat these as UI gates; they do not configure the provider by themselves.
+- Start Postgres with `docker compose up -d postgres`
+- Run `bun run db:migrate`
+- Then start the API or run tests
+
+Auth notes:
+
+- The app now uses API-issued JWTs and email magic links only.
+- Convex/OIDC verification and frontend Convex auth providers have been removed.

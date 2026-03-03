@@ -3,16 +3,8 @@ kind: Template
 metadata:
   name: Inko
 spec:
-  description: Inko API + self-hosted Convex stack on Zeabur
+  description: Inko web app with API and PostgreSQL on Zeabur
   variables:
-    - key: BACKEND_DOMAIN
-      type: DOMAIN
-      name: Convex Backend Domain
-      description: Subdomain for Convex backend (resulting in <value>.zeabur.app)
-    - key: SYNC_DOMAIN
-      type: DOMAIN
-      name: Convex Site/Auth Domain
-      description: Subdomain for Convex site/auth HTTP origin on port 3211 (resulting in <value>.zeabur.app)
     - key: API_DOMAIN
       type: DOMAIN
       name: API Domain
@@ -21,15 +13,11 @@ spec:
       type: DOMAIN
       name: Frontend Domain
       description: Subdomain for frontend service (resulting in <value>.zeabur.app)
-    - key: CONVEX_INSTANCE_SECRET
-      type: PASSWORD
-      name: Convex Instance Secret
-      description: "64-char hex secret for Convex backend (generate with: openssl rand -hex 32)"
   services:
     - name: API
       template: GIT
       dependencies:
-        - Convex Backend
+        - PostgreSQL
       spec:
         source:
           source: GITHUB
@@ -47,14 +35,18 @@ spec:
             default: "false"
           PORT:
             default: "4000"
-          CONVEX_URL:
-            default: "https://${BACKEND_DOMAIN}.zeabur.app"
-          CONVEX_SITE_URL:
-            default: "https://${SYNC_DOMAIN}.zeabur.app"
+          DATABASE_URL:
+            default: "${POSTGRES_CONNECTION_STRING}"
+          DATABASE_POOL_MAX:
+            default: "10"
           JWT_SECRET:
             default: "replace-with-strong-secret-at-least-16-chars"
           FRONTEND_URL:
             default: "https://${FRONTEND_DOMAIN}.zeabur.app"
+          MAIL_PROVIDER:
+            default: "log"
+          MAIL_FROM:
+            default: "Inkō <no-reply@localhost>"
         healthCheck:
           type: HTTP
           port: web
@@ -62,50 +54,21 @@ spec:
             path: /health
       domainKey: API_DOMAIN
 
-    - name: Convex Backend
+    - name: PostgreSQL
       template: PREBUILT_V2
       spec:
         source:
-          image: ghcr.io/get-convex/convex-backend:latest
-        ports:
-          - id: convex-http
-            port: 3210
-            type: HTTP
-          - id: convex-sync
-            port: 3211
-            type: HTTP
+          image: postgres:16-alpine
         volumes:
           - id: data
-            dir: /convex/data
+            dir: /var/lib/postgresql/data
         env:
-          INSTANCE_NAME:
-            default: "inko-prod"
-          INSTANCE_SECRET:
-            default: "${CONVEX_INSTANCE_SECRET}"
-          CONVEX_CLOUD_ORIGIN:
-            default: "https://${BACKEND_DOMAIN}.zeabur.app"
-          CONVEX_SITE_ORIGIN:
-            default: "https://${SYNC_DOMAIN}.zeabur.app"
-          CONVEX_SITE_URL:
-            default: "https://${SYNC_DOMAIN}.zeabur.app"
-          CUSTOM_AUTH_SITE_URL:
-            default: "https://${SYNC_DOMAIN}.zeabur.app"
-      domainKey: BACKEND_DOMAIN
-
-    - name: Convex Dashboard
-      template: PREBUILT_V2
-      dependencies:
-        - Convex Backend
-      spec:
-        source:
-          image: ghcr.io/get-convex/convex-dashboard:latest
-        ports:
-          - id: web
-            port: 6791
-            type: HTTP
-        env:
-          NEXT_PUBLIC_DEPLOYMENT_URL:
-            default: "https://${BACKEND_DOMAIN}.zeabur.app"
+          POSTGRES_DB:
+            default: "inko"
+          POSTGRES_USER:
+            default: "postgres"
+          POSTGRES_PASSWORD:
+            default: "postgres"
 
     - name: Frontend
       template: GIT
@@ -128,8 +91,6 @@ spec:
             default: "false"
           VITE_API_URL:
             default: "https://${API_DOMAIN}.zeabur.app"
-          VITE_CONVEX_URL:
-            default: "https://${BACKEND_DOMAIN}.zeabur.app"
           VITE_SITE_URL:
             default: "https://${FRONTEND_DOMAIN}.zeabur.app"
       domainKey: FRONTEND_DOMAIN

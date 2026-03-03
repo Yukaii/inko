@@ -12,7 +12,6 @@ applyThemePreferences(loadThemePreferences());
 
 window.__INKO_ENV__ = {
   apiUrl: import.meta.env.VITE_API_URL,
-  convexUrl: import.meta.env.VITE_CONVEX_URL,
   authGoogleEnabled: import.meta.env.VITE_AUTH_GOOGLE_ENABLED,
   authGithubEnabled: import.meta.env.VITE_AUTH_GITHUB_ENABLED,
   authAppleEnabled: import.meta.env.VITE_AUTH_APPLE_ENABLED,
