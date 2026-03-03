@@ -11,7 +11,6 @@ Design docs:
 
 Common commands:
 
-- `docker compose up -d postgres`
 - `docker compose up -d garage`
 - `bun run --filter @inko/api dev`
 - `bun run db:migrate`
@@ -43,7 +42,7 @@ Object storage envs:
 
 Local bootstrap:
 
-- Start Postgres with `docker compose up -d postgres`
+- Use your existing local PostgreSQL instance
 - Start Garage with `docker compose up -d garage`
 - Create a Garage bucket and key, then copy the S3 credentials into `apps/api/.env`
 - Run `bun run db:migrate`

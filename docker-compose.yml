@@ -1,43 +1,21 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: inko-postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: inko
-    ports:
-      - "5432:5432"
-    volumes:
-      - inko-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d inko"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
   garage:
-    build:
-      context: .
-      dockerfile: Dockerfile.garage
+    image: dxflrs/garage:v1.1.0
     container_name: inko-garage
-    environment:
-      GARAGE_RPC_SECRET: local-dev-rpc-secret-change-me
-      GARAGE_ADMIN_TOKEN: local-dev-admin-token-change-me
-      GARAGE_RPC_PUBLIC_ADDR: garage:3901
-      GARAGE_REGION: garage
+    command: ["/garage", "server"]
     ports:
       - "3900:3900"
       - "3903:3903"
     volumes:
+      - ./scripts/garage/garage.toml:/etc/garage.toml:ro
       - inko-garage-meta:/var/lib/garage/meta
       - inko-garage-data:/var/lib/garage/data
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3903/v0/health | grep -q healthy"]
+      test: ["CMD", "/garage", "status"]
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
-  inko-postgres-data:
   inko-garage-meta:
   inko-garage-data:
