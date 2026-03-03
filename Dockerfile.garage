@@ -1,0 +1,14 @@
+FROM dxflrs/garage:v1.1.0 AS garage-bin
+
+FROM alpine:3.20
+
+RUN apk add --no-cache ca-certificates
+
+COPY --from=garage-bin /garage /garage
+COPY scripts/garage/run.sh /app/run.sh
+
+RUN chmod +x /app/run.sh
+
+EXPOSE 3900 3901 3903
+
+CMD ["/app/run.sh"]
