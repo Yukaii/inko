@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { applyMetadata } from "../lib/seo";
+import { authQueryKey } from "../lib/queryKeys";
 
 const STAR_VALUES = [1, 2, 3, 4, 5] as const;
 
@@ -16,7 +17,7 @@ export function CommunityDeckDetailPage() {
   const queryClient = useQueryClient();
   const [commentBody, setCommentBody] = useState("");
   const meQuery = useQuery({
-    queryKey: ["me"],
+    queryKey: authQueryKey(token, "me"),
     queryFn: () => api.me(token ?? ""),
     enabled: Boolean(token),
     staleTime: Number.POSITIVE_INFINITY,

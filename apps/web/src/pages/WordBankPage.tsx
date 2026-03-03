@@ -7,6 +7,7 @@ import { LANGUAGE_LABELS, type CreateCommunityDeckSubmissionInput, type Language
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
+import { authQueryKey } from "../lib/queryKeys";
 import { downloadDeckCsv, fetchAllDeckWords } from "./wordBankExport";
 
 type AddTab = "single" | "import";
@@ -103,12 +104,12 @@ export function WordBankPage() {
   });
 
   const decksQuery = useQuery({
-    queryKey: ["decks"],
+    queryKey: authQueryKey(token, "decks"),
     queryFn: () => api.listDecks(token ?? ""),
   });
 
   const wordsQuery = useQuery({
-    queryKey: ["words-page", selectedDeckId, wordsCursor],
+    queryKey: authQueryKey(token, "words-page", selectedDeckId, wordsCursor),
     enabled: !!selectedDeckId,
     queryFn: () =>
       api.listWordsPage(token ?? "", selectedDeckId, {
@@ -186,7 +187,7 @@ export function WordBankPage() {
       setSelectedDeckId(deck.id);
       setShowNewDeckModal(false);
       setNewDeckName("");
-      await queryClient.invalidateQueries({ queryKey: ["decks"] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "decks") });
     },
   });
 
@@ -196,7 +197,7 @@ export function WordBankPage() {
       if (selectedDeckId === deckToDelete?.id) setSelectedDeckId("");
       setShowDeleteConfirm(false);
       setDeckToDelete(null);
-      await queryClient.invalidateQueries({ queryKey: ["decks"] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "decks") });
     },
   });
 
@@ -213,9 +214,9 @@ export function WordBankPage() {
       setShowEditDeckModal(false);
       setEditingDeck(null);
       if (selectedDeckId === deck.id) {
-        await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+        await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "words-page", selectedDeckId) });
       }
-      await queryClient.invalidateQueries({ queryKey: ["decks"] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "decks") });
     },
   });
 
@@ -232,14 +233,14 @@ export function WordBankPage() {
       }),
     onSuccess: async () => {
       setWordForm({ target: "", reading: "", romanization: "", meaning: "", example: "", audioUrl: "", tags: "" });
-      await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "words-page", selectedDeckId) });
     },
   });
 
   const deleteWord = useMutation({
     mutationFn: (wordId: string) => api.deleteWord(token ?? "", wordId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "words-page", selectedDeckId) });
     },
   });
 
@@ -259,7 +260,7 @@ export function WordBankPage() {
     onSuccess: async () => {
       setShowEditWordModal(false);
       setEditingWord(null);
-      await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "words-page", selectedDeckId) });
     },
   });
 
@@ -270,7 +271,7 @@ export function WordBankPage() {
     },
     onSuccess: async () => {
       setSelectedWordIds(new Set());
-      await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "words-page", selectedDeckId) });
     },
   });
 
@@ -429,7 +430,7 @@ export function WordBankPage() {
     }
     setImportStatus(t("word_bank.import.done", { imported, failed: "" }));
     setRawImportData(null);
-    await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+    await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "words-page", selectedDeckId) });
     setTimeout(() => setImportStatus(null), 4000);
   };
 

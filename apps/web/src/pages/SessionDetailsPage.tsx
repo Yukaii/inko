@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
+import { authQueryKey } from "../lib/queryKeys";
 
 function formatDuration(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
@@ -41,7 +42,7 @@ export function SessionDetailsPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
 
   const detailsQuery = useQuery({
-    queryKey: ["practice-session", sessionId],
+    queryKey: authQueryKey(token, "practice-session", sessionId),
     enabled: Boolean(token && sessionId),
     queryFn: () => api.getPracticeSessionDetails(token ?? "", sessionId ?? ""),
   });
