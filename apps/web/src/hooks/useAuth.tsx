@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 type AuthSource = "magic-link";
 
@@ -18,6 +18,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 function AuthStateProvider({ children }: { children: React.ReactNode }) {
   const [token, setTokenState] = useState<string | null>(() => localStorage.getItem("inko_token"));
   const [, setSourceState] = useState<AuthSource | null>(() => "magic-link");
+  const [isLoading, setIsLoading] = useState(true);
 
   const setToken = (nextToken: string | null, nextSource: AuthSource = "magic-link") => {
     setTokenState(nextToken);
@@ -36,14 +37,27 @@ function AuthStateProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
   };
 
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const accessToken = url.searchParams.get("accessToken");
+
+    if (accessToken) {
+      setToken(accessToken, "magic-link");
+      url.searchParams.delete("accessToken");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+
+    setIsLoading(false);
+  }, []);
+
   const value = useMemo(
     () => ({
       token,
-      isLoading: false,
+      isLoading,
       setToken,
       signOut,
     }),
-    [token],
+    [isLoading, token],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
