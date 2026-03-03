@@ -1,5 +1,8 @@
 import type { LanguageCode } from "@inko/shared";
-import { convex } from "./convex";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { EdgeTTS } from "node-edge-tts";
 
 export type TtsAudioResult = {
   audio: Buffer;
@@ -45,37 +48,24 @@ export function getVoiceForLanguage(language: LanguageCode) {
 
 export const ttsService: TtsService = {
   async synthesizeWordAudio(input) {
-    const result = await (convex as any).action("ttsNode:ensureWordAudio", {
-      userId: input.userId,
-      deckId: input.deckId,
-      wordId: input.wordId,
-      voice: input.voice,
-      rate: input.rate,
-    }) as { audioUrl: string };
-
-    try {
-      new URL(result.audioUrl);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Invalid audioUrl returned from Convex action: ${result.audioUrl}; cause=${errorMessage}`);
-    }
-
-    let response: Response;
-    try {
-      response = await fetch(result.audioUrl);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to fetch Convex audio URL: ${result.audioUrl}; cause=${errorMessage}`);
-    }
-    if (!response.ok) {
-      throw new Error(`Failed to fetch stored audio (${response.status}) from ${result.audioUrl}`);
-    }
+    const workdir = await mkdtemp(join(tmpdir(), "inko-tts-"));
+    const outputPath = join(workdir, `${sanitizeFileName(input.targetHint ?? input.wordId)}.mp3`);
+    const edgeTts = new EdgeTTS({
+      voice: input.voice ?? "en-US-EmmaNeural",
+      rate: input.rate ?? "default",
+      pitch: "0Hz",
+      volume: "0%",
+      outputFormat: "audio-24khz-48kbitrate-mono-mp3",
+    });
+    await edgeTts.ttsPromise(input.targetHint ?? input.wordId, outputPath);
+    const audio = await readFile(outputPath);
+    await rm(workdir, { recursive: true, force: true });
 
     return {
-      audio: Buffer.from(await response.arrayBuffer()),
-      contentType: response.headers.get("content-type") ?? "audio/mpeg",
+      audio,
+      contentType: "audio/mpeg",
       fileName: `${sanitizeFileName(input.targetHint ?? input.wordId)}.mp3`,
-      audioUrl: result.audioUrl,
+      audioUrl: "generated-inline",
     };
   },
 };

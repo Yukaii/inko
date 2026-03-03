@@ -7,6 +7,8 @@ import { env } from "./lib/env";
 import { createMailer, type Mailer } from "./lib/mailer";
 import { ttsService, type TtsService } from "./lib/tts";
 import { setPracticeTraceSink } from "./lib/diagnostics";
+import { closeDb } from "./db/client";
+import { migrateToLatest } from "./db/migrator";
 import { authRoutes } from "./routes/auth";
 import { deckRoutes } from "./routes/decks";
 import { practiceRoutes } from "./routes/practice";
@@ -17,6 +19,7 @@ import { ttsRoutes } from "./routes/tts";
 import { repository, type Repository } from "./services/repository";
 
 export async function buildServer(options?: { repository?: Repository; mailer?: Mailer; ttsService?: TtsService }) {
+  await migrateToLatest();
   const app = Fastify({ logger: true });
   setPracticeTraceSink((payload, message) => {
     app.log.info(payload, message);
@@ -70,6 +73,9 @@ export async function buildServer(options?: { repository?: Repository; mailer?: 
   await app.register(async (instance) => ttsRoutes(instance, tts));
 
   app.get("/health", async () => ({ ok: true }));
+  app.addHook("onClose", async () => {
+    await closeDb();
+  });
 
   return app;
 }

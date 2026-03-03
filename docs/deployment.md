@@ -3,17 +3,16 @@
 This project uses:
 - Frontend (`apps/web`) on Zeabur or GitHub Pages
 - API (`apps/api`) on Zeabur
-- Self-hosted Convex (backend + dashboard) on Zeabur
+- PostgreSQL on Zeabur
 
 ## 1. Zeabur template (multi-service)
 
 This repo now includes a multi-service template:
 - `zeabur.yml`
 
-It deploys 4 services into one Zeabur project:
+It deploys 3 services into one Zeabur project:
 - `API` (Git source from this repo)
-- `Convex Backend` (official prebuilt image)
-- `Convex Dashboard` (official prebuilt image)
+- `PostgreSQL` (official `postgres:16-alpine` image)
 - `Frontend` (Git source from `apps/web`)
 
 Dockerfile selection for API:
@@ -38,23 +37,14 @@ npx -y zeabur@latest template deploy \
   -i=false \
   --file zeabur.yml \
   --project-id <ZEABUR_PROJECT_ID> \
-  --var BACKEND_DOMAIN=<convex-backend-subdomain> \
   --var API_DOMAIN=<api-subdomain> \
-  --var FRONTEND_DOMAIN=<frontend-subdomain> \
-  --var CONVEX_INSTANCE_SECRET=<hex-secret>
-```
-
-Generate Convex instance secret:
-
-```bash
-openssl rand -hex 32
+  --var FRONTEND_DOMAIN=<frontend-subdomain>
 ```
 
 Notes:
-- `BACKEND_DOMAIN` is the Zeabur-generated subdomain (without `.zeabur.app`).
 - `API_DOMAIN` and `FRONTEND_DOMAIN` are Zeabur-generated subdomains (without `.zeabur.app`).
-- `CONVEX_INSTANCE_SECRET` must be hex. Non-hex values will crash Convex backend on startup.
 - Template currently pins GitHub repo id for `Yukaii/inko`. If you fork/rename repo, update `spec.services[API].spec.source.repo` in `zeabur.yml`.
+- API reads `DATABASE_URL` from Zeabur's `${POSTGRES_CONNECTION_STRING}` exposed variable.
 
 ## 3. GitHub Action for CLI deploy
 
@@ -64,34 +54,17 @@ Workflow file:
 Required GitHub secrets:
 - `ZEABUR_TOKEN`
 - `ZEABUR_PROJECT_ID`
-- `ZEABUR_BACKEND_DOMAIN`
 - `ZEABUR_API_DOMAIN`
 - `ZEABUR_FRONTEND_DOMAIN`
-- `ZEABUR_CONVEX_INSTANCE_SECRET` (output of `openssl rand -hex 32`)
 
 This workflow is `workflow_dispatch` (manual trigger) to avoid accidental production redeploys.
 
-## 4. Self-hosted Convex runtime notes
+## 4. PostgreSQL runtime notes
 
-Convex backend service requirements:
-- persistent volume mounted to `/convex/data`
-- secure hex `INSTANCE_SECRET` value
-- explicit public origin envs for self-hosted runtime:
-  - `CONVEX_CLOUD_ORIGIN=https://<BACKEND_DOMAIN>.zeabur.app`
-  - `CONVEX_SITE_ORIGIN=https://<BACKEND_DOMAIN>.zeabur.app`
-
-If backend logs show `Couldn't hexdecode key`, fix by replacing `INSTANCE_SECRET` with a valid hex secret and redeploying/restarting the service.
-
-After first boot, generate admin key in Convex backend service terminal:
-
-```bash
-./generate_admin_key.sh
-```
-
-`CONVEX_URL` for API should point to Convex backend public URL:
-- `https://<BACKEND_DOMAIN>.zeabur.app`
-
-If Node actions fail on the first `ctx.runQuery(...)` with `Invalid URL`, verify the Convex Backend service itself has `CONVEX_CLOUD_ORIGIN` and `CONVEX_SITE_ORIGIN` set to absolute `https://` URLs. The upstream self-hosted backend defaults these to localhost values, which are not valid for a public Zeabur deployment.
+- PostgreSQL persists data at `/var/lib/postgresql/data`
+- API gets its connection string from `${POSTGRES_CONNECTION_STRING}`
+- API runs Kysely migrations on boot, so a fresh project should initialize its schema automatically
+- If you want a non-default database password, change `POSTGRES_PASSWORD` in the `PostgreSQL` service after deploy and redeploy the API service so `DATABASE_URL` stays in sync
 
 ## 5. Frontend on Zeabur (recommended when GitHub Actions quota is limited)
 
@@ -128,13 +101,12 @@ Runs on PRs and pushes to `main`:
 
 ## 8. Recommended production checklist
 
-- `zeabur.yml` deployed successfully (4 services created)
-- Convex backend volume mounted at `/convex/data`
+- `zeabur.yml` deployed successfully (3 services created)
+- PostgreSQL volume mounted at `/var/lib/postgresql/data`
 - API `JWT_SECRET` replaced with strong value
 - API `MAIL_PROVIDER` set to `resend`
 - API `RESEND_API_KEY` configured
 - API `MAIL_FROM` configured with verified sender domain
-- Convex `INSTANCE_SECRET` is valid hex
 - API `FRONTEND_URL` matches frontend domain
 - frontend `VITE_API_URL` points to API domain
 - CORS requests from frontend domain succeed

@@ -3,23 +3,16 @@
   "version": "0.1.0",
   "devDependencies": {
     "@auth/core": "0.37.0",
-    "@convex-dev/auth": "^0.0.91",
     "concurrently": "^9.1.2",
-    "convex": "^1.20.0",
     "typescript": "^5.8.2"
   },
   "private": true,
   "scripts": {
     "build": "bun run --filter @inko/shared build && bun run --filter @inko/api build && bun run --filter @inko/web build",
     "dev": "concurrently \"bun run --filter @inko/api dev\" \"bun run --filter @inko/web dev\"",
+    "db:migrate": "bun run --filter @inko/api migrate",
     "test": "bun run --filter @inko/shared test && bun run --filter @inko/api test && bun run --filter @inko/web test",
-    "lint": "bun run --filter @inko/shared lint && bun run --filter @inko/api lint && bun run --filter @inko/web lint",
-    "convex:dev": "bunx convex dev",
-    "convex:codegen": "bunx convex codegen",
-    "seed:starter": "bunx convex run seed:seedStarterData '{\"email\":\"user@example.com\"}'",
-    "backfill:deck-word-counts": "bun run scripts/backfill-deck-word-counts.ts",
-    "backfill:deck-word-snapshots": "bun run scripts/backfill-deck-word-snapshots.ts",
-    "backfill:practice-queue": "bun run scripts/backfill-practice-queue.ts"
+    "lint": "bun run --filter @inko/shared lint && bun run --filter @inko/api lint && bun run --filter @inko/web lint"
   },
   "workspaces": [
     "apps/*",
