@@ -48,6 +48,7 @@ import type {
 } from "../db/types";
 import { tracePractice } from "../lib/diagnostics";
 import { env } from "../lib/env";
+import { buildImportedAudioObjectKey, putObject } from "../lib/object-storage";
 
 const db = getDb();
 const BATCH_WORDS_CHUNK_SIZE = 200;
@@ -635,8 +636,14 @@ export const repository = {
 
   async storeImportedAudio(userId: string, input: { filename: string; contentType: string; bytes: Uint8Array }) {
     await requireUser(userId);
-    const base64 = Buffer.from(input.bytes).toString("base64");
-    return { audioUrl: `data:${input.contentType};base64,${base64}` };
+    const key = buildImportedAudioObjectKey(userId, input.filename);
+    const audioUrl = await putObject({
+      key,
+      body: input.bytes,
+      contentType: input.contentType,
+      cacheControl: "public, max-age=31536000, immutable",
+    });
+    return { audioUrl };
   },
 
   async updateWord(userId: string, wordId: string, input: UpdateWordInput) {

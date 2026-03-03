@@ -13,11 +13,36 @@ spec:
       type: DOMAIN
       name: Frontend Domain
       description: Subdomain for frontend service (resulting in <value>.zeabur.app)
+    - key: GARAGE_DOMAIN
+      type: DOMAIN
+      name: Garage Domain
+      description: Subdomain for Garage S3 API (resulting in <value>.zeabur.app)
+    - key: GARAGE_RPC_SECRET
+      type: PASSWORD
+      name: Garage RPC Secret
+      description: Shared RPC secret for the Garage node
+    - key: GARAGE_ADMIN_TOKEN
+      type: PASSWORD
+      name: Garage Admin Token
+      description: Admin token used to manage Garage bucket and keys
+    - key: OBJECT_STORAGE_ACCESS_KEY_ID
+      type: STRING
+      name: Garage S3 Access Key ID
+      description: Application S3 access key created in Garage
+    - key: OBJECT_STORAGE_SECRET_ACCESS_KEY
+      type: PASSWORD
+      name: Garage S3 Secret Access Key
+      description: Application S3 secret created in Garage
+    - key: OBJECT_STORAGE_BUCKET
+      type: STRING
+      name: Garage Bucket
+      description: Bucket used by the application
   services:
     - name: API
       template: GIT
       dependencies:
         - PostgreSQL
+        - Garage
       spec:
         source:
           source: GITHUB
@@ -39,10 +64,24 @@ spec:
             default: "${POSTGRES_CONNECTION_STRING}"
           DATABASE_POOL_MAX:
             default: "10"
+          API_PUBLIC_URL:
+            default: "https://${API_DOMAIN}.zeabur.app"
           JWT_SECRET:
             default: "replace-with-strong-secret-at-least-16-chars"
           FRONTEND_URL:
             default: "https://${FRONTEND_DOMAIN}.zeabur.app"
+          OBJECT_STORAGE_ENDPOINT:
+            default: "https://${GARAGE_DOMAIN}.zeabur.app"
+          OBJECT_STORAGE_REGION:
+            default: "garage"
+          OBJECT_STORAGE_BUCKET:
+            default: "${OBJECT_STORAGE_BUCKET}"
+          OBJECT_STORAGE_ACCESS_KEY_ID:
+            default: "${OBJECT_STORAGE_ACCESS_KEY_ID}"
+          OBJECT_STORAGE_SECRET_ACCESS_KEY:
+            default: "${OBJECT_STORAGE_SECRET_ACCESS_KEY}"
+          OBJECT_STORAGE_FORCE_PATH_STYLE:
+            default: "true"
           MAIL_PROVIDER:
             default: "log"
           MAIL_FROM:
@@ -69,6 +108,38 @@ spec:
             default: "postgres"
           POSTGRES_PASSWORD:
             default: "postgres"
+
+    - name: Garage
+      template: GIT
+      spec:
+        source:
+          source: GITHUB
+          repo: 1167879584
+          branch: main
+          rootDirectory: .
+        ports:
+          - id: s3
+            port: 3900
+            type: HTTP
+        volumes:
+          - id: garage-meta
+            dir: /var/lib/garage/meta
+          - id: garage-data
+            dir: /var/lib/garage/data
+        env:
+          ZBPACK_DOCKERFILE_NAME:
+            default: "garage"
+          ZBPACK_IGNORE_DOCKERFILE:
+            default: "false"
+          GARAGE_RPC_SECRET:
+            default: "${GARAGE_RPC_SECRET}"
+          GARAGE_ADMIN_TOKEN:
+            default: "${GARAGE_ADMIN_TOKEN}"
+          GARAGE_RPC_PUBLIC_ADDR:
+            default: "127.0.0.1:3901"
+          GARAGE_REGION:
+            default: "garage"
+      domainKey: GARAGE_DOMAIN
 
     - name: Frontend
       template: GIT
