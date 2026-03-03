@@ -43,6 +43,7 @@ class KeyboardManager {
 
   handle(event: KeyboardEvent) {
     if (!this.enabled) return;
+    if (typeof event.key !== "string" || event.key.length === 0) return;
 
     const parts: string[] = [];
     if (event.ctrlKey) parts.push("ctrl");

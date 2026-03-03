@@ -107,6 +107,10 @@ function asArray<T>(value: unknown, fallback: T): T {
   return (value as T | undefined) ?? fallback;
 }
 
+function jsonb<T>(value: T) {
+  return sql<T>`CAST(${JSON.stringify(value)} AS jsonb)`;
+}
+
 function toUserDTO(user: UserRow) {
   const fallbackName = (user.email.split("@")[0] ?? "learner").replace(/[._-]+/g, " ").trim() || "learner";
   return {
@@ -392,7 +396,7 @@ export const repository = {
         theme_mode: "dark",
         typing_mode: "language_specific",
         tts_enabled: true,
-        themes: DefaultThemes,
+        themes: jsonb(DefaultThemes),
         created_at: Date.now(),
       })
       .returningAll()
@@ -415,7 +419,7 @@ export const repository = {
         theme_mode: input.themeMode,
         typing_mode: input.typingMode,
         tts_enabled: input.ttsEnabled,
-        themes: input.themes,
+        themes: jsonb(input.themes),
       })
       .where("id", "=", userId)
       .returningAll()
@@ -548,7 +552,7 @@ export const repository = {
           meaning: input.meaning,
           example: input.example ?? null,
           audio_url: input.audioUrl ?? null,
-          tags: input.tags ?? [],
+          tags: jsonb(input.tags ?? []),
           created_at: now,
         })
         .returningAll()
@@ -597,7 +601,7 @@ export const repository = {
               meaning: word.meaning,
               example: word.example ?? null,
               audio_url: word.audioUrl ?? null,
-              tags: word.tags ?? [],
+              tags: jsonb(word.tags ?? []),
               created_at: now,
             })
             .returningAll()
@@ -646,7 +650,7 @@ export const repository = {
         meaning: input.meaning,
         example: input.example ?? null,
         audio_url: input.audioUrl ?? null,
-        tags: input.tags ?? [],
+        tags: jsonb(input.tags ?? []),
       })
       .where("id", "=", wordId)
       .returningAll()
@@ -850,9 +854,9 @@ export const repository = {
         source_kind: input.sourceKind,
         source_name: input.sourceName,
         card_count: input.words.length,
-        tags: input.tags ?? [],
-        note_types: input.noteTypes ?? [],
-        words: input.words.map((word) => ({ ...word, tags: word.tags ?? [] })),
+        tags: jsonb(input.tags ?? []),
+        note_types: jsonb(input.noteTypes ?? []),
+        words: jsonb(input.words.map((word) => ({ ...word, tags: word.tags ?? [] }))),
         status: "pending",
         moderation_notes: null,
         reviewed_by_user_id: null,
@@ -957,9 +961,9 @@ export const repository = {
               author_name: submission.submitter_email,
               published_by_user_id: userId,
               card_count: submission.card_count,
-              tags: submission.tags,
-              note_types: submission.note_types,
-              words: submission.words,
+              tags: jsonb(asArray(submission.tags, [])),
+              note_types: jsonb(asArray(submission.note_types, [])),
+              words: jsonb(asArray(submission.words, [])),
               updated_at: now,
             })
             .where("id", "=", existingDeck.id)
@@ -980,9 +984,9 @@ export const repository = {
             rating: 0,
             rating_count: 0,
             card_count: submission.card_count,
-            tags: submission.tags,
-            note_types: submission.note_types,
-            words: submission.words,
+            tags: jsonb(asArray(submission.tags, [])),
+            note_types: jsonb(asArray(submission.note_types, [])),
+            words: jsonb(asArray(submission.words, [])),
             published_at: now,
             updated_at: now,
           }).execute();
@@ -1014,7 +1018,7 @@ export const repository = {
         started_at: Date.now(),
         finished_at: null,
         cards_completed: 0,
-        attempted_word_ids: [],
+        attempted_word_ids: jsonb([]),
       })
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -1158,7 +1162,7 @@ export const repository = {
         .updateTable("practice_sessions")
         .set({
           cards_completed: session.cards_completed + 1,
-          attempted_word_ids: attemptedWordIds,
+          attempted_word_ids: jsonb(attemptedWordIds),
         })
         .where("id", "=", sessionId)
         .returningAll()
