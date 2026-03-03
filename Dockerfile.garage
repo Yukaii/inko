@@ -5,9 +5,10 @@ FROM alpine:3.20
 RUN apk add --no-cache ca-certificates
 
 COPY --from=garage-bin /garage /garage
+COPY scripts/garage/bootstrap.sh /app/bootstrap.sh
 COPY scripts/garage/run.sh /app/run.sh
 
-RUN chmod +x /app/run.sh
+RUN chmod +x /app/bootstrap.sh /app/run.sh
 
 EXPOSE 3900 3901 3903
 

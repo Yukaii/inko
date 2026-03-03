@@ -139,6 +139,18 @@ spec:
             default: "127.0.0.1:3901"
           GARAGE_REGION:
             default: "garage"
+          GARAGE_AUTO_BOOTSTRAP:
+            default: "true"
+          GARAGE_BOOTSTRAP_ZONE:
+            default: "garage"
+          GARAGE_BOOTSTRAP_CAPACITY:
+            default: "10GB"
+          OBJECT_STORAGE_BUCKET:
+            default: "${OBJECT_STORAGE_BUCKET}"
+          OBJECT_STORAGE_ACCESS_KEY_ID:
+            default: "${OBJECT_STORAGE_ACCESS_KEY_ID}"
+          OBJECT_STORAGE_SECRET_ACCESS_KEY:
+            default: "${OBJECT_STORAGE_SECRET_ACCESS_KEY}"
       domainKey: GARAGE_DOMAIN
 
     - name: Frontend

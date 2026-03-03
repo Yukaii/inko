@@ -7,6 +7,7 @@ import { env } from "./lib/env";
 import { createMailer, type Mailer } from "./lib/mailer";
 import { ttsService, type TtsService } from "./lib/tts";
 import { setPracticeTraceSink } from "./lib/diagnostics";
+import type { MagicTokenStore } from "./lib/auth";
 import { closeDb } from "./db/client";
 import { migrateToLatest } from "./db/migrator";
 import { authRoutes } from "./routes/auth";
@@ -19,8 +20,16 @@ import { mediaRoutes } from "./routes/media";
 import { ttsRoutes } from "./routes/tts";
 import { repository, type Repository } from "./services/repository";
 
-export async function buildServer(options?: { repository?: Repository; mailer?: Mailer; ttsService?: TtsService }) {
-  await migrateToLatest();
+export async function buildServer(options?: {
+  repository?: Repository;
+  mailer?: Mailer;
+  ttsService?: TtsService;
+  magicTokenStore?: MagicTokenStore;
+  skipMigrations?: boolean;
+}) {
+  if (!options?.skipMigrations) {
+    await migrateToLatest();
+  }
   const app = Fastify({ logger: true });
   setPracticeTraceSink((payload, message) => {
     app.log.info(payload, message);
@@ -65,7 +74,7 @@ export async function buildServer(options?: { repository?: Repository; mailer?: 
     },
   });
 
-  await app.register(async (instance) => authRoutes(instance, repo, mailer));
+  await app.register(async (instance) => authRoutes(instance, repo, mailer, options?.magicTokenStore));
   await app.register(async (instance) => deckRoutes(instance, repo));
   await app.register(async (instance) => importRoutes(instance, repo));
   await app.register(async (instance) => mediaRoutes(instance));

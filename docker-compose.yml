@@ -1,13 +1,24 @@
 services:
   garage:
-    image: dxflrs/garage:v1.1.0
+    build:
+      context: .
+      dockerfile: Dockerfile.garage
     container_name: inko-garage
-    command: ["/garage", "server"]
     ports:
       - "3900:3900"
       - "3903:3903"
+    environment:
+      GARAGE_RPC_SECRET: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      GARAGE_ADMIN_TOKEN: "dev-admin-token"
+      GARAGE_RPC_PUBLIC_ADDR: "garage:3901"
+      GARAGE_REGION: "garage"
+      GARAGE_AUTO_BOOTSTRAP: "true"
+      GARAGE_BOOTSTRAP_ZONE: "local"
+      GARAGE_BOOTSTRAP_CAPACITY: "10GB"
+      OBJECT_STORAGE_BUCKET: "inko-media"
+      OBJECT_STORAGE_ACCESS_KEY_ID: "GKb599967dd3416890fee1b9bf"
+      OBJECT_STORAGE_SECRET_ACCESS_KEY: "68af3881281301775c8a62b05c2cd30e40d7572bb8fa33b0c8945538a60c658d"
     volumes:
-      - ./scripts/garage/garage.toml:/etc/garage.toml:ro
       - inko-garage-meta:/var/lib/garage/meta
       - inko-garage-data:/var/lib/garage/data
     healthcheck:

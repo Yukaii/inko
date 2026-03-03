@@ -23,4 +23,11 @@ api_bind_addr = "0.0.0.0:3903"
 admin_token = "${GARAGE_ADMIN_TOKEN}"
 EOF
 
-exec /garage server
+/garage server &
+garage_pid=$!
+
+if [ "${GARAGE_AUTO_BOOTSTRAP:-false}" = "true" ]; then
+  /app/bootstrap.sh
+fi
+
+wait "$garage_pid"

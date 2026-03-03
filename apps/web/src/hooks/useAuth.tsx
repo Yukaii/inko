@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { api } from "../api/client";
 
-type AuthSource = "magic-link";
+type AuthSource = "magic-link" | "oauth";
 
 type AuthState = {
   token: string | null;
@@ -41,13 +42,26 @@ function AuthStateProvider({ children }: { children: React.ReactNode }) {
     const url = new URL(window.location.href);
     const accessToken = url.searchParams.get("accessToken");
 
-    if (accessToken) {
-      setToken(accessToken, "magic-link");
-      url.searchParams.delete("accessToken");
-      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
-    }
+    const bootstrapAuth = async () => {
+      if (accessToken) {
+        setToken(accessToken, "magic-link");
+        url.searchParams.delete("accessToken");
+        window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+        setIsLoading(false);
+        return;
+      }
 
-    setIsLoading(false);
+      try {
+        const exchange = await api.exchangeOAuthSession();
+        if (exchange?.accessToken) {
+          setToken(exchange.accessToken, "oauth");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void bootstrapAuth();
   }, []);
 
   const value = useMemo(
