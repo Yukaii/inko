@@ -98,6 +98,10 @@ spec:
       spec:
         source:
           image: postgres:16-alpine
+        ports:
+          - id: postgres
+            port: 5432
+            type: TCP
         volumes:
           - id: data
             dir: /var/lib/postgresql/data
