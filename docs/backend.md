@@ -40,17 +40,18 @@ Object storage envs:
 - `OBJECT_STORAGE_SECRET_ACCESS_KEY=<garage secret>`
 - `OBJECT_STORAGE_FORCE_PATH_STYLE=true`
 
-Production Garage env formats:
+Production R2 env formats:
 
-- `GARAGE_RPC_SECRET`: 64 hex chars
-- `GARAGE_ADMIN_TOKEN`: long random string, 64 hex chars is fine
-- `OBJECT_STORAGE_ACCESS_KEY_ID`: Garage-generated key ID, starts with `GK` and is created by `garage key create`
-- `OBJECT_STORAGE_SECRET_ACCESS_KEY`: the secret paired with that Garage-generated key
+- `OBJECT_STORAGE_ENDPOINT`: `https://<accountid>.r2.cloudflarestorage.com`
+- `OBJECT_STORAGE_REGION`: `auto`
+- `OBJECT_STORAGE_ACCESS_KEY_ID`: R2 API token access key ID
+- `OBJECT_STORAGE_SECRET_ACCESS_KEY`: R2 API token secret access key
+- `OBJECT_STORAGE_BUCKET`: existing R2 bucket name
 
 Local bootstrap:
 
 - Use your existing local PostgreSQL instance
-- Start Garage with `docker compose up -d garage`
+- Optional: start Garage with `docker compose up -d garage` for local S3-compatible testing
 - Garage bootstraps the single local node, `inko-media` bucket, and `inko-app` key automatically
 - Use these local compose credentials in `apps/api/.env`:
   - `OBJECT_STORAGE_ACCESS_KEY_ID=GKb599967dd3416890fee1b9bf`

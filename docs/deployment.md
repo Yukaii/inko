@@ -4,17 +4,16 @@ This project uses:
 - Frontend (`apps/web`) on Zeabur or GitHub Pages
 - API (`apps/api`) on Zeabur
 - PostgreSQL on Zeabur
-- Garage object storage on Zeabur
+- Cloudflare R2 for object storage
 
 ## 1. Zeabur template (multi-service)
 
 This repo now includes a multi-service template:
 - `zeabur.yml`
 
-It deploys 4 services into one Zeabur project:
+It deploys 3 services into one Zeabur project:
 - `API` (Git source from this repo)
 - `PostgreSQL` (official `postgres:16-alpine` image)
-- `Garage` (Git source from this repo via `Dockerfile.garage`)
 - `Frontend` (Git source from `apps/web`)
 
 Dockerfile selection for API:
@@ -33,10 +32,10 @@ Official CLI repo:
 Local command flow:
 
 ```bash
-GARAGE_RPC_SECRET="$(openssl rand -hex 32)"
-GARAGE_ADMIN_TOKEN="$(openssl rand -hex 32)"
-OBJECT_STORAGE_ACCESS_KEY_ID="inkoapp$(openssl rand -hex 8)"
-OBJECT_STORAGE_SECRET_ACCESS_KEY="$(openssl rand -hex 32)"
+OBJECT_STORAGE_ENDPOINT="https://<r2-account-id>.r2.cloudflarestorage.com"
+OBJECT_STORAGE_ACCESS_KEY_ID="<r2-access-key-id>"
+OBJECT_STORAGE_SECRET_ACCESS_KEY="<r2-secret-access-key>"
+OBJECT_STORAGE_BUCKET="inko-media"
 
 npx -y zeabur@latest auth login --token <ZEABUR_TOKEN>
 
@@ -46,21 +45,18 @@ npx -y zeabur@latest template deploy \
   --project-id <ZEABUR_PROJECT_ID> \
   --var API_DOMAIN=<api-subdomain> \
   --var FRONTEND_DOMAIN=<frontend-subdomain> \
-  --var GARAGE_DOMAIN=<garage-subdomain> \
-  --var GARAGE_RPC_SECRET=<garage-rpc-secret> \
-  --var GARAGE_ADMIN_TOKEN=<garage-admin-token> \
-  --var OBJECT_STORAGE_ACCESS_KEY_ID=<garage-key-id> \
-  --var OBJECT_STORAGE_SECRET_ACCESS_KEY=<garage-secret> \
-  --var OBJECT_STORAGE_BUCKET=inko-media
+  --var OBJECT_STORAGE_ENDPOINT=<r2-endpoint> \
+  --var OBJECT_STORAGE_ACCESS_KEY_ID=<r2-access-key-id> \
+  --var OBJECT_STORAGE_SECRET_ACCESS_KEY=<r2-secret-access-key> \
+  --var OBJECT_STORAGE_BUCKET=<r2-bucket>
 ```
 
 Notes:
 - `API_DOMAIN` and `FRONTEND_DOMAIN` are Zeabur-generated subdomains (without `.zeabur.app`).
-- `GARAGE_DOMAIN` is the public S3 endpoint domain for Garage.
 - Template currently pins GitHub repo id for `Yukaii/inko`. If you fork/rename repo, update `spec.services[API].spec.source.repo` in `zeabur.yml`.
 - API reads `DATABASE_URL` from Zeabur's `${POSTGRES_CONNECTION_STRING}` exposed variable.
-- API reads object storage from Garage's internal `${GARAGE_S3_ENDPOINT}` exposed variable.
-- `GARAGE_RPC_SECRET` must be a valid 64-character hexadecimal string.
+- API reads object storage from `${OBJECT_STORAGE_ENDPOINT}` (Cloudflare R2 S3 endpoint).
+- Set `OBJECT_STORAGE_REGION=auto` for R2.
 
 ## 2.2 Deploy only selected services
 
@@ -77,12 +73,10 @@ export ZEABUR_TOKEN=<your-token>
 export ZEABUR_PROJECT_ID=<your-project-id>
 export ZEABUR_API_DOMAIN=<api-subdomain>
 export ZEABUR_FRONTEND_DOMAIN=<frontend-subdomain>
-export ZEABUR_GARAGE_DOMAIN=<garage-subdomain>
-export ZEABUR_GARAGE_RPC_SECRET=<64-hex-rpc-secret>
-export ZEABUR_GARAGE_ADMIN_TOKEN=<admin-token>
-export ZEABUR_OBJECT_STORAGE_ACCESS_KEY_ID=<access-key-id>
-export ZEABUR_OBJECT_STORAGE_SECRET_ACCESS_KEY=<secret-access-key>
-export ZEABUR_OBJECT_STORAGE_BUCKET=inko-media
+export ZEABUR_OBJECT_STORAGE_ENDPOINT=<r2-endpoint>
+export ZEABUR_OBJECT_STORAGE_ACCESS_KEY_ID=<r2-access-key-id>
+export ZEABUR_OBJECT_STORAGE_SECRET_ACCESS_KEY=<r2-secret-access-key>
+export ZEABUR_OBJECT_STORAGE_BUCKET=<r2-bucket>
 ```
 
 Deploy only the API service:
@@ -100,13 +94,13 @@ scripts/zeabur-deploy-template.sh --fzf --skip-validation
 Load template variables from a dotenv file:
 
 ```bash
-scripts/zeabur-deploy-template.sh --services Garage --env-file .env.zeabur --skip-validation
+scripts/zeabur-deploy-template.sh --services API --env-file .env.zeabur --skip-validation
 ```
 
-Deploy only Garage:
+Deploy only PostgreSQL:
 
 ```bash
-scripts/zeabur-deploy-template.sh --services Garage --skip-validation
+scripts/zeabur-deploy-template.sh --services PostgreSQL --skip-validation
 ```
 
 Deploy API and Frontend together:
@@ -118,7 +112,7 @@ scripts/zeabur-deploy-template.sh --services API,Frontend --skip-validation
 Preview the filtered template without deploying:
 
 ```bash
-scripts/zeabur-deploy-template.sh --services API,Garage --dry-run
+scripts/zeabur-deploy-template.sh --services API,PostgreSQL --dry-run
 ```
 
 Preview after picking services interactively:
@@ -139,35 +133,14 @@ So `ZEABUR_API_DOMAIN` satisfies `API_DOMAIN`, `ZEABUR_OBJECT_STORAGE_BUCKET` sa
 
 The env file is parsed as a simple dotenv-style file. Blank lines, `# comments`, and optional leading `export ` are supported.
 
-## 2.1 Garage secret formats
+## 2.1 R2 credentials
 
 Use these exact formats:
 
-- `GARAGE_RPC_SECRET`: exactly 64 lowercase hex characters
-- `GARAGE_ADMIN_TOKEN`: any long random string; 64 lowercase hex characters is fine
-- `OBJECT_STORAGE_ACCESS_KEY_ID`: Garage-generated key ID that starts with `GK`
-- `OBJECT_STORAGE_SECRET_ACCESS_KEY`: the secret returned with that Garage key
-- `OBJECT_STORAGE_BUCKET`: DNS-safe bucket name such as `inko-media`
-
-Copy-pasteable generation commands for the values you can generate yourself:
-
-```bash
-GARAGE_RPC_SECRET="$(openssl rand -hex 32)"
-GARAGE_ADMIN_TOKEN="$(openssl rand -hex 32)"
-OBJECT_STORAGE_BUCKET="inko-media"
-
-printf 'GARAGE_RPC_SECRET=%s\n' "$GARAGE_RPC_SECRET"
-printf 'GARAGE_ADMIN_TOKEN=%s\n' "$GARAGE_ADMIN_TOKEN"
-printf 'OBJECT_STORAGE_BUCKET=%s\n' "$OBJECT_STORAGE_BUCKET"
-```
-
-Create the S3 key inside the `Garage` service shell instead of inventing it manually:
-
-```bash
-/garage key create inko-app
-```
-
-That command prints a valid `OBJECT_STORAGE_ACCESS_KEY_ID` and `OBJECT_STORAGE_SECRET_ACCESS_KEY`. Use that exact pair for both the `Garage` and `API` services.
+- `OBJECT_STORAGE_ENDPOINT`: `https://<accountid>.r2.cloudflarestorage.com`
+- `OBJECT_STORAGE_ACCESS_KEY_ID`: R2 API token access key ID
+- `OBJECT_STORAGE_SECRET_ACCESS_KEY`: R2 API token secret access key
+- `OBJECT_STORAGE_BUCKET`: existing R2 bucket name such as `inko-media`
 
 ## 3. GitHub Action for CLI deploy
 
@@ -179,9 +152,7 @@ Required GitHub secrets:
 - `ZEABUR_PROJECT_ID`
 - `ZEABUR_API_DOMAIN`
 - `ZEABUR_FRONTEND_DOMAIN`
-- `ZEABUR_GARAGE_DOMAIN`
-- `ZEABUR_GARAGE_RPC_SECRET`
-- `ZEABUR_GARAGE_ADMIN_TOKEN`
+- `ZEABUR_OBJECT_STORAGE_ENDPOINT`
 - `ZEABUR_OBJECT_STORAGE_ACCESS_KEY_ID`
 - `ZEABUR_OBJECT_STORAGE_SECRET_ACCESS_KEY`
 - `ZEABUR_OBJECT_STORAGE_BUCKET`
@@ -196,69 +167,11 @@ This workflow is `workflow_dispatch` (manual trigger) to avoid accidental produc
 - API runs Kysely migrations on boot, so a fresh project should initialize its schema automatically
 - If you rotate credentials in the PostgreSQL service later, redeploy the API service so `DATABASE_URL` stays in sync with the new `${POSTGRES_CONNECTION_STRING}`
 
-## 5. Garage runtime notes
+## 5. R2 runtime notes
 
-- Garage stores metadata at `/var/lib/garage/meta` and objects at `/var/lib/garage/data`
-- API talks to Garage through the internal S3-compatible endpoint `${GARAGE_S3_ENDPOINT}`
-- `GARAGE_DOMAIN` remains the public/external Garage domain if you need outside access
-- Garage now auto-bootstraps its single-node layout, imports the application key, and ensures the configured bucket exists on startup
-- Set these template variables before deploy:
-  - `OBJECT_STORAGE_ACCESS_KEY_ID`
-  - `OBJECT_STORAGE_SECRET_ACCESS_KEY`
-  - `OBJECT_STORAGE_BUCKET`
-- Reusing the same access key ID and secret on redeploy is intentional; the bootstrap path is idempotent
-
-Expected bootstrap behavior on a healthy first deploy:
-
-- Garage starts on ports `3900`, `3901`, and `3903`
-- `scripts/garage/run.sh` starts Garage and then runs `scripts/garage/bootstrap.sh`
-- bootstrap waits for `/garage status` to succeed
-- bootstrap runs:
-  - `garage layout assign -z <zone> -c <capacity> <node-id>`
-  - `garage layout apply --version 1`
-  - `garage bucket create <bucket>`
-  - `garage key import --yes -n inko-app <garage-key-id> <garage-key-secret>`
-  - `garage bucket allow --read --write --owner <bucket> --key <garage-key-id>`
-
-If you need to re-run bootstrap manually from a Zeabur shell inside the `Garage` service, use:
-
-```bash
-/garage status
-NODE_ID="$(/garage status | awk '/^[0-9a-f]{16}[[:space:]]/ { print $1; exit }')"
-echo "$NODE_ID"
-
-/garage layout assign -z "${GARAGE_BOOTSTRAP_ZONE:-garage}" -c "${GARAGE_BOOTSTRAP_CAPACITY:-10GB}" "$NODE_ID"
-/garage layout apply --version 1
-/garage bucket create "${OBJECT_STORAGE_BUCKET}"
-/garage key create inko-app
-```
-
-Then set the printed key ID and secret into:
-
-```bash
-OBJECT_STORAGE_ACCESS_KEY_ID=<printed-garage-key-id>
-OBJECT_STORAGE_SECRET_ACCESS_KEY=<printed-garage-key-secret>
-```
-
-and run:
-
-```bash
-/garage bucket allow --read --write --owner "${OBJECT_STORAGE_BUCKET}" --key "${OBJECT_STORAGE_ACCESS_KEY_ID}"
-```
-
-To verify the result from that shell:
-
-```bash
-/garage bucket list
-/garage key list
-/garage key info "${OBJECT_STORAGE_ACCESS_KEY_ID}"
-```
-
-You should see:
-
-- bucket `inko-media` or your chosen bucket name
-- key matching `OBJECT_STORAGE_ACCESS_KEY_ID`
-- bucket permissions showing `read`, `write`, and `owner`
+- API talks to R2 through `${OBJECT_STORAGE_ENDPOINT}` with S3-compatible auth.
+- Use `OBJECT_STORAGE_REGION=auto`.
+- Bucket and key credentials are managed in Cloudflare, not in Zeabur runtime.
 
 ## 6. Frontend on Zeabur (recommended when GitHub Actions quota is limited)
 
@@ -295,9 +208,8 @@ Runs on PRs and pushes to `main`:
 
 ## 9. Recommended production checklist
 
-- `zeabur.yml` deployed successfully (4 services created)
+- `zeabur.yml` deployed successfully (3 services created)
 - PostgreSQL volume mounted at `/var/lib/postgresql/data`
-- Garage volumes mounted at `/var/lib/garage/meta` and `/var/lib/garage/data`
 - API `JWT_SECRET` replaced with strong value
 - API `MAIL_PROVIDER` set to `resend`
 - API `RESEND_API_KEY` configured
@@ -305,7 +217,7 @@ Runs on PRs and pushes to `main`:
 - API `FRONTEND_URL` matches frontend domain
 - API `API_PUBLIC_URL` matches API domain
 - OAuth provider envs configured when GitHub or Google login is enabled
-- API object storage envs point at Garage and valid bucket/key
+- API object storage envs point at R2 endpoint and valid bucket/key
 - frontend `VITE_API_URL` points to API domain
 - CORS requests from frontend domain succeed
 - API `/health` returns `{"ok": true}`

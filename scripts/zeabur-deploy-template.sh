@@ -32,9 +32,9 @@ Template variables can be supplied either as:
 Examples:
   scripts/zeabur-deploy-template.sh --services API
   scripts/zeabur-deploy-template.sh --fzf
-  scripts/zeabur-deploy-template.sh --services Garage --env-file .env.zeabur
+  scripts/zeabur-deploy-template.sh --services API --env-file .env.zeabur
   scripts/zeabur-deploy-template.sh --services API,Frontend --skip-validation
-  scripts/zeabur-deploy-template.sh --services Garage --var OBJECT_STORAGE_BUCKET=inko-media
+  scripts/zeabur-deploy-template.sh --services API --var OBJECT_STORAGE_BUCKET=inko-media
 EOF
 }
 
