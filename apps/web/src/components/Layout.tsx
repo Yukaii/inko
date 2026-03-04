@@ -408,12 +408,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
           return (
             <NavLink
               key={link.to}
-              className={`flex max-w-20 flex-1 flex-col items-center justify-center gap-1 bg-transparent px-4 py-2 transition-colors ${isActive ? "text-accent-orange" : "text-text-secondary hover:text-text-primary focus:text-text-primary"}`}
+              className={`flex min-w-0 max-w-20 flex-1 flex-col items-center justify-center gap-1 bg-transparent px-4 py-2 transition-colors ${isActive ? "text-accent-orange" : "text-text-secondary hover:text-text-primary focus:text-text-primary"}`}
               to={link.to}
               aria-current={isActive ? "page" : undefined}
             >
               <link.Icon className="h-[22px] w-[22px]" />
-              <span className="text-[11px] font-medium">{t(link.mobileLabel)}</span>
+              <span className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-[11px] font-medium leading-none">
+                {t(link.mobileLabel)}
+              </span>
             </NavLink>
           );
         })}
@@ -421,11 +423,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Mobile Settings Link */}
         <NavLink
           to="/settings"
-          className={`flex max-w-20 flex-1 flex-col items-center justify-center gap-1 bg-transparent px-4 py-2 transition-colors ${location.pathname === "/settings" ? "text-accent-orange" : "text-text-secondary hover:text-text-primary focus:text-text-primary"}`}
+          className={`flex min-w-0 max-w-20 flex-1 flex-col items-center justify-center gap-1 bg-transparent px-4 py-2 transition-colors ${location.pathname === "/settings" ? "text-accent-orange" : "text-text-secondary hover:text-text-primary focus:text-text-primary"}`}
           aria-current={location.pathname === "/settings" ? "page" : undefined}
         >
           <SettingsIcon className="h-[22px] w-[22px]" />
-          <span className="text-[11px] font-medium">{t("nav.settings")}</span>
+          <span className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-[11px] font-medium leading-none">
+            {t("nav.settings")}
+          </span>
         </NavLink>
       </nav>
 
