@@ -72,7 +72,7 @@ spec:
           OBJECT_STORAGE_SECRET_ACCESS_KEY:
             default: "${OBJECT_STORAGE_SECRET_ACCESS_KEY}"
           OBJECT_STORAGE_FORCE_PATH_STYLE:
-            default: "true"
+            default: "false"
           MAIL_PROVIDER:
             default: "log"
           MAIL_FROM:

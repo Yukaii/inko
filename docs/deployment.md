@@ -57,6 +57,7 @@ Notes:
 - API reads `DATABASE_URL` from Zeabur's `${POSTGRES_CONNECTION_STRING}` exposed variable.
 - API reads object storage from `${OBJECT_STORAGE_ENDPOINT}` (Cloudflare R2 S3 endpoint).
 - Set `OBJECT_STORAGE_REGION=auto` for R2.
+- Set `OBJECT_STORAGE_FORCE_PATH_STYLE=false` for R2 (template default).
 
 ## 2.2 Deploy only selected services
 
@@ -141,6 +142,12 @@ Use these exact formats:
 - `OBJECT_STORAGE_ACCESS_KEY_ID`: R2 API token access key ID
 - `OBJECT_STORAGE_SECRET_ACCESS_KEY`: R2 API token secret access key
 - `OBJECT_STORAGE_BUCKET`: existing R2 bucket name such as `inko-media`
+
+R2 endpoint rule:
+- Use the account-level endpoint only, without bucket path and without bucket subdomain.
+- Correct: `https://<accountid>.r2.cloudflarestorage.com`
+- Wrong: `https://<bucket>.<accountid>.r2.cloudflarestorage.com`
+- Wrong: `https://<accountid>.r2.cloudflarestorage.com/<bucket>`
 
 ## 3. GitHub Action for CLI deploy
 
