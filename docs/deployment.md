@@ -33,6 +33,11 @@ Official CLI repo:
 Local command flow:
 
 ```bash
+GARAGE_RPC_SECRET="$(openssl rand -hex 32)"
+GARAGE_ADMIN_TOKEN="$(openssl rand -hex 32)"
+OBJECT_STORAGE_ACCESS_KEY_ID="inkoapp$(openssl rand -hex 8)"
+OBJECT_STORAGE_SECRET_ACCESS_KEY="$(openssl rand -hex 32)"
+
 npx -y zeabur@latest auth login --token <ZEABUR_TOKEN>
 
 npx -y zeabur@latest template deploy \
@@ -56,6 +61,87 @@ Notes:
 - API reads `DATABASE_URL` from Zeabur's `${POSTGRES_CONNECTION_STRING}` exposed variable.
 - API reads object storage from the Garage S3-compatible endpoint.
 - `GARAGE_RPC_SECRET` must be a valid 64-character hexadecimal string.
+
+## 2.2 Deploy only selected services
+
+If you only want to redeploy part of the stack, use:
+
+- [scripts/zeabur-deploy-template.sh](/Users/yukai/Projects/Personal/inko/scripts/zeabur-deploy-template.sh)
+
+The wrapper trims unselected services from `zeabur.yml`, removes dependencies that are no longer present, keeps only the template variables still needed by the selected services, and then calls `zeabur template deploy`.
+
+Examples:
+
+```bash
+export ZEABUR_TOKEN=<your-token>
+export ZEABUR_PROJECT_ID=<your-project-id>
+export ZEABUR_API_DOMAIN=<api-subdomain>
+export ZEABUR_FRONTEND_DOMAIN=<frontend-subdomain>
+export ZEABUR_GARAGE_DOMAIN=<garage-subdomain>
+export ZEABUR_GARAGE_RPC_SECRET=<64-hex-rpc-secret>
+export ZEABUR_GARAGE_ADMIN_TOKEN=<admin-token>
+export ZEABUR_OBJECT_STORAGE_ACCESS_KEY_ID=<access-key-id>
+export ZEABUR_OBJECT_STORAGE_SECRET_ACCESS_KEY=<secret-access-key>
+export ZEABUR_OBJECT_STORAGE_BUCKET=inko-media
+```
+
+Deploy only the API service:
+
+```bash
+scripts/zeabur-deploy-template.sh --services API --skip-validation
+```
+
+Deploy only Garage:
+
+```bash
+scripts/zeabur-deploy-template.sh --services Garage --skip-validation
+```
+
+Deploy API and Frontend together:
+
+```bash
+scripts/zeabur-deploy-template.sh --services API,Frontend --skip-validation
+```
+
+Preview the filtered template without deploying:
+
+```bash
+scripts/zeabur-deploy-template.sh --services API,Garage --dry-run
+```
+
+Variable resolution order:
+
+1. `--var KEY=value`
+2. shell env `KEY=value`
+3. shell env `ZEABUR_KEY=value`
+
+So `ZEABUR_API_DOMAIN` satisfies `API_DOMAIN`, `ZEABUR_OBJECT_STORAGE_BUCKET` satisfies `OBJECT_STORAGE_BUCKET`, and so on.
+
+## 2.1 Garage secret formats
+
+Use these exact formats:
+
+- `GARAGE_RPC_SECRET`: exactly 64 lowercase hex characters
+- `GARAGE_ADMIN_TOKEN`: any long random string; 64 lowercase hex characters is fine
+- `OBJECT_STORAGE_ACCESS_KEY_ID`: plain ASCII string; 16 to 32 chars is a practical target
+- `OBJECT_STORAGE_SECRET_ACCESS_KEY`: long random string; 64 lowercase hex characters is fine
+- `OBJECT_STORAGE_BUCKET`: DNS-safe bucket name such as `inko-media`
+
+Copy-pasteable generation commands:
+
+```bash
+GARAGE_RPC_SECRET="$(openssl rand -hex 32)"
+GARAGE_ADMIN_TOKEN="$(openssl rand -hex 32)"
+OBJECT_STORAGE_ACCESS_KEY_ID="inkoapp$(openssl rand -hex 8)"
+OBJECT_STORAGE_SECRET_ACCESS_KEY="$(openssl rand -hex 32)"
+OBJECT_STORAGE_BUCKET="inko-media"
+
+printf 'GARAGE_RPC_SECRET=%s\n' "$GARAGE_RPC_SECRET"
+printf 'GARAGE_ADMIN_TOKEN=%s\n' "$GARAGE_ADMIN_TOKEN"
+printf 'OBJECT_STORAGE_ACCESS_KEY_ID=%s\n' "$OBJECT_STORAGE_ACCESS_KEY_ID"
+printf 'OBJECT_STORAGE_SECRET_ACCESS_KEY=%s\n' "$OBJECT_STORAGE_SECRET_ACCESS_KEY"
+printf 'OBJECT_STORAGE_BUCKET=%s\n' "$OBJECT_STORAGE_BUCKET"
+```
 
 ## 3. GitHub Action for CLI deploy
 
@@ -93,6 +179,46 @@ This workflow is `workflow_dispatch` (manual trigger) to avoid accidental produc
   - `OBJECT_STORAGE_SECRET_ACCESS_KEY`
   - `OBJECT_STORAGE_BUCKET`
 - Reusing the same access key ID and secret on redeploy is intentional; the bootstrap path is idempotent
+
+Expected bootstrap behavior on a healthy first deploy:
+
+- Garage starts on ports `3900`, `3901`, and `3903`
+- `scripts/garage/run.sh` starts Garage and then runs `scripts/garage/bootstrap.sh`
+- bootstrap waits for `/garage status` to succeed
+- bootstrap runs:
+  - `garage layout assign -z <zone> -c <capacity> <node-id>`
+  - `garage layout apply --version 1`
+  - `garage bucket create <bucket>`
+  - `garage key import --yes -n inko-app <access-key-id> <secret>`
+  - `garage bucket allow --read --write --owner <bucket> --key <access-key-id>`
+
+If you need to re-run bootstrap manually from a Zeabur shell inside the `Garage` service, use:
+
+```bash
+/garage status
+NODE_ID="$(/garage status | awk '/^[0-9a-f]{16}[[:space:]]/ { print $1; exit }')"
+echo "$NODE_ID"
+
+/garage layout assign -z "${GARAGE_BOOTSTRAP_ZONE:-garage}" -c "${GARAGE_BOOTSTRAP_CAPACITY:-10GB}" "$NODE_ID"
+/garage layout apply --version 1
+/garage bucket create "${OBJECT_STORAGE_BUCKET}"
+/garage key import --yes -n inko-app "${OBJECT_STORAGE_ACCESS_KEY_ID}" "${OBJECT_STORAGE_SECRET_ACCESS_KEY}"
+/garage bucket allow --read --write --owner "${OBJECT_STORAGE_BUCKET}" --key "${OBJECT_STORAGE_ACCESS_KEY_ID}"
+```
+
+To verify the result from that shell:
+
+```bash
+/garage bucket list
+/garage key list
+/garage key info "${OBJECT_STORAGE_ACCESS_KEY_ID}"
+```
+
+You should see:
+
+- bucket `inko-media` or your chosen bucket name
+- key matching `OBJECT_STORAGE_ACCESS_KEY_ID`
+- bucket permissions showing `read`, `write`, and `owner`
 
 ## 6. Frontend on Zeabur (recommended when GitHub Actions quota is limited)
 
