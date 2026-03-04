@@ -209,6 +209,26 @@
     "no_attempts": "No attempt data recorded for this session.",
     "load_failed": "Unable to load this session."
   },
+  "languages": {
+    "ja": "Japanese",
+    "ko": "Korean",
+    "zh": "Chinese",
+    "es": "Spanish",
+    "fr": "French",
+    "de": "German",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "ru": "Russian",
+    "ar": "Arabic",
+    "hi": "Hindi",
+    "th": "Thai",
+    "nl": "Dutch",
+    "pl": "Polish",
+    "tr": "Turkish",
+    "vi": "Vietnamese",
+    "id": "Indonesian",
+    "uk": "Ukrainian"
+  },
   "word_bank": {
     "title": "Word Bank",
     "subtitle": "Manage your decks and vocabulary",

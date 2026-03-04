@@ -13,6 +13,12 @@ export const SUPPORTED_LANGUAGES = [
   "ar",
   "hi",
   "th",
+  "nl",
+  "pl",
+  "tr",
+  "vi",
+  "id",
+  "uk",
 ] as const;
 export const LanguageSchema = z.enum(SUPPORTED_LANGUAGES);
 export const LANGUAGE_LABELS: Record<z.infer<typeof LanguageSchema>, string> = {
@@ -28,6 +34,12 @@ export const LANGUAGE_LABELS: Record<z.infer<typeof LanguageSchema>, string> = {
   ar: "Arabic",
   hi: "Hindi",
   th: "Thai",
+  nl: "Dutch",
+  pl: "Polish",
+  tr: "Turkish",
+  vi: "Vietnamese",
+  id: "Indonesian",
+  uk: "Ukrainian",
 };
 export const ThemeModeSchema = z.union([z.literal("dark"), z.literal("light")]);
 export const TypingModeSchema = z.union([z.literal("language_specific"), z.literal("universal")]);
@@ -83,6 +95,30 @@ export const EDGE_TTS_VOICE_OPTIONS_BY_LANGUAGE = {
   th: [
     { value: "th-TH-PremwadeeNeural", label: "Premwadee" },
     { value: "th-TH-NiwatNeural", label: "Niwat" },
+  ],
+  nl: [
+    { value: "nl-NL-ColetteNeural", label: "Colette" },
+    { value: "nl-NL-MaartenNeural", label: "Maarten" },
+  ],
+  pl: [
+    { value: "pl-PL-ZofiaNeural", label: "Zofia" },
+    { value: "pl-PL-MarekNeural", label: "Marek" },
+  ],
+  tr: [
+    { value: "tr-TR-EmelNeural", label: "Emel" },
+    { value: "tr-TR-AhmetNeural", label: "Ahmet" },
+  ],
+  vi: [
+    { value: "vi-VN-HoaiMyNeural", label: "HoaiMy" },
+    { value: "vi-VN-NamMinhNeural", label: "NamMinh" },
+  ],
+  id: [
+    { value: "id-ID-GadisNeural", label: "Gadis" },
+    { value: "id-ID-ArdiNeural", label: "Ardi" },
+  ],
+  uk: [
+    { value: "uk-UA-PolinaNeural", label: "Polina" },
+    { value: "uk-UA-OstapNeural", label: "Ostap" },
   ],
 } as const satisfies Record<z.infer<typeof LanguageSchema>, readonly { value: string; label: string }[]>;
 
