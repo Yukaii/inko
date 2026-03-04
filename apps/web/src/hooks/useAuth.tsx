@@ -1,11 +1,9 @@
-import { ConvexAuthProvider, useAuthActions, useAuthToken } from "@convex-dev/auth/react";
-import { ConvexReactClient, useConvexAuth } from "convex/react";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { isAuthScopedQueryKey } from "../lib/queryKeys";
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL ?? "http://127.0.0.1:3210");
-
-type AuthSource = "magic-link" | "convex-auth";
+type AuthSource = "magic-link" | "oauth";
 
 type AuthState = {
   token: string | null;
@@ -17,24 +15,15 @@ type AuthState = {
 const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  return (
-    <ConvexAuthProvider client={convex}>
-      <AuthStateProvider>{children}</AuthStateProvider>
-    </ConvexAuthProvider>
-  );
+  return <AuthStateProvider>{children}</AuthStateProvider>;
 }
 
 function AuthStateProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [token, setTokenState] = useState<string | null>(() => localStorage.getItem("inko_token"));
-  const [source, setSourceState] = useState<AuthSource | null>(
-    () => (localStorage.getItem("inko_auth_source") as AuthSource | null) ?? null,
-  );
-  const [exchangeLoading, setExchangeLoading] = useState(false);
-  const convexToken = useAuthToken();
-  const { signOut: signOutConvex } = useAuthActions();
-  const { isLoading: convexLoading } = useConvexAuth();
-  const lastConvexTokenRef = useRef<string | null>(null);
-  const hasPendingConvexExchange = Boolean(convexToken) && token === null;
+  const [, setSourceState] = useState<AuthSource | null>(() => "magic-link");
+  const [isLoading, setIsLoading] = useState(true);
+  const previousTokenRef = useRef<string | null>(token);
 
   const setToken = (nextToken: string | null, nextSource: AuthSource = "magic-link") => {
     setTokenState(nextToken);
@@ -49,66 +38,54 @@ function AuthStateProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    if (convexLoading) return;
-
-    if (!convexToken) {
-      lastConvexTokenRef.current = null;
-      if (source === "convex-auth") {
-        setToken(null);
-      }
-      return;
-    }
-
-    if (convexToken === lastConvexTokenRef.current) {
-      return;
-    }
-
-    let cancelled = false;
-    setExchangeLoading(true);
-
-    void api
-      .verifyConvexAuth(convexToken)
-      .then((result) => {
-        if (cancelled) return;
-        lastConvexTokenRef.current = convexToken;
-        setToken(result.accessToken, "convex-auth");
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        console.error("Failed to exchange Convex auth token", error);
-        lastConvexTokenRef.current = convexToken;
-        setToken(null);
-        void signOutConvex();
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setExchangeLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [convexLoading, convexToken, source]);
-
   const signOut = async () => {
-    const activeSource = source;
     setToken(null);
-    lastConvexTokenRef.current = null;
-    if (activeSource === "convex-auth") {
-      await signOutConvex();
-    }
   };
+
+  useEffect(() => {
+    const previousToken = previousTokenRef.current;
+    if (previousToken !== token) {
+      queryClient.removeQueries({
+        predicate: (query) => isAuthScopedQueryKey(query.queryKey),
+      });
+      previousTokenRef.current = token;
+    }
+  }, [queryClient, token]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const accessToken = url.searchParams.get("accessToken");
+
+    const bootstrapAuth = async () => {
+      if (accessToken) {
+        setToken(accessToken, "magic-link");
+        url.searchParams.delete("accessToken");
+        window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const exchange = await api.exchangeOAuthSession();
+        if (exchange?.accessToken) {
+          setToken(exchange.accessToken, "oauth");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void bootstrapAuth();
+  }, []);
 
   const value = useMemo(
     () => ({
       token,
-      isLoading: convexLoading || exchangeLoading || hasPendingConvexExchange,
+      isLoading,
       setToken,
       signOut,
     }),
-    [convexLoading, exchangeLoading, hasPendingConvexExchange, token],
+    [isLoading, token],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

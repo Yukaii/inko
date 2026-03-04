@@ -174,11 +174,29 @@ export const api = {
       body: JSON.stringify({ token }),
     }),
 
-  verifyConvexAuth: (token: string) =>
-    request<AuthVerifyResponse>("/api/auth/convex/verify", {
+  exchangeOAuthSession: async () => {
+    const res = await fetch(`${API_BASE}/api/auth/oauth/exchange`, {
       method: "POST",
-      body: JSON.stringify({ token }),
-    }),
+      credentials: "include",
+    });
+
+    if (res.status === 401) {
+      return null;
+    }
+
+    if (!res.ok) {
+      let errorMessage = res.statusText;
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        errorMessage = await res.text() || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    return await res.json() as AuthVerifyResponse;
+  },
 
   me: (token: string) => request<UserDTO>("/api/me", {}, token),
   updateMe: (token: string, input: UpdateProfileInput) =>

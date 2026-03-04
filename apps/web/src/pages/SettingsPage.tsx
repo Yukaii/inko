@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { DefaultThemes, type ThemeConfig, type ThemeMode, type ThemePalette, type TypingMode } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
+import { authQueryKey } from "../lib/queryKeys";
 import { applyThemePreferences, saveThemePreferences } from "../theme/theme";
 import { SUPPORTED_UI_LANGUAGES } from "../i18n";
 import { downloadDeckCsv, fetchAllDeckWords } from "./wordBankExport";
@@ -309,14 +310,14 @@ export function SettingsPage() {
   const settingsNavRef = useRef<HTMLElement | null>(null);
 
   const profileQuery = useQuery({
-    queryKey: ["me"],
+    queryKey: authQueryKey(token, "me"),
     queryFn: () => api.me(token ?? ""),
     enabled: Boolean(token),
   });
 
   const user = profileQuery.data as MeResponse | undefined;
   const decksQuery = useQuery({
-    queryKey: ["decks"],
+    queryKey: authQueryKey(token, "decks"),
     queryFn: () => api.listDecks(token ?? ""),
     enabled: Boolean(token),
   });
@@ -350,7 +351,7 @@ export function SettingsPage() {
       }),
     onSuccess: (updated) => {
       const nextUser = updated as MeResponse;
-      queryClient.setQueryData(["me"], nextUser);
+      queryClient.setQueryData(authQueryKey(token, "me"), nextUser);
       applyThemePreferences({ themeMode: nextUser.themeMode, themes: nextUser.themes });
       saveThemePreferences({ themeMode: nextUser.themeMode, themes: nextUser.themes });
       setMessage(t("settings.messages.saved"));

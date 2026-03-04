@@ -1,5 +1,9 @@
-import type { LanguageCode } from "@inko/shared";
-import { convex } from "./convex";
+import { getDefaultEdgeTtsVoice, type LanguageCode } from "@inko/shared";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { EdgeTTS } from "node-edge-tts";
+import { buildTtsObjectKey, getObject, hasObject, putObject } from "./object-storage";
 
 export type TtsAudioResult = {
   audio: Buffer;
@@ -26,56 +30,55 @@ function sanitizeFileName(text: string) {
 }
 
 export function getVoiceForLanguage(language: LanguageCode) {
-  const defaults: Record<LanguageCode, string> = {
-    ja: "ja-JP-NanamiNeural",
-    ko: "ko-KR-SunHiNeural",
-    zh: "zh-CN-XiaoxiaoNeural",
-    es: "es-ES-ElviraNeural",
-    fr: "fr-FR-DeniseNeural",
-    de: "de-DE-KatjaNeural",
-    it: "it-IT-ElsaNeural",
-    pt: "pt-BR-FranciscaNeural",
-    ru: "ru-RU-SvetlanaNeural",
-    ar: "ar-SA-ZariyahNeural",
-    hi: "hi-IN-SwaraNeural",
-    th: "th-TH-PremwadeeNeural",
-  };
-  return defaults[language] ?? "en-US-EmmaNeural";
+  return getDefaultEdgeTtsVoice(language);
 }
 
 export const ttsService: TtsService = {
   async synthesizeWordAudio(input) {
-    const result = await (convex as any).action("ttsNode:ensureWordAudio", {
+    const key = buildTtsObjectKey({
       userId: input.userId,
       deckId: input.deckId,
       wordId: input.wordId,
-      voice: input.voice,
-      rate: input.rate,
-    }) as { audioUrl: string };
+      voice: input.voice ?? "en-US-EmmaNeural",
+      rate: input.rate ?? "default",
+    });
 
-    try {
-      new URL(result.audioUrl);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Invalid audioUrl returned from Convex action: ${result.audioUrl}; cause=${errorMessage}`);
+    if (await hasObject(key)) {
+      const existing = await getObject(key);
+      if (existing) {
+        return {
+          audio: existing.body,
+          contentType: existing.contentType,
+          fileName: `${sanitizeFileName(input.targetHint ?? input.wordId)}.mp3`,
+          audioUrl: "stored",
+        };
+      }
     }
 
-    let response: Response;
-    try {
-      response = await fetch(result.audioUrl);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to fetch Convex audio URL: ${result.audioUrl}; cause=${errorMessage}`);
-    }
-    if (!response.ok) {
-      throw new Error(`Failed to fetch stored audio (${response.status}) from ${result.audioUrl}`);
-    }
+    const workdir = await mkdtemp(join(tmpdir(), "inko-tts-"));
+    const outputPath = join(workdir, `${sanitizeFileName(input.targetHint ?? input.wordId)}.mp3`);
+    const edgeTts = new EdgeTTS({
+      voice: input.voice ?? "en-US-EmmaNeural",
+      rate: input.rate ?? "default",
+      pitch: "0Hz",
+      volume: "0%",
+      outputFormat: "audio-24khz-48kbitrate-mono-mp3",
+    });
+    await edgeTts.ttsPromise(input.targetHint ?? input.wordId, outputPath);
+    const audio = await readFile(outputPath);
+    await rm(workdir, { recursive: true, force: true });
+    await putObject({
+      key,
+      body: audio,
+      contentType: "audio/mpeg",
+      cacheControl: "public, max-age=31536000, immutable",
+    });
 
     return {
-      audio: Buffer.from(await response.arrayBuffer()),
-      contentType: response.headers.get("content-type") ?? "audio/mpeg",
+      audio,
+      contentType: "audio/mpeg",
       fileName: `${sanitizeFileName(input.targetHint ?? input.wordId)}.mp3`,
-      audioUrl: result.audioUrl,
+      audioUrl: "stored",
     };
   },
 };

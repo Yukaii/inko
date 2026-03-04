@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
+import { authQueryKey } from "../lib/queryKeys";
 import { BookOpen, ChevronRight, Clock, Flame, Play, Star, Target, TrendingUp } from "lucide-react";
 
 function clampProgress(value: number, max: number) {
@@ -33,12 +34,24 @@ function formatDeckDate(timestamp: number, language: string) {
 }
 
 function formatSessionDate(timestamp: number, language: string) {
+  if (!Number.isFinite(timestamp)) {
+    return "";
+  }
   return new Intl.DateTimeFormat(language, {
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(timestamp));
+}
+
+function normalizeTimestamp(value: unknown) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : NaN;
+  }
+  return NaN;
 }
 
 function StatsSkeleton() {
@@ -99,25 +112,25 @@ export function DashboardPage() {
   const [focusedDeckIndex, setFocusedDeckIndex] = useState(-1);
 
   const statsQuery = useQuery({
-    queryKey: ["dashboard", "stats"],
+    queryKey: authQueryKey(token, "dashboard", "stats"),
     queryFn: () => api.dashboardStats(token ?? ""),
     enabled: Boolean(token),
     staleTime: 30_000,
   });
   const sessionsQuery = useQuery({
-    queryKey: ["dashboard", "recent-sessions"],
+    queryKey: authQueryKey(token, "dashboard", "recent-sessions"),
     queryFn: () => api.dashboardRecentSessions(token ?? ""),
     enabled: Boolean(token),
     staleTime: 30_000,
   });
   const meQuery = useQuery({
-    queryKey: ["me"],
+    queryKey: authQueryKey(token, "me"),
     queryFn: () => api.me(token ?? ""),
     enabled: Boolean(token),
     staleTime: 60_000,
   });
   const decksQuery = useQuery({
-    queryKey: ["decks"],
+    queryKey: authQueryKey(token, "decks"),
     queryFn: () => api.listDecks(token ?? ""),
     enabled: Boolean(token),
     staleTime: 30_000,
@@ -458,10 +471,11 @@ export function DashboardPage() {
         ) : (
           <div className="rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-2">
             {(sessionsQuery.data?.recentSessions ?? []).map((session) => {
-              const finishedAt = session.finishedAt ?? session.startedAt;
+              const startedAt = normalizeTimestamp(session.startedAt);
+              const finishedAt = normalizeTimestamp(session.finishedAt ?? session.startedAt);
               const durationSeconds = Math.max(
                 0,
-                Math.round((finishedAt - session.startedAt) / 1000),
+                Math.round((finishedAt - startedAt) / 1000),
               );
               const deck = decksById.get(session.deckId);
               const sessionDeckName = deck?.name ?? session.deckName ?? t("dashboard.session_label");

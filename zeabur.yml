@@ -3,16 +3,8 @@ kind: Template
 metadata:
   name: Inko
 spec:
-  description: Inko API + self-hosted Convex stack on Zeabur
+  description: Inko web app with API and PostgreSQL on Zeabur
   variables:
-    - key: BACKEND_DOMAIN
-      type: DOMAIN
-      name: Convex Backend Domain
-      description: Subdomain for Convex backend (resulting in <value>.zeabur.app)
-    - key: SYNC_DOMAIN
-      type: DOMAIN
-      name: Convex Site/Auth Domain
-      description: Subdomain for Convex site/auth HTTP origin on port 3211 (resulting in <value>.zeabur.app)
     - key: API_DOMAIN
       type: DOMAIN
       name: API Domain
@@ -21,15 +13,36 @@ spec:
       type: DOMAIN
       name: Frontend Domain
       description: Subdomain for frontend service (resulting in <value>.zeabur.app)
-    - key: CONVEX_INSTANCE_SECRET
+    - key: GARAGE_DOMAIN
+      type: DOMAIN
+      name: Garage Domain
+      description: Subdomain for Garage S3 API (resulting in <value>.zeabur.app)
+    - key: GARAGE_RPC_SECRET
       type: PASSWORD
-      name: Convex Instance Secret
-      description: "64-char hex secret for Convex backend (generate with: openssl rand -hex 32)"
+      name: Garage RPC Secret
+      description: Shared RPC secret for the Garage node
+    - key: GARAGE_ADMIN_TOKEN
+      type: PASSWORD
+      name: Garage Admin Token
+      description: Admin token used to manage Garage bucket and keys
+    - key: OBJECT_STORAGE_ACCESS_KEY_ID
+      type: STRING
+      name: Garage S3 Access Key ID
+      description: Application S3 access key created in Garage
+    - key: OBJECT_STORAGE_SECRET_ACCESS_KEY
+      type: PASSWORD
+      name: Garage S3 Secret Access Key
+      description: Application S3 secret created in Garage
+    - key: OBJECT_STORAGE_BUCKET
+      type: STRING
+      name: Garage Bucket
+      description: Bucket used by the application
   services:
     - name: API
       template: GIT
       dependencies:
-        - Convex Backend
+        - PostgreSQL
+        - Garage
       spec:
         source:
           source: GITHUB
@@ -47,14 +60,32 @@ spec:
             default: "false"
           PORT:
             default: "4000"
-          CONVEX_URL:
-            default: "https://${BACKEND_DOMAIN}.zeabur.app"
-          CONVEX_SITE_URL:
-            default: "https://${SYNC_DOMAIN}.zeabur.app"
+          DATABASE_URL:
+            default: "${POSTGRES_CONNECTION_STRING}"
+          DATABASE_POOL_MAX:
+            default: "10"
+          API_PUBLIC_URL:
+            default: "https://${API_DOMAIN}.zeabur.app"
           JWT_SECRET:
             default: "replace-with-strong-secret-at-least-16-chars"
           FRONTEND_URL:
             default: "https://${FRONTEND_DOMAIN}.zeabur.app"
+          OBJECT_STORAGE_ENDPOINT:
+            default: "${GARAGE_S3_ENDPOINT}"
+          OBJECT_STORAGE_REGION:
+            default: "garage"
+          OBJECT_STORAGE_BUCKET:
+            default: "${OBJECT_STORAGE_BUCKET}"
+          OBJECT_STORAGE_ACCESS_KEY_ID:
+            default: "${OBJECT_STORAGE_ACCESS_KEY_ID}"
+          OBJECT_STORAGE_SECRET_ACCESS_KEY:
+            default: "${OBJECT_STORAGE_SECRET_ACCESS_KEY}"
+          OBJECT_STORAGE_FORCE_PATH_STYLE:
+            default: "true"
+          MAIL_PROVIDER:
+            default: "log"
+          MAIL_FROM:
+            default: "Inkō <no-reply@localhost>"
         healthCheck:
           type: HTTP
           port: web
@@ -62,50 +93,91 @@ spec:
             path: /health
       domainKey: API_DOMAIN
 
-    - name: Convex Backend
+    - name: PostgreSQL
       template: PREBUILT_V2
       spec:
         source:
-          image: ghcr.io/get-convex/convex-backend:latest
+          image: postgres:16-alpine
         ports:
-          - id: convex-http
-            port: 3210
-            type: HTTP
-          - id: convex-sync
-            port: 3211
-            type: HTTP
+          - id: database
+            port: 5432
+            type: TCP
         volumes:
           - id: data
-            dir: /convex/data
+            dir: /var/lib/postgresql/data
         env:
-          INSTANCE_NAME:
-            default: "inko-prod"
-          INSTANCE_SECRET:
-            default: "${CONVEX_INSTANCE_SECRET}"
-          CONVEX_CLOUD_ORIGIN:
-            default: "https://${BACKEND_DOMAIN}.zeabur.app"
-          CONVEX_SITE_ORIGIN:
-            default: "https://${SYNC_DOMAIN}.zeabur.app"
-          CONVEX_SITE_URL:
-            default: "https://${SYNC_DOMAIN}.zeabur.app"
-          CUSTOM_AUTH_SITE_URL:
-            default: "https://${SYNC_DOMAIN}.zeabur.app"
-      domainKey: BACKEND_DOMAIN
+          POSTGRES_CONNECTION_STRING:
+            default: "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}"
+            expose: true
+          POSTGRES_DATABASE:
+            default: "${POSTGRES_DB}"
+            expose: true
+          POSTGRES_DB:
+            default: "inko"
+          POSTGRES_HOST:
+            default: "${CONTAINER_HOSTNAME}"
+            expose: true
+          POSTGRES_PASSWORD:
+            default: "${PASSWORD}"
+            expose: true
+          POSTGRES_PORT:
+            default: "${DATABASE_PORT}"
+            expose: true
+          POSTGRES_URI:
+            default: "${POSTGRES_CONNECTION_STRING}"
+            expose: true
+          POSTGRES_USER:
+            default: "root"
+          POSTGRES_USERNAME:
+            default: "${POSTGRES_USER}"
+            expose: true
 
-    - name: Convex Dashboard
-      template: PREBUILT_V2
-      dependencies:
-        - Convex Backend
+    - name: Garage
+      template: GIT
       spec:
         source:
-          image: ghcr.io/get-convex/convex-dashboard:latest
+          source: GITHUB
+          repo: 1167879584
+          branch: main
+          rootDirectory: .
         ports:
-          - id: web
-            port: 6791
+          - id: s3
+            port: 3900
             type: HTTP
+        volumes:
+          - id: garage-meta
+            dir: /var/lib/garage/meta
+          - id: garage-data
+            dir: /var/lib/garage/data
         env:
-          NEXT_PUBLIC_DEPLOYMENT_URL:
-            default: "https://${BACKEND_DOMAIN}.zeabur.app"
+          ZBPACK_DOCKERFILE_NAME:
+            default: "garage"
+          ZBPACK_IGNORE_DOCKERFILE:
+            default: "false"
+          GARAGE_S3_ENDPOINT:
+            default: "http://${CONTAINER_HOSTNAME}:${S3_PORT}"
+            expose: true
+          GARAGE_RPC_SECRET:
+            default: "${GARAGE_RPC_SECRET}"
+          GARAGE_ADMIN_TOKEN:
+            default: "${GARAGE_ADMIN_TOKEN}"
+          GARAGE_RPC_PUBLIC_ADDR:
+            default: "127.0.0.1:3901"
+          GARAGE_REGION:
+            default: "garage"
+          GARAGE_AUTO_BOOTSTRAP:
+            default: "true"
+          GARAGE_BOOTSTRAP_ZONE:
+            default: "garage"
+          GARAGE_BOOTSTRAP_CAPACITY:
+            default: "10GB"
+          OBJECT_STORAGE_BUCKET:
+            default: "${OBJECT_STORAGE_BUCKET}"
+          OBJECT_STORAGE_ACCESS_KEY_ID:
+            default: "${OBJECT_STORAGE_ACCESS_KEY_ID}"
+          OBJECT_STORAGE_SECRET_ACCESS_KEY:
+            default: "${OBJECT_STORAGE_SECRET_ACCESS_KEY}"
+      domainKey: GARAGE_DOMAIN
 
     - name: Frontend
       template: GIT
@@ -128,8 +200,6 @@ spec:
             default: "false"
           VITE_API_URL:
             default: "https://${API_DOMAIN}.zeabur.app"
-          VITE_CONVEX_URL:
-            default: "https://${BACKEND_DOMAIN}.zeabur.app"
           VITE_SITE_URL:
             default: "https://${FRONTEND_DOMAIN}.zeabur.app"
       domainKey: FRONTEND_DOMAIN

@@ -4,10 +4,12 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, FileArchive, FileSpreadsheet, Layers, Send, Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { CreateCommunityDeckSubmissionInput, CreateDeckInput, CreateWordInput, LanguageCode } from "@inko/shared";
-import { LANGUAGE_LABELS, SUPPORTED_LANGUAGES } from "@inko/shared";
+import { SUPPORTED_LANGUAGES } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { applyNoIndexMetadata } from "../lib/seo";
+import { authQueryKey } from "../lib/queryKeys";
+import { getLanguageLabel } from "../lib/languages";
 import {
   IMPORTABLE_FIELDS,
   buildWordsFromMapping,
@@ -102,7 +104,7 @@ export function AnkiImportPage() {
   };
 
   const decksQuery = useQuery({
-    queryKey: ["decks"],
+    queryKey: authQueryKey(token, "decks"),
     queryFn: () => api.listDecks(token ?? ""),
   });
 
@@ -118,7 +120,7 @@ export function AnkiImportPage() {
   });
 
   const mySubmissionsQuery = useQuery({
-    queryKey: ["community-submissions", "mine"],
+    queryKey: authQueryKey(token, "community-submissions", "mine"),
     queryFn: () => api.listMyCommunitySubmissions(token ?? ""),
     enabled: Boolean(token),
   });
@@ -129,7 +131,7 @@ export function AnkiImportPage() {
       setSelectedDeckId(deck.id);
       setShowCreateDeck(false);
       setNewDeck({ name: "", language: deck.language });
-      await queryClient.invalidateQueries({ queryKey: ["decks"] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "decks") });
     },
   });
 
@@ -200,7 +202,7 @@ export function AnkiImportPage() {
     },
     onSuccess: async (imported) => {
       setStatus(t("importer.status.imported_cards", { count: imported }));
-      await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "words-page", selectedDeckId) });
     },
     onError: (mutationError) => {
       setStatus(null);
@@ -255,7 +257,7 @@ export function AnkiImportPage() {
     },
     onSuccess: async (submission) => {
       setStatus(t("importer.status.submitted_for_moderation", { title: submission.title }));
-      await queryClient.invalidateQueries({ queryKey: ["community-submissions", "mine"] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "community-submissions", "mine") });
     },
     onError: (mutationError) => {
       setStatus(null);
@@ -516,7 +518,7 @@ export function AnkiImportPage() {
                 >
                   {SUPPORTED_LANGUAGES.map((language) => (
                     <option key={language} value={language} className="bg-bg-card text-text-primary">
-                      {LANGUAGE_LABELS[language]}
+                      {getLanguageLabel(language, (key, options) => t(key, options))}
                     </option>
                   ))}
                 </select>

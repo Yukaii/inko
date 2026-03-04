@@ -3,10 +3,12 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Pencil, Trash2, ChevronLeft, ChevronRight, Search, BookOpen, ArrowLeft, Download } from "lucide-react";
-import { LANGUAGE_LABELS, type CreateCommunityDeckSubmissionInput, type LanguageCode, SUPPORTED_LANGUAGES } from "@inko/shared";
+import { type CreateCommunityDeckSubmissionInput, type LanguageCode, SUPPORTED_LANGUAGES } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
+import { authQueryKey } from "../lib/queryKeys";
+import { getLanguageLabel } from "../lib/languages";
 import { downloadDeckCsv, fetchAllDeckWords } from "./wordBankExport";
 
 type AddTab = "single" | "import";
@@ -103,12 +105,12 @@ export function WordBankPage() {
   });
 
   const decksQuery = useQuery({
-    queryKey: ["decks"],
+    queryKey: authQueryKey(token, "decks"),
     queryFn: () => api.listDecks(token ?? ""),
   });
 
   const wordsQuery = useQuery({
-    queryKey: ["words-page", selectedDeckId, wordsCursor],
+    queryKey: authQueryKey(token, "words-page", selectedDeckId, wordsCursor),
     enabled: !!selectedDeckId,
     queryFn: () =>
       api.listWordsPage(token ?? "", selectedDeckId, {
@@ -186,7 +188,7 @@ export function WordBankPage() {
       setSelectedDeckId(deck.id);
       setShowNewDeckModal(false);
       setNewDeckName("");
-      await queryClient.invalidateQueries({ queryKey: ["decks"] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "decks") });
     },
   });
 
@@ -196,7 +198,7 @@ export function WordBankPage() {
       if (selectedDeckId === deckToDelete?.id) setSelectedDeckId("");
       setShowDeleteConfirm(false);
       setDeckToDelete(null);
-      await queryClient.invalidateQueries({ queryKey: ["decks"] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "decks") });
     },
   });
 
@@ -213,9 +215,9 @@ export function WordBankPage() {
       setShowEditDeckModal(false);
       setEditingDeck(null);
       if (selectedDeckId === deck.id) {
-        await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+        await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "words-page", selectedDeckId) });
       }
-      await queryClient.invalidateQueries({ queryKey: ["decks"] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "decks") });
     },
   });
 
@@ -232,14 +234,14 @@ export function WordBankPage() {
       }),
     onSuccess: async () => {
       setWordForm({ target: "", reading: "", romanization: "", meaning: "", example: "", audioUrl: "", tags: "" });
-      await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "words-page", selectedDeckId) });
     },
   });
 
   const deleteWord = useMutation({
     mutationFn: (wordId: string) => api.deleteWord(token ?? "", wordId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "words-page", selectedDeckId) });
     },
   });
 
@@ -259,7 +261,7 @@ export function WordBankPage() {
     onSuccess: async () => {
       setShowEditWordModal(false);
       setEditingWord(null);
-      await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "words-page", selectedDeckId) });
     },
   });
 
@@ -270,7 +272,7 @@ export function WordBankPage() {
     },
     onSuccess: async () => {
       setSelectedWordIds(new Set());
-      await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "words-page", selectedDeckId) });
     },
   });
 
@@ -375,7 +377,7 @@ export function WordBankPage() {
         current.description ||
         t("word_bank.publish.default_description", {
           name: activeDeck.name,
-          language: activeDeck.language.toUpperCase(),
+          language: getLanguageLabel(activeDeck.language, (key, options) => t(key, options)),
         }),
       difficulty: current.difficulty,
       tags: current.tags || activeDeck.language,
@@ -429,7 +431,7 @@ export function WordBankPage() {
     }
     setImportStatus(t("word_bank.import.done", { imported, failed: "" }));
     setRawImportData(null);
-    await queryClient.invalidateQueries({ queryKey: ["words-page", selectedDeckId] });
+    await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "words-page", selectedDeckId) });
     setTimeout(() => setImportStatus(null), 4000);
   };
 
@@ -1123,7 +1125,7 @@ export function WordBankPage() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-text-secondary" htmlFor={`${formId}-deck-language`}>{t("word_bank.new_deck.language")}</label>
                 <select id={`${formId}-deck-language`} className="py-2 px-3 rounded-lg border border-[var(--border-subtle)] bg-bg-page focus:border-accent-orange outline-none" value={newDeckLanguage} onChange={(e) => setNewDeckLanguage(e.target.value as LanguageCode)}>
-                  {SUPPORTED_LANGUAGES.map((code) => <option key={code} value={code}>{LANGUAGE_LABELS[code]} ({code.toUpperCase()})</option>)}
+                  {SUPPORTED_LANGUAGES.map((code) => <option key={code} value={code}>{getLanguageLabel(code, (key, options) => t(key, options))} ({code.toUpperCase()})</option>)}
                 </select>
               </div>
             </div>
@@ -1160,7 +1162,7 @@ export function WordBankPage() {
                 >
                   {SUPPORTED_LANGUAGES.map((code) => (
                     <option key={code} value={code}>
-                      {LANGUAGE_LABELS[code]} ({code.toUpperCase()})
+                      {getLanguageLabel(code, (key, options) => t(key, options))} ({code.toUpperCase()})
                     </option>
                   ))}
                 </select>

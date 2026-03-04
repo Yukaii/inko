@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { applyNoIndexMetadata } from "../lib/seo";
@@ -37,14 +36,6 @@ function GitHubIcon() {
   );
 }
 
-function AppleIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0 fill-current">
-      <path d="M15.21 1.5c.1 1.2-.37 2.35-1.08 3.18-.76.87-2 1.54-3.12 1.44-.14-1.15.41-2.35 1.14-3.1.8-.82 2.14-1.4 3.06-1.52Zm3.79 17.07c-.5 1.14-.74 1.64-1.38 2.62-.88 1.34-2.12 3-3.65 3.01-1.36.01-1.71-.89-3.55-.88-1.83.01-2.22.9-3.58.89-1.53-.02-2.7-1.5-3.58-2.84C.8 17.82.54 13.66 2.44 10.75c1.35-2.06 3.47-3.27 5.46-3.27 1.58 0 2.57.89 3.88.89 1.26 0 2.03-.89 3.86-.89 1.77 0 3.65.96 5 2.63-4.39 2.4-3.68 8.72.36 10.46Z" />
-    </svg>
-  );
-}
-
 const ENABLED_PROVIDERS = [
   {
     id: "google" as const,
@@ -62,14 +53,6 @@ const ENABLED_PROVIDERS = [
       "flex items-center justify-center gap-3 border border-[#30363D] bg-[#24292F] text-white hover:bg-[#2F363D] disabled:border-[#30363D] disabled:bg-[#24292F]/80 disabled:text-white/80",
     Icon: GitHubIcon,
   },
-  {
-    id: "apple" as const,
-    name: "Apple",
-    enabled: import.meta.env.VITE_AUTH_APPLE_ENABLED === "true",
-    className:
-      "flex items-center justify-center gap-3 bg-black text-white hover:bg-[#1A1A1A] disabled:bg-black/80 disabled:text-white/80",
-    Icon: AppleIcon,
-  },
 ].filter((provider) => provider.enabled);
 
 export function LoginPage() {
@@ -80,7 +63,6 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [oauthProvider, setOauthProvider] = useState<string | null>(null);
   const { token, isLoading: authLoading, setToken } = useAuth();
-  const { signIn } = useAuthActions();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -95,7 +77,15 @@ export function LoginPage() {
   };
 
   useEffect(() => {
-    const token = new URLSearchParams(window.location.search).get("token");
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get("error");
+    const token = params.get("token");
+
+    if (oauthError) {
+      setMessage(oauthError);
+      return;
+    }
+
     if (!token) return;
 
     setTokenInput(token);
@@ -152,17 +142,12 @@ export function LoginPage() {
     }
   };
 
-  const startOauth = async (provider: "google" | "github" | "apple") => {
+  const startOauth = (provider: "google" | "github") => {
     setLoading(true);
     setOauthProvider(provider);
-    setMessage("");
-    try {
-      await signIn(provider, { redirectTo: "/dashboard" });
-    } catch (error) {
-      setMessage(getErrorMessage(error));
-      setLoading(false);
-      setOauthProvider(null);
-    }
+    const url = new URL(`${import.meta.env.VITE_API_URL ?? "http://localhost:4000"}/api/auth/${provider}/start`);
+    url.searchParams.set("redirectTo", "/dashboard");
+    window.location.href = url.toString();
   };
 
   return (
@@ -181,7 +166,7 @@ export function LoginPage() {
                     key={id}
                     type="button"
                     className={className}
-                    onClick={() => void startOauth(id)}
+                    onClick={() => startOauth(id)}
                     disabled={loading || authLoading}
                   >
                     <Icon />

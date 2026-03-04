@@ -7,16 +7,29 @@ import { env } from "./lib/env";
 import { createMailer, type Mailer } from "./lib/mailer";
 import { ttsService, type TtsService } from "./lib/tts";
 import { setPracticeTraceSink } from "./lib/diagnostics";
+import type { MagicTokenStore } from "./lib/auth";
+import { closeDb } from "./db/client";
+import { migrateToLatest } from "./db/migrator";
 import { authRoutes } from "./routes/auth";
 import { deckRoutes } from "./routes/decks";
 import { practiceRoutes } from "./routes/practice";
 import { dashboardRoutes } from "./routes/dashboard";
 import { communityRoutes } from "./routes/community";
 import { importRoutes } from "./routes/imports";
+import { mediaRoutes } from "./routes/media";
 import { ttsRoutes } from "./routes/tts";
 import { repository, type Repository } from "./services/repository";
 
-export async function buildServer(options?: { repository?: Repository; mailer?: Mailer; ttsService?: TtsService }) {
+export async function buildServer(options?: {
+  repository?: Repository;
+  mailer?: Mailer;
+  ttsService?: TtsService;
+  magicTokenStore?: MagicTokenStore;
+  skipMigrations?: boolean;
+}) {
+  if (!options?.skipMigrations) {
+    await migrateToLatest();
+  }
   const app = Fastify({ logger: true });
   setPracticeTraceSink((payload, message) => {
     app.log.info(payload, message);
@@ -61,15 +74,19 @@ export async function buildServer(options?: { repository?: Repository; mailer?: 
     },
   });
 
-  await app.register(async (instance) => authRoutes(instance, repo, mailer));
+  await app.register(async (instance) => authRoutes(instance, repo, mailer, options?.magicTokenStore));
   await app.register(async (instance) => deckRoutes(instance, repo));
   await app.register(async (instance) => importRoutes(instance, repo));
+  await app.register(async (instance) => mediaRoutes(instance));
   await app.register(async (instance) => practiceRoutes(instance, repo));
   await app.register(async (instance) => dashboardRoutes(instance, repo));
   await app.register(async (instance) => communityRoutes(instance, repo));
-  await app.register(async (instance) => ttsRoutes(instance, tts));
+  await app.register(async (instance) => ttsRoutes(instance, repo, tts));
 
   app.get("/health", async () => ({ ok: true }));
+  app.addHook("onClose", async () => {
+    await closeDb();
+  });
 
   return app;
 }

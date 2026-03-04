@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { applyNoIndexMetadata } from "../lib/seo";
+import { authQueryKey } from "../lib/queryKeys";
 
 export function CommunitySubmissionsPage() {
   const { t } = useTranslation();
@@ -16,14 +17,14 @@ export function CommunitySubmissionsPage() {
   }, [t]);
 
   const submissionsQuery = useQuery({
-    queryKey: ["community-submissions", "mine"],
+    queryKey: authQueryKey(token, "community-submissions", "mine"),
     queryFn: () => api.listMyCommunitySubmissions(token ?? ""),
     enabled: Boolean(token),
   });
   const deleteMutation = useMutation({
     mutationFn: (submissionId: string) => api.deleteMyCommunitySubmission(token ?? "", submissionId),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["community-submissions", "mine"] });
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "community-submissions", "mine") });
     },
   });
 

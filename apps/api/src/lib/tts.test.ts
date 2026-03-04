@@ -6,5 +6,6 @@ describe("getVoiceForLanguage", () => {
     expect(getVoiceForLanguage("ja")).toBe("ja-JP-NanamiNeural");
     expect(getVoiceForLanguage("es")).toBe("es-ES-ElviraNeural");
     expect(getVoiceForLanguage("th")).toBe("th-TH-PremwadeeNeural");
+    expect(getVoiceForLanguage("nl")).toBe("nl-NL-ColetteNeural");
   });
 });

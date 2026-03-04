@@ -49,13 +49,17 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
 ```
 
-3. Start Convex local development:
+3. Start PostgreSQL and run migrations:
 
 ```bash
-bun run convex:dev
+bun run db:migrate
 ```
 
-The first run is interactive and writes local deployment config. For local-first development, choose the local dev deployment when prompted.
+If you also want local object storage for imported audio and cached TTS:
+
+```bash
+docker compose up -d garage
+```
 
 4. Start the app:
 
@@ -63,17 +67,13 @@ The first run is interactive and writes local deployment config. For local-first
 bun run dev
 ```
 
-5. Optionally seed starter data:
-
-```bash
-bun run seed:starter
-```
+5. Optionally seed starter data by inserting rows directly into PostgreSQL or by adding a dedicated seed script.
 
 ## Local Auth
 
 - With `MAIL_PROVIDER=log`, the login token is returned locally for development and can be pasted into the login form.
 - With `MAIL_PROVIDER=resend`, magic links are sent by email.
-- Google, GitHub, and Apple sign-in are supported when their provider credentials and frontend flags are configured.
+- Google and GitHub sign-in are supported when their provider credentials and frontend flags are configured.
 
 ## Documentation
 
