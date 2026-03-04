@@ -59,7 +59,7 @@ Notes:
 - `GARAGE_DOMAIN` is the public S3 endpoint domain for Garage.
 - Template currently pins GitHub repo id for `Yukaii/inko`. If you fork/rename repo, update `spec.services[API].spec.source.repo` in `zeabur.yml`.
 - API reads `DATABASE_URL` from Zeabur's `${POSTGRES_CONNECTION_STRING}` exposed variable.
-- API reads object storage from the Garage S3-compatible endpoint.
+- API reads object storage from Garage's internal `${GARAGE_S3_ENDPOINT}` exposed variable.
 - `GARAGE_RPC_SECRET` must be a valid 64-character hexadecimal string.
 
 ## 2.2 Deploy only selected services
@@ -178,13 +178,15 @@ This workflow is `workflow_dispatch` (manual trigger) to avoid accidental produc
 
 - PostgreSQL persists data at `/var/lib/postgresql/data`
 - API gets its connection string from `${POSTGRES_CONNECTION_STRING}`
+- Zeabur generates the PostgreSQL username and password for the service when they are not pinned in the template
 - API runs Kysely migrations on boot, so a fresh project should initialize its schema automatically
-- If you want a non-default database password, change `POSTGRES_PASSWORD` in the `PostgreSQL` service after deploy and redeploy the API service so `DATABASE_URL` stays in sync
+- If you rotate credentials in the PostgreSQL service later, redeploy the API service so `DATABASE_URL` stays in sync with the new `${POSTGRES_CONNECTION_STRING}`
 
 ## 5. Garage runtime notes
 
 - Garage stores metadata at `/var/lib/garage/meta` and objects at `/var/lib/garage/data`
-- API talks to Garage through the S3-compatible endpoint at `https://<GARAGE_DOMAIN>.zeabur.app`
+- API talks to Garage through the internal S3-compatible endpoint `${GARAGE_S3_ENDPOINT}`
+- `GARAGE_DOMAIN` remains the public/external Garage domain if you need outside access
 - Garage now auto-bootstraps its single-node layout, imports the application key, and ensures the configured bucket exists on startup
 - Set these template variables before deploy:
   - `OBJECT_STORAGE_ACCESS_KEY_ID`
