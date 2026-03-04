@@ -40,6 +40,13 @@ Object storage envs:
 - `OBJECT_STORAGE_SECRET_ACCESS_KEY=<garage secret>`
 - `OBJECT_STORAGE_FORCE_PATH_STYLE=true`
 
+Production Garage env formats:
+
+- `GARAGE_RPC_SECRET`: 64 hex chars
+- `GARAGE_ADMIN_TOKEN`: long random string, 64 hex chars is fine
+- `OBJECT_STORAGE_ACCESS_KEY_ID`: plain ASCII identifier
+- `OBJECT_STORAGE_SECRET_ACCESS_KEY`: long random string
+
 Local bootstrap:
 
 - Use your existing local PostgreSQL instance
