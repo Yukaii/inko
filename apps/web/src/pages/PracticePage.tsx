@@ -493,19 +493,11 @@ export function PracticePage() {
 
   useEffect(() => {
     if (!ttsEnabled) return;
-    const cardsToWarm = [card, ...upcomingCards]
-      .filter((value): value is PracticeCard => value !== null)
-      .slice(0, 2);
-
-    void (async () => {
-      for (const practiceCard of cardsToWarm) {
-        try {
-          await getOrPrefetchAudioUrl(practiceCard);
-        } catch {
-          // Ignore prefetch failures; playback will retry on demand.
-        }
-      }
-    })();
+    for (const practiceCard of [card, ...upcomingCards].filter((value): value is PracticeCard => value !== null).slice(0, 8)) {
+      void getOrPrefetchAudioUrl(practiceCard).catch(() => {
+        // Ignore prefetch failures; playback will retry on demand.
+      });
+    }
   }, [card, getOrPrefetchAudioUrl, upcomingCards, ttsEnabled]);
 
   const replayCardAudio = useCallback(async (practiceCard: PracticeCard | null) => {
