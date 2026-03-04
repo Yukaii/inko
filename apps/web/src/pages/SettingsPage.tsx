@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { DefaultThemes, type ThemeConfig, type ThemeMode, type ThemePalette, type TypingMode } from "@inko/shared";
 import { api } from "../api/client";
@@ -26,6 +26,8 @@ type ThemePreset = {
   name: string;
   themes: ThemeConfig;
 };
+
+type SettingsSection = "profile" | "preferences" | "appearance" | "about";
 
 const PALETTE_FIELDS: Array<{ key: keyof ThemePalette; labelKey: string }> = [
   { key: "accentOrange", labelKey: "settings.appearance.palette_fields.accent_orange" },
@@ -297,13 +299,22 @@ function parseThemePayload(text: string, currentMode: ThemeMode, currentThemes: 
   return null;
 }
 
+function parseSettingsSectionFromHash(hash: string): SettingsSection {
+  const normalized = hash.replace(/^#/, "").trim().toLowerCase();
+  if (normalized === "preferences" || normalized === "appearance" || normalized === "about") {
+    return normalized;
+  }
+  return "profile";
+}
+
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
   const { token, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [message, setMessage] = useState("");
-  const [activeSection, setActiveSection] = useState<"profile" | "preferences" | "appearance" | "about">("profile");
+  const [activeSection, setActiveSection] = useState<SettingsSection>(() => parseSettingsSectionFromHash(window.location.hash));
   const [activeThemeEditor, setActiveThemeEditor] = useState<ThemeMode>("dark");
   const [canScrollSettingsNavLeft, setCanScrollSettingsNavLeft] = useState(false);
   const [canScrollSettingsNavRight, setCanScrollSettingsNavRight] = useState(false);
@@ -524,6 +535,24 @@ export function SettingsPage() {
   ];
 
   useEffect(() => {
+    const sectionFromHash = parseSettingsSectionFromHash(location.hash);
+    if (sectionFromHash !== activeSection) {
+      setActiveSection(sectionFromHash);
+    }
+  }, [activeSection, location.hash]);
+
+  const handleSectionChange = (section: SettingsSection) => {
+    navigate(
+      {
+        pathname: location.pathname,
+        hash: `#${section}`,
+      },
+      { replace: false },
+    );
+    setActiveSection(section);
+  };
+
+  useEffect(() => {
     const updateSettingsNavScrollState = () => {
       const node = settingsNavRef.current;
       if (!node) return;
@@ -597,7 +626,7 @@ export function SettingsPage() {
                 key={item.id}
                 type="button"
                 className={`shrink-0 whitespace-nowrap rounded-[10px] px-4 py-3 text-left text-sm transition-all lg:w-full ${activeSection === item.id ? "bg-bg-card font-medium text-text-primary" : "bg-transparent text-text-secondary hover:bg-bg-card hover:text-text-primary"}`}
-                onClick={() => setActiveSection(item.id)}
+                onClick={() => handleSectionChange(item.id)}
               >
                 {t(item.label)}
               </button>
