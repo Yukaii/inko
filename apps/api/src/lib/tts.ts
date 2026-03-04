@@ -1,4 +1,4 @@
-import type { LanguageCode } from "@inko/shared";
+import { getDefaultEdgeTtsVoice, type LanguageCode } from "@inko/shared";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -30,21 +30,7 @@ function sanitizeFileName(text: string) {
 }
 
 export function getVoiceForLanguage(language: LanguageCode) {
-  const defaults: Record<LanguageCode, string> = {
-    ja: "ja-JP-NanamiNeural",
-    ko: "ko-KR-SunHiNeural",
-    zh: "zh-CN-XiaoxiaoNeural",
-    es: "es-ES-ElviraNeural",
-    fr: "fr-FR-DeniseNeural",
-    de: "de-DE-KatjaNeural",
-    it: "it-IT-ElsaNeural",
-    pt: "pt-BR-FranciscaNeural",
-    ru: "ru-RU-SvetlanaNeural",
-    ar: "ar-SA-ZariyahNeural",
-    hi: "hi-IN-SwaraNeural",
-    th: "th-TH-PremwadeeNeural",
-  };
-  return defaults[language] ?? "en-US-EmmaNeural";
+  return getDefaultEdgeTtsVoice(language);
 }
 
 export const ttsService: TtsService = {
