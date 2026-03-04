@@ -91,6 +91,12 @@ Deploy only the API service:
 scripts/zeabur-deploy-template.sh --services API --skip-validation
 ```
 
+Choose services interactively with `fzf`:
+
+```bash
+scripts/zeabur-deploy-template.sh --fzf --skip-validation
+```
+
 Deploy only Garage:
 
 ```bash
@@ -107,6 +113,12 @@ Preview the filtered template without deploying:
 
 ```bash
 scripts/zeabur-deploy-template.sh --services API,Garage --dry-run
+```
+
+Preview after picking services interactively:
+
+```bash
+scripts/zeabur-deploy-template.sh --fzf --dry-run
 ```
 
 Variable resolution order:
