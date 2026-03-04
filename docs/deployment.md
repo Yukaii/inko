@@ -145,25 +145,29 @@ Use these exact formats:
 
 - `GARAGE_RPC_SECRET`: exactly 64 lowercase hex characters
 - `GARAGE_ADMIN_TOKEN`: any long random string; 64 lowercase hex characters is fine
-- `OBJECT_STORAGE_ACCESS_KEY_ID`: plain ASCII string; 16 to 32 chars is a practical target
-- `OBJECT_STORAGE_SECRET_ACCESS_KEY`: long random string; 64 lowercase hex characters is fine
+- `OBJECT_STORAGE_ACCESS_KEY_ID`: Garage-generated key ID that starts with `GK`
+- `OBJECT_STORAGE_SECRET_ACCESS_KEY`: the secret returned with that Garage key
 - `OBJECT_STORAGE_BUCKET`: DNS-safe bucket name such as `inko-media`
 
-Copy-pasteable generation commands:
+Copy-pasteable generation commands for the values you can generate yourself:
 
 ```bash
 GARAGE_RPC_SECRET="$(openssl rand -hex 32)"
 GARAGE_ADMIN_TOKEN="$(openssl rand -hex 32)"
-OBJECT_STORAGE_ACCESS_KEY_ID="inkoapp$(openssl rand -hex 8)"
-OBJECT_STORAGE_SECRET_ACCESS_KEY="$(openssl rand -hex 32)"
 OBJECT_STORAGE_BUCKET="inko-media"
 
 printf 'GARAGE_RPC_SECRET=%s\n' "$GARAGE_RPC_SECRET"
 printf 'GARAGE_ADMIN_TOKEN=%s\n' "$GARAGE_ADMIN_TOKEN"
-printf 'OBJECT_STORAGE_ACCESS_KEY_ID=%s\n' "$OBJECT_STORAGE_ACCESS_KEY_ID"
-printf 'OBJECT_STORAGE_SECRET_ACCESS_KEY=%s\n' "$OBJECT_STORAGE_SECRET_ACCESS_KEY"
 printf 'OBJECT_STORAGE_BUCKET=%s\n' "$OBJECT_STORAGE_BUCKET"
 ```
+
+Create the S3 key inside the `Garage` service shell instead of inventing it manually:
+
+```bash
+/garage key create inko-app
+```
+
+That command prints a valid `OBJECT_STORAGE_ACCESS_KEY_ID` and `OBJECT_STORAGE_SECRET_ACCESS_KEY`. Use that exact pair for both the `Garage` and `API` services.
 
 ## 3. GitHub Action for CLI deploy
 
@@ -213,8 +217,8 @@ Expected bootstrap behavior on a healthy first deploy:
   - `garage layout assign -z <zone> -c <capacity> <node-id>`
   - `garage layout apply --version 1`
   - `garage bucket create <bucket>`
-  - `garage key import --yes -n inko-app <access-key-id> <secret>`
-  - `garage bucket allow --read --write --owner <bucket> --key <access-key-id>`
+  - `garage key import --yes -n inko-app <garage-key-id> <garage-key-secret>`
+  - `garage bucket allow --read --write --owner <bucket> --key <garage-key-id>`
 
 If you need to re-run bootstrap manually from a Zeabur shell inside the `Garage` service, use:
 
@@ -226,7 +230,19 @@ echo "$NODE_ID"
 /garage layout assign -z "${GARAGE_BOOTSTRAP_ZONE:-garage}" -c "${GARAGE_BOOTSTRAP_CAPACITY:-10GB}" "$NODE_ID"
 /garage layout apply --version 1
 /garage bucket create "${OBJECT_STORAGE_BUCKET}"
-/garage key import --yes -n inko-app "${OBJECT_STORAGE_ACCESS_KEY_ID}" "${OBJECT_STORAGE_SECRET_ACCESS_KEY}"
+/garage key create inko-app
+```
+
+Then set the printed key ID and secret into:
+
+```bash
+OBJECT_STORAGE_ACCESS_KEY_ID=<printed-garage-key-id>
+OBJECT_STORAGE_SECRET_ACCESS_KEY=<printed-garage-key-secret>
+```
+
+and run:
+
+```bash
 /garage bucket allow --read --write --owner "${OBJECT_STORAGE_BUCKET}" --key "${OBJECT_STORAGE_ACCESS_KEY_ID}"
 ```
 
