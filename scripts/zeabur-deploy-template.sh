@@ -13,6 +13,7 @@ Usage:
 Options:
   --services <list>         Comma-separated Zeabur service names to keep
   --fzf                     Choose services interactively with fzf (multi-select)
+  --env-file <path>         Load template variables from a dotenv-style file
   --project-id <id>         Zeabur project ID (or set ZEABUR_PROJECT_ID)
   --template <path>         Template file path (default: ./zeabur.yml)
   --var KEY=VALUE           Extra template variable, repeatable
@@ -31,6 +32,7 @@ Template variables can be supplied either as:
 Examples:
   scripts/zeabur-deploy-template.sh --services API
   scripts/zeabur-deploy-template.sh --fzf
+  scripts/zeabur-deploy-template.sh --services Garage --env-file .env.zeabur
   scripts/zeabur-deploy-template.sh --services API,Frontend --skip-validation
   scripts/zeabur-deploy-template.sh --services Garage --var OBJECT_STORAGE_BUCKET=inko-media
 EOF
@@ -50,12 +52,15 @@ require_tool npx
 
 SERVICES_CSV=""
 USE_FZF=false
+ENV_FILE=""
 PROJECT_ID="${ZEABUR_PROJECT_ID:-}"
 SKIP_VALIDATION=false
 DRY_RUN=false
 EXTRA_VARS=()
 VAR_KEYS=()
 VAR_VALUES=()
+ENV_FILE_VAR_KEYS=()
+ENV_FILE_VAR_VALUES=()
 
 set_var() {
   local key="$1"
@@ -83,6 +88,81 @@ get_var() {
   return 1
 }
 
+set_env_file_var() {
+  local key="$1"
+  local value="$2"
+  local i
+  for i in "${!ENV_FILE_VAR_KEYS[@]}"; do
+    if [[ "${ENV_FILE_VAR_KEYS[$i]}" == "$key" ]]; then
+      ENV_FILE_VAR_VALUES[$i]="$value"
+      return
+    fi
+  done
+  ENV_FILE_VAR_KEYS+=("$key")
+  ENV_FILE_VAR_VALUES+=("$value")
+}
+
+get_env_file_var() {
+  local key="$1"
+  local i
+  for i in "${!ENV_FILE_VAR_KEYS[@]}"; do
+    if [[ "${ENV_FILE_VAR_KEYS[$i]}" == "$key" ]]; then
+      printf '%s' "${ENV_FILE_VAR_VALUES[$i]}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+trim_whitespace() {
+  local value="$1"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
+}
+
+strip_matching_quotes() {
+  local value="$1"
+  if [[ ${#value} -ge 2 ]]; then
+    if [[ "${value:0:1}" == '"' && "${value: -1}" == '"' ]]; then
+      printf '%s' "${value:1:${#value}-2}"
+      return
+    fi
+    if [[ "${value:0:1}" == "'" && "${value: -1}" == "'" ]]; then
+      printf '%s' "${value:1:${#value}-2}"
+      return
+    fi
+  fi
+  printf '%s' "$value"
+}
+
+load_env_file() {
+  local path="$1"
+  local line
+  local lineno=0
+  local key
+  local value
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    lineno=$((lineno + 1))
+    line="$(trim_whitespace "$line")"
+    [[ -z "$line" ]] && continue
+    [[ "$line" == \#* ]] && continue
+    line="${line#export }"
+    if [[ "$line" != *=* ]]; then
+      echo "Invalid line in env file $path:$lineno" >&2
+      exit 1
+    fi
+    key="$(trim_whitespace "${line%%=*}")"
+    value="$(trim_whitespace "${line#*=}")"
+    if [[ -z "$key" ]]; then
+      echo "Invalid key in env file $path:$lineno" >&2
+      exit 1
+    fi
+    value="$(strip_matching_quotes "$value")"
+    set_env_file_var "$key" "$value"
+  done < "$path"
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --services)
@@ -92,6 +172,10 @@ while [[ $# -gt 0 ]]; do
     --fzf)
       USE_FZF=true
       shift
+      ;;
+    --env-file)
+      ENV_FILE="${2:-}"
+      shift 2
       ;;
     --project-id)
       PROJECT_ID="${2:-}"
@@ -134,6 +218,14 @@ fi
 if [[ ! -f "$TEMPLATE_FILE" ]]; then
   echo "Template file not found: $TEMPLATE_FILE" >&2
   exit 1
+fi
+
+if [[ -n "$ENV_FILE" ]]; then
+  if [[ ! -f "$ENV_FILE" ]]; then
+    echo "Env file not found: $ENV_FILE" >&2
+    exit 1
+  fi
+  load_env_file "$ENV_FILE"
 fi
 
 AVAILABLE_SERVICES=()
@@ -270,6 +362,14 @@ while IFS= read -r key; do
   prefixed="ZEABUR_${key}"
   if [[ -n "${!prefixed:-}" ]]; then
     set_var "$key" "${!prefixed}"
+    continue
+  fi
+  if value="$(get_env_file_var "$key" 2>/dev/null)"; then
+    set_var "$key" "$value"
+    continue
+  fi
+  if value="$(get_env_file_var "$prefixed" 2>/dev/null)"; then
+    set_var "$key" "$value"
   fi
 done < <(yq eval '.spec.variables[].key' "$TMP_TEMPLATE")
 

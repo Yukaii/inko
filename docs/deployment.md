@@ -97,6 +97,12 @@ Choose services interactively with `fzf`:
 scripts/zeabur-deploy-template.sh --fzf --skip-validation
 ```
 
+Load template variables from a dotenv file:
+
+```bash
+scripts/zeabur-deploy-template.sh --services Garage --env-file .env.zeabur --skip-validation
+```
+
 Deploy only Garage:
 
 ```bash
@@ -126,8 +132,12 @@ Variable resolution order:
 1. `--var KEY=value`
 2. shell env `KEY=value`
 3. shell env `ZEABUR_KEY=value`
+4. `--env-file` entries `KEY=value`
+5. `--env-file` entries `ZEABUR_KEY=value`
 
 So `ZEABUR_API_DOMAIN` satisfies `API_DOMAIN`, `ZEABUR_OBJECT_STORAGE_BUCKET` satisfies `OBJECT_STORAGE_BUCKET`, and so on.
+
+The env file is parsed as a simple dotenv-style file. Blank lines, `# comments`, and optional leading `export ` are supported.
 
 ## 2.1 Garage secret formats
 
