@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { ThemeConfig, ThemeMode } from "@inko/shared";
 import { registerShortcut, getShortcutsList } from "../hooks/useKeyboard";
-import { useAuth } from "../hooks/useAuth";
+import { shouldResetAuth, useAuth } from "../hooks/useAuth";
 import { api } from "../api/client";
 import { authQueryKey } from "../lib/queryKeys";
 import { applyThemePreferences, saveThemePreferences } from "../theme/theme";
@@ -125,6 +125,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
   });
 
   const user = meQuery.data as { displayName: string; email: string; themeMode: ThemeMode; themes: ThemeConfig; canModerateCommunity?: boolean } | undefined;
+
+  useEffect(() => {
+    if (!meQuery.error || !shouldResetAuth(meQuery.error)) {
+      return;
+    }
+    void signOut().finally(() => {
+      navigate("/login", { replace: true });
+    });
+  }, [meQuery.error, navigate, signOut]);
 
   useEffect(() => {
     const me = meQuery.data as { themeMode: ThemeMode; themes: ThemeConfig } | undefined;

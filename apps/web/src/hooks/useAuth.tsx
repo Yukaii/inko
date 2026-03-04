@@ -14,6 +14,14 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+export function shouldResetAuth(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const maybeError = error as { statusCode?: unknown; code?: unknown };
+  const statusCode = Number(maybeError.statusCode);
+  const code = typeof maybeError.code === "string" ? maybeError.code : "";
+  return statusCode === 401 || statusCode === 404 || code === "INVALID_TOKEN" || code === "USER_NOT_FOUND";
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthStateProvider>{children}</AuthStateProvider>;
 }
@@ -58,9 +66,31 @@ function AuthStateProvider({ children }: { children: React.ReactNode }) {
 
     const bootstrapAuth = async () => {
       if (accessToken) {
-        setToken(accessToken, "magic-link");
+        try {
+          await api.me(accessToken);
+          setToken(accessToken, "magic-link");
+        } catch (error) {
+          if (shouldResetAuth(error)) {
+            setToken(null);
+          } else {
+            setToken(accessToken, "magic-link");
+          }
+        }
         url.searchParams.delete("accessToken");
         window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+        setIsLoading(false);
+        return;
+      }
+
+      const storedToken = localStorage.getItem("inko_token");
+      if (storedToken) {
+        try {
+          await api.me(storedToken);
+        } catch (error) {
+          if (shouldResetAuth(error)) {
+            setToken(null);
+          }
+        }
         setIsLoading(false);
         return;
       }
