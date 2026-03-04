@@ -71,7 +71,7 @@ spec:
           FRONTEND_URL:
             default: "https://${FRONTEND_DOMAIN}.zeabur.app"
           OBJECT_STORAGE_ENDPOINT:
-            default: "https://${GARAGE_DOMAIN}.zeabur.app"
+            default: "${GARAGE_S3_ENDPOINT}"
           OBJECT_STORAGE_REGION:
             default: "garage"
           OBJECT_STORAGE_BUCKET:
@@ -99,19 +99,38 @@ spec:
         source:
           image: postgres:16-alpine
         ports:
-          - id: postgres
+          - id: database
             port: 5432
             type: TCP
         volumes:
           - id: data
             dir: /var/lib/postgresql/data
         env:
+          POSTGRES_CONNECTION_STRING:
+            default: "postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}"
+            expose: true
+          POSTGRES_DATABASE:
+            default: "${POSTGRES_DB}"
+            expose: true
           POSTGRES_DB:
             default: "inko"
-          POSTGRES_USER:
-            default: "postgres"
+          POSTGRES_HOST:
+            default: "${CONTAINER_HOSTNAME}"
+            expose: true
           POSTGRES_PASSWORD:
-            default: "postgres"
+            default: "${PASSWORD}"
+            expose: true
+          POSTGRES_PORT:
+            default: "${DATABASE_PORT}"
+            expose: true
+          POSTGRES_URI:
+            default: "${POSTGRES_CONNECTION_STRING}"
+            expose: true
+          POSTGRES_USER:
+            default: "root"
+          POSTGRES_USERNAME:
+            default: "${POSTGRES_USER}"
+            expose: true
 
     - name: Garage
       template: GIT
@@ -135,6 +154,9 @@ spec:
             default: "garage"
           ZBPACK_IGNORE_DOCKERFILE:
             default: "false"
+          GARAGE_S3_ENDPOINT:
+            default: "http://${CONTAINER_HOSTNAME}:${S3_PORT}"
+            expose: true
           GARAGE_RPC_SECRET:
             default: "${GARAGE_RPC_SECRET}"
           GARAGE_ADMIN_TOKEN:
