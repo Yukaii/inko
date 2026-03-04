@@ -6,18 +6,35 @@ import { useAuth } from "../hooks/useAuth";
 import { authQueryKey } from "../lib/queryKeys";
 
 function formatDuration(totalSeconds: number) {
+  if (!Number.isFinite(totalSeconds)) {
+    return "0:00";
+  }
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = Math.max(0, totalSeconds % 60);
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-function formatDate(timestamp: number, language: string) {
+function normalizeTimestamp(value: unknown) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : NaN;
+  }
+  return NaN;
+}
+
+function formatDate(timestamp: unknown, language: string) {
+  const normalizedTimestamp = normalizeTimestamp(timestamp);
+  if (!Number.isFinite(normalizedTimestamp)) {
+    return "—";
+  }
+
   return new Intl.DateTimeFormat(language, {
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-  }).format(new Date(timestamp));
+  }).format(new Date(normalizedTimestamp));
 }
 
 function StatCard({
