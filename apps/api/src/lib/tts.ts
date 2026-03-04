@@ -10,7 +10,22 @@ export type TtsAudioResult = {
   contentType: string;
   fileName: string;
   audioUrl: string;
+  diagnostics?: {
+    objectKey: string;
+    source: "cache-hit" | "generated";
+    timingsMs: {
+      hasObject?: number;
+      getObject?: number;
+      edgeTts?: number;
+      readFile?: number;
+      cleanup?: number;
+      putObject?: number;
+      total: number;
+    };
+  };
 };
+
+type TtsTimings = NonNullable<TtsAudioResult["diagnostics"]>["timingsMs"];
 
 export type TtsService = {
   synthesizeWordAudio(input: {
@@ -35,6 +50,10 @@ export function getVoiceForLanguage(language: LanguageCode) {
 
 export const ttsService: TtsService = {
   async synthesizeWordAudio(input) {
+    const totalStartedAt = Date.now();
+    const timingsMs: TtsTimings = {
+      total: 0,
+    };
     const key = buildTtsObjectKey({
       userId: input.userId,
       deckId: input.deckId,
@@ -43,14 +62,25 @@ export const ttsService: TtsService = {
       rate: input.rate ?? "default",
     });
 
-    if (await hasObject(key)) {
+    const hasObjectStartedAt = Date.now();
+    const objectExists = await hasObject(key);
+    timingsMs.hasObject = Date.now() - hasObjectStartedAt;
+    if (objectExists) {
+      const getObjectStartedAt = Date.now();
       const existing = await getObject(key);
+      timingsMs.getObject = Date.now() - getObjectStartedAt;
       if (existing) {
+        timingsMs.total = Date.now() - totalStartedAt;
         return {
           audio: existing.body,
           contentType: existing.contentType,
           fileName: `${sanitizeFileName(input.targetHint ?? input.wordId)}.mp3`,
           audioUrl: "stored",
+          diagnostics: {
+            objectKey: key,
+            source: "cache-hit",
+            timingsMs,
+          },
         };
       }
     }
@@ -64,21 +94,35 @@ export const ttsService: TtsService = {
       volume: "0%",
       outputFormat: "audio-24khz-48kbitrate-mono-mp3",
     });
+    const edgeTtsStartedAt = Date.now();
     await edgeTts.ttsPromise(input.targetHint ?? input.wordId, outputPath);
+    timingsMs.edgeTts = Date.now() - edgeTtsStartedAt;
+    const readFileStartedAt = Date.now();
     const audio = await readFile(outputPath);
+    timingsMs.readFile = Date.now() - readFileStartedAt;
+    const cleanupStartedAt = Date.now();
     await rm(workdir, { recursive: true, force: true });
+    timingsMs.cleanup = Date.now() - cleanupStartedAt;
+    const putObjectStartedAt = Date.now();
     await putObject({
       key,
       body: audio,
       contentType: "audio/mpeg",
       cacheControl: "public, max-age=31536000, immutable",
     });
+    timingsMs.putObject = Date.now() - putObjectStartedAt;
+    timingsMs.total = Date.now() - totalStartedAt;
 
     return {
       audio,
       contentType: "audio/mpeg",
       fileName: `${sanitizeFileName(input.targetHint ?? input.wordId)}.mp3`,
       audioUrl: "stored",
+      diagnostics: {
+        objectKey: key,
+        source: "generated",
+        timingsMs,
+      },
     };
   },
 };

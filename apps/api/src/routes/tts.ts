@@ -10,6 +10,7 @@ export async function ttsRoutes(
   service: TtsService = ttsService,
 ) {
   app.get("/api/words/:wordId/tts", { preHandler: requireAuth }, async (request, reply) => {
+    const requestStartedAt = Date.now();
     try {
       const { wordId } = request.params as { wordId: string };
       const { deckId, voice, rate } = request.query as {
@@ -21,6 +22,18 @@ export async function ttsRoutes(
         reply.code(400);
         return { message: "deckId is required" };
       }
+      app.log.info(
+        {
+          tts: {
+            userId: request.auth!.userId,
+            deckId,
+            wordId,
+            voice: voice ?? "default",
+            rate: rate ?? "default",
+          },
+        },
+        "tts request started",
+      );
       const word = await repo.getWordById(request.auth!.userId, wordId);
       const audio = await service.synthesizeWordAudio({
         userId: request.auth!.userId,
@@ -30,12 +43,36 @@ export async function ttsRoutes(
         voice,
         rate,
       });
+      app.log.info(
+        {
+          tts: {
+            userId: request.auth!.userId,
+            deckId,
+            wordId,
+            source: audio.diagnostics?.source ?? "unknown",
+            objectKey: audio.diagnostics?.objectKey ?? null,
+            timingsMs: audio.diagnostics?.timingsMs ?? null,
+            requestTotal: Date.now() - requestStartedAt,
+          },
+        },
+        "tts request completed",
+      );
 
       reply.header("content-type", audio.contentType);
       reply.header("content-disposition", `inline; filename="${audio.fileName}"`);
       reply.header("cache-control", "private, max-age=86400");
       return reply.send(audio.audio);
     } catch (error) {
+      app.log.error(
+        {
+          err: error,
+          tts: {
+            requestTotal: Date.now() - requestStartedAt,
+            path: request.url,
+          },
+        },
+        "tts request failed",
+      );
       rethrowAsHttp(app, error);
     }
   });
