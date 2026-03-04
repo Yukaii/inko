@@ -4,11 +4,12 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, FileArchive, FileSpreadsheet, Layers, Send, Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { CreateCommunityDeckSubmissionInput, CreateDeckInput, CreateWordInput, LanguageCode } from "@inko/shared";
-import { LANGUAGE_LABELS, SUPPORTED_LANGUAGES } from "@inko/shared";
+import { SUPPORTED_LANGUAGES } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { applyNoIndexMetadata } from "../lib/seo";
 import { authQueryKey } from "../lib/queryKeys";
+import { getLanguageLabel } from "../lib/languages";
 import {
   IMPORTABLE_FIELDS,
   buildWordsFromMapping,
@@ -517,7 +518,7 @@ export function AnkiImportPage() {
                 >
                   {SUPPORTED_LANGUAGES.map((language) => (
                     <option key={language} value={language} className="bg-bg-card text-text-primary">
-                      {LANGUAGE_LABELS[language]}
+                      {getLanguageLabel(language, (key, options) => t(key, options))}
                     </option>
                   ))}
                 </select>
