@@ -4,6 +4,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { ArrowRight, Download, Layers, MessageSquare, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
+import { RichText } from "../components/RichText";
 import { useAuth } from "../hooks/useAuth";
 import { applyMetadata } from "../lib/seo";
 import { authQueryKey } from "../lib/queryKeys";
@@ -210,10 +211,18 @@ export function CommunityDeckDetailPage() {
                   <tbody>
                     {deck.words.slice(0, 6).map((word) => (
                       <tr key={`${word.target}-${word.meaning}`} className="border-t border-[var(--border-subtle)]">
-                        <td className="max-w-[14rem] px-4 py-3 font-medium text-text-primary break-words">{word.target}</td>
-                        <td className="max-w-[14rem] px-4 py-3 text-text-secondary break-words">{word.reading ?? word.romanization ?? "-"}</td>
-                        <td className="max-w-[18rem] px-4 py-3 text-text-primary break-words">{word.meaning}</td>
-                        <td className="max-w-[18rem] px-4 py-3 text-text-secondary break-words">{word.example ?? "-"}</td>
+                        <td className="max-w-[14rem] px-4 py-3 font-medium text-text-primary break-words">
+                          <RichText html={word.targetHtml} text={word.target} className="[&_p]:m-0 [&_p+*]:mt-1 [&_ruby_rt]:text-[11px] [&_ruby_rt]:text-text-secondary" />
+                        </td>
+                        <td className="max-w-[14rem] px-4 py-3 text-text-secondary break-words">
+                          <RichText html={word.readingHtml ?? word.romanizationHtml} text={word.reading ?? word.romanization} className="[&_p]:m-0 [&_p+*]:mt-1 [&_ruby_rt]:text-[11px] [&_ruby_rt]:text-text-secondary" />
+                        </td>
+                        <td className="max-w-[18rem] px-4 py-3 text-text-primary break-words">
+                          <RichText html={word.meaningHtml} text={word.meaning} className="[&_p]:m-0 [&_p+*]:mt-1 [&_ruby_rt]:text-[11px] [&_ruby_rt]:text-text-secondary" />
+                        </td>
+                        <td className="max-w-[18rem] px-4 py-3 text-text-secondary break-words">
+                          <RichText html={word.exampleHtml} text={word.example} className="[&_p]:m-0 [&_p+*]:mt-1 [&_ruby_rt]:text-[11px] [&_ruby_rt]:text-text-secondary" />
+                        </td>
                       </tr>
                     ))}
                   </tbody>

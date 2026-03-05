@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
+import { RichText } from "../components/RichText";
 import { useAuth } from "../hooks/useAuth";
 import { applyNoIndexMetadata } from "../lib/seo";
 import { authQueryKey } from "../lib/queryKeys";
@@ -111,9 +112,15 @@ export function CommunitySubmissionsPage() {
                       <tbody>
                         {submission.sampleWords.slice(0, 5).map((word) => (
                           <tr key={`${word.target}-${word.meaning}`} className="border-t border-[var(--border-subtle)]">
-                            <td className="px-4 py-3 text-text-primary">{word.target}</td>
-                            <td className="px-4 py-3 text-text-primary">{word.meaning}</td>
-                            <td className="px-4 py-3 text-text-secondary">{word.reading ?? word.romanization ?? "-"}</td>
+                            <td className="px-4 py-3 text-text-primary">
+                              <RichText html={word.targetHtml} text={word.target} className="[&_p]:m-0 [&_p+*]:mt-1 [&_ruby_rt]:text-[11px] [&_ruby_rt]:text-text-secondary" />
+                            </td>
+                            <td className="px-4 py-3 text-text-primary">
+                              <RichText html={word.meaningHtml} text={word.meaning} className="[&_p]:m-0 [&_p+*]:mt-1 [&_ruby_rt]:text-[11px] [&_ruby_rt]:text-text-secondary" />
+                            </td>
+                            <td className="px-4 py-3 text-text-secondary">
+                              <RichText html={word.readingHtml ?? word.romanizationHtml} text={word.reading ?? word.romanization} className="[&_p]:m-0 [&_p+*]:mt-1 [&_ruby_rt]:text-[11px] [&_ruby_rt]:text-text-secondary" />
+                            </td>
                           </tr>
                         ))}
                       </tbody>

@@ -10,13 +10,16 @@ import { useAuth } from "../hooks/useAuth";
 import { applyNoIndexMetadata } from "../lib/seo";
 import { authQueryKey } from "../lib/queryKeys";
 import { getLanguageLabel } from "../lib/languages";
+import { RichText } from "../components/RichText";
 import {
   IMPORTABLE_FIELDS,
   buildWordsFromMapping,
   extractPrimaryAnkiSoundReference,
+  formatImportedFieldPreview,
   inferFieldMapping,
   parseAnkiPackage,
   parseDelimitedImport,
+  sanitizeImportedFieldHtml,
   type AnkiPackageDataset,
   type ImportDataset,
   type ImportableField,
@@ -705,7 +708,15 @@ export function AnkiImportPage() {
                         <tr key={`preview-${rowIndex}`} className="border-t border-[var(--border-subtle)]">
                           {dataset.headers.map((_, colIndex) => (
                             <td key={`cell-${rowIndex}-${colIndex}`} className="max-w-56 px-4 py-3 align-top text-text-primary">
-                              <div className="max-h-32 overflow-hidden break-words whitespace-pre-wrap">{row[colIndex] || "-"}</div>
+                              {["target", "reading", "meaning", "romanization", "example"].includes(mapping[colIndex] ?? "") ? (
+                                <RichText
+                                  html={sanitizeImportedFieldHtml(row[colIndex])}
+                                  text={formatImportedFieldPreview(row[colIndex])}
+                                  className="max-h-32 overflow-hidden break-words whitespace-pre-wrap [&_p]:m-0 [&_p+*]:mt-1 [&_ruby_rt]:text-[11px] [&_ruby_rt]:text-text-secondary"
+                                />
+                              ) : (
+                                <div className="max-h-32 overflow-hidden break-words whitespace-pre-wrap">{formatImportedFieldPreview(row[colIndex]) || "-"}</div>
+                              )}
                             </td>
                           ))}
                         </tr>

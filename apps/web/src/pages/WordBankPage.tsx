@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Pencil, Trash2, ChevronLeft, ChevronRight, Search, BookOpen, ArrowLeft, Download } from "lucide-react";
 import { type CreateCommunityDeckSubmissionInput, type LanguageCode, SUPPORTED_LANGUAGES } from "@inko/shared";
 import { api } from "../api/client";
+import { RichText } from "../components/RichText";
 import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
 import { authQueryKey } from "../lib/queryKeys";
@@ -985,9 +986,15 @@ export function WordBankPage() {
                               }}
                             />
                           </td>
-                          <td className={`px-4 py-4 font-bold text-text-primary ${activeDeck?.language === "ja" ? "[font-family:var(--font-jp)] text-lg" : ""}`}>{word.target}</td>
-                          <td className={`px-4 py-4 text-text-secondary md:table-cell hidden ${activeDeck?.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}>{word.reading ?? "-"}</td>
-                          <td className="px-4 py-4 text-text-secondary">{word.meaning}</td>
+                          <td className={`px-4 py-4 font-bold text-text-primary ${activeDeck?.language === "ja" ? "[font-family:var(--font-jp)] text-lg" : ""}`}>
+                            <RichText html={word.targetHtml} text={word.target} className="[&_p]:m-0 [&_p+*]:mt-1 [&_ruby_rt]:text-[11px] [&_ruby_rt]:text-text-secondary" />
+                          </td>
+                          <td className={`px-4 py-4 text-text-secondary md:table-cell hidden ${activeDeck?.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}>
+                            <RichText html={word.readingHtml} text={word.reading} className="[&_p]:m-0 [&_p+*]:mt-1 [&_ruby_rt]:text-[11px] [&_ruby_rt]:text-text-secondary" />
+                          </td>
+                          <td className="px-4 py-4 text-text-secondary">
+                            <RichText html={word.meaningHtml} text={word.meaning} className="[&_p]:m-0 [&_p+*]:mt-1 [&_ruby_rt]:text-[11px] [&_ruby_rt]:text-text-secondary" />
+                          </td>
                           <td className="px-4 py-4 text-text-secondary lg:table-cell hidden max-w-[240px] truncate">{(word.tags ?? []).length > 0 ? word.tags.join(", ") : "-"}</td>
                           {showWordActionsColumn ? (
                             <td className="px-4 py-4 text-right">

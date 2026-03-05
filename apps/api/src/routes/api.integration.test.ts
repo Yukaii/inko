@@ -353,7 +353,7 @@ describe("API integration", () => {
       audio: Buffer.from("fake-mp3"),
       contentType: "audio/mpeg",
       fileName: "word.mp3",
-      audioUrl: "https://convex.example/word.mp3",
+      audioUrl: "https://media.example/word.mp3",
     }));
     tts = {
       synthesizeWordAudio,

@@ -198,10 +198,15 @@ export const WordSchema = z.object({
   userId: z.string(),
   language: LanguageSchema,
   target: z.string().min(1),
+  targetHtml: z.string().optional(),
   reading: z.string().optional(),
+  readingHtml: z.string().optional(),
   romanization: z.string().optional(),
+  romanizationHtml: z.string().optional(),
   meaning: z.string().min(1),
+  meaningHtml: z.string().optional(),
   example: z.string().optional(),
+  exampleHtml: z.string().optional(),
   audioUrl: z.string().url().optional(),
   tags: z.array(z.string()).default([]),
 });
@@ -257,10 +262,15 @@ export const UpdateDeckSchema = z.object({
 
 export const CreateWordSchema = z.object({
   target: z.string().min(1),
+  targetHtml: z.string().optional(),
   reading: z.string().optional(),
+  readingHtml: z.string().optional(),
   romanization: z.string().optional(),
+  romanizationHtml: z.string().optional(),
   meaning: z.string().min(1),
+  meaningHtml: z.string().optional(),
   example: z.string().optional(),
+  exampleHtml: z.string().optional(),
   audioUrl: z.string().url().optional(),
   tags: z.array(z.string()).default([]),
 });

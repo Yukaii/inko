@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PERFORMANCE_CONSTANTS, testChunkArray } from "./repository";
 
 describe("repository performance guards", () => {
-  it("chunks large imports into bounded Convex batches", () => {
+  it("chunks large imports into bounded batches", () => {
     const items = Array.from({ length: 10000 }, (_, i) => i);
     const chunks = testChunkArray(items, PERFORMANCE_CONSTANTS.BATCH_WORDS_CHUNK_SIZE);
 
@@ -12,7 +12,7 @@ describe("repository performance guards", () => {
     expect(chunks.every((chunk) => chunk.length <= PERFORMANCE_CONSTANTS.BATCH_WORDS_CHUNK_SIZE)).toBe(true);
   });
 
-  it("keeps batch size under Convex array argument limit", () => {
+  it("keeps batch size under the configured array argument limit", () => {
     expect(PERFORMANCE_CONSTANTS.BATCH_WORDS_CHUNK_SIZE).toBeLessThan(
       PERFORMANCE_CONSTANTS.CONVEX_ARRAY_ARG_LIMIT,
     );

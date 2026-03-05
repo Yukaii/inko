@@ -1,4 +1,4 @@
-import type { CreateWordInput } from "@inko/shared";
+import { sanitizeImportedHtml, stripHtmlToPlainText, type CreateWordInput } from "@inko/shared";
 import JSZip from "jszip";
 import initSqlJs from "sql.js";
 import sqlWasmUrl from "sql.js/dist/sql-wasm.wasm?url";
@@ -35,6 +35,19 @@ const HEADER_HINTS: Record<Exclude<ImportableField, "skip">, string[]> = {
   tags: ["tags", "tag", "labels", "topics"],
 };
 const ANKI_SOUND_TAG_PATTERN = /\[sound:([^\]]+)\]/gi;
+const HTML_BREAK_TAG_PATTERN = /<(?:br|\/div|\/p|\/li|\/tr|\/table|div|p|li|tr|table|ul|\/ul|ol|\/ol|hr)\b[^>]*>/gi;
+const HTML_TAG_PATTERN = /<[^>]+>/g;
+const HTML_MEDIA_SRC_PATTERN = /<(?:audio|source|video|img)\b[^>]*?\ssrc=(["'])(.*?)\1[^>]*>/gi;
+const HTML_ENTITY_PATTERN = /&(#x?[0-9a-f]+|[a-z]+);/gi;
+
+const HTML_ENTITY_REPLACEMENTS: Record<string, string> = {
+  amp: "&",
+  apos: "'",
+  gt: ">",
+  lt: "<",
+  nbsp: " ",
+  quot: '"',
+};
 
 function normalizeHeader(value: string) {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
@@ -128,7 +141,91 @@ export function extractAnkiSoundReferences(value: string | undefined | null) {
 }
 
 export function extractPrimaryAnkiSoundReference(value: string | undefined | null) {
-  return extractAnkiSoundReferences(value)[0];
+  return extractImportedAudioReferences(value)[0];
+}
+
+function decodeHtmlEntities(value: string) {
+  return value.replace(HTML_ENTITY_PATTERN, (entity, token: string) => {
+    const named = HTML_ENTITY_REPLACEMENTS[token.toLowerCase()];
+    if (named) return named;
+
+    const isHex = token[0] === "#" && token[1]?.toLowerCase() === "x";
+    const isNumeric = token[0] === "#";
+    if (!isNumeric) return entity;
+
+    const codePoint = Number.parseInt(token.slice(isHex ? 2 : 1), isHex ? 16 : 10);
+    if (!Number.isFinite(codePoint)) return entity;
+    try {
+      return String.fromCodePoint(codePoint);
+    } catch {
+      return entity;
+    }
+  });
+}
+
+function cleanImportedText(value: string) {
+  return value
+    .replace(/\r/g, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n[ \t]+/g, "\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+export function extractEmbeddedMediaReferences(value: string | undefined | null) {
+  if (!value) return [];
+  const references: string[] = [];
+  for (const match of value.matchAll(HTML_MEDIA_SRC_PATTERN)) {
+    const source = decodeHtmlEntities(match[2] ?? "").trim();
+    if (source) references.push(source);
+  }
+  return references;
+}
+
+function isAudioReference(value: string) {
+  return /\.(mp3|wav|ogg|oga|m4a|aac|flac)(?:$|\?)/i.test(value);
+}
+
+export function extractImportedAudioReferences(value: string | undefined | null) {
+  return [
+    ...extractAnkiSoundReferences(value),
+    ...extractEmbeddedMediaReferences(value).filter(isAudioReference),
+  ];
+}
+
+export function normalizeImportedFieldText(value: string | undefined | null) {
+  if (!value) return "";
+
+  const stripped = decodeHtmlEntities(
+    value
+      .replace(ANKI_SOUND_TAG_PATTERN, " ")
+      .replace(HTML_MEDIA_SRC_PATTERN, " ")
+      .replace(/<rt\b[^>]*>.*?<\/rt>/gi, "")
+      .replace(HTML_BREAK_TAG_PATTERN, "\n")
+      .replace(HTML_TAG_PATTERN, " ")
+      .replace(/\u00a0/g, " "),
+  );
+  return cleanImportedText(stripHtmlToPlainText(stripped)).replace(/([^\x00-\x7F])\s+([^\x00-\x7F])/g, "$1$2");
+}
+
+export function sanitizeImportedFieldHtml(value: string | undefined | null) {
+  if (!value) return undefined;
+  if (!/[<][a-z!/]|&[a-z#0-9]+;/i.test(value)) return undefined;
+  return sanitizeImportedHtml(value.replace(ANKI_SOUND_TAG_PATTERN, " ").replace(HTML_MEDIA_SRC_PATTERN, " "));
+}
+
+export function formatImportedFieldPreview(value: string | undefined | null) {
+  const text = normalizeImportedFieldText(value);
+  const audioReferences = extractImportedAudioReferences(value).map((reference) => reference.split(/[\\/]/).at(-1) ?? reference);
+  const embeddedMedia = extractEmbeddedMediaReferences(value)
+    .filter((reference) => !isAudioReference(reference))
+    .map((reference) => reference.split(/[\\/]/).at(-1) ?? reference);
+
+  const parts = [text];
+  if (audioReferences.length > 0) parts.push(audioReferences.map((reference) => `[audio: ${reference}]`).join(" "));
+  if (embeddedMedia.length > 0) parts.push(embeddedMedia.map((reference) => `[media: ${reference}]`).join(" "));
+  return cleanImportedText(parts.filter(Boolean).join("\n"));
 }
 
 function inferMediaContentType(filename: string) {
@@ -139,6 +236,11 @@ function inferMediaContentType(filename: string) {
   if (normalized.endsWith(".m4a")) return "audio/mp4";
   if (normalized.endsWith(".aac")) return "audio/aac";
   if (normalized.endsWith(".flac")) return "audio/flac";
+  if (normalized.endsWith(".jpg") || normalized.endsWith(".jpeg")) return "image/jpeg";
+  if (normalized.endsWith(".png")) return "image/png";
+  if (normalized.endsWith(".gif")) return "image/gif";
+  if (normalized.endsWith(".webp")) return "image/webp";
+  if (normalized.endsWith(".svg")) return "image/svg+xml";
   return "application/octet-stream";
 }
 
@@ -155,14 +257,27 @@ export function buildWordsFromMapping(dataset: ImportDataset, mapping: Importabl
 
   return dataset.rows
     .map((row) => {
+      const rawAudioValue = audioUrlIndex >= 0 ? row[audioUrlIndex] : undefined;
+      const normalizedAudioValue = normalizeImportedFieldText(rawAudioValue);
+      const extractedAudioReference = extractImportedAudioReferences(rawAudioValue)[0];
+      const rawTarget = row[targetIndex];
+      const rawMeaning = row[meaningIndex];
+      const rawReading = readingIndex >= 0 ? row[readingIndex] : undefined;
+      const rawRomanization = romanizationIndex >= 0 ? row[romanizationIndex] : undefined;
+      const rawExample = exampleIndex >= 0 ? row[exampleIndex] : undefined;
       const word: CreateWordInput = {
-        target: row[targetIndex] ?? "",
-        meaning: row[meaningIndex] ?? "",
-        reading: readingIndex >= 0 ? row[readingIndex] || undefined : undefined,
-        romanization: romanizationIndex >= 0 ? row[romanizationIndex] || undefined : undefined,
-        example: exampleIndex >= 0 ? row[exampleIndex] || undefined : undefined,
-        audioUrl: audioUrlIndex >= 0 ? row[audioUrlIndex] || undefined : undefined,
-        tags: tagsIndex >= 0 ? splitTags(row[tagsIndex]) : [],
+        target: normalizeImportedFieldText(rawTarget),
+        targetHtml: sanitizeImportedFieldHtml(rawTarget),
+        meaning: normalizeImportedFieldText(rawMeaning),
+        meaningHtml: sanitizeImportedFieldHtml(rawMeaning),
+        reading: readingIndex >= 0 ? normalizeImportedFieldText(rawReading) || undefined : undefined,
+        readingHtml: sanitizeImportedFieldHtml(rawReading),
+        romanization: romanizationIndex >= 0 ? normalizeImportedFieldText(rawRomanization) || undefined : undefined,
+        romanizationHtml: sanitizeImportedFieldHtml(rawRomanization),
+        example: exampleIndex >= 0 ? normalizeImportedFieldText(rawExample) || undefined : undefined,
+        exampleHtml: sanitizeImportedFieldHtml(rawExample),
+        audioUrl: extractedAudioReference || normalizedAudioValue || undefined,
+        tags: tagsIndex >= 0 ? splitTags(normalizeImportedFieldText(row[tagsIndex])) : [],
       };
       return word;
     })
@@ -234,7 +349,7 @@ export async function parseAnkiPackage(file: File): Promise<AnkiPackageDataset> 
 
       const noteFields = fieldsValue.split("\u001f");
       for (const fieldValue of noteFields) {
-        for (const mediaFilename of extractAnkiSoundReferences(fieldValue)) {
+        for (const mediaFilename of [...extractImportedAudioReferences(fieldValue), ...extractEmbeddedMediaReferences(fieldValue)]) {
           referencedMedia.add(mediaFilename);
         }
       }

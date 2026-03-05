@@ -3,6 +3,7 @@ import {
   DefaultThemes,
   PRACTICE_SESSION_CARD_CAP_DEFAULT,
   applyAttempt,
+  sanitizeImportedHtml,
   defaultWordChannelStats,
   getDefaultEdgeTtsVoice,
   nextDueAt,
@@ -147,10 +148,15 @@ function toWordDTO(word: WordRow) {
     userId: word.user_id,
     language: word.language,
     target: word.target,
+    targetHtml: word.target_html ?? undefined,
     reading: word.reading ?? undefined,
+    readingHtml: word.reading_html ?? undefined,
     romanization: word.romanization ?? undefined,
+    romanizationHtml: word.romanization_html ?? undefined,
     meaning: word.meaning,
+    meaningHtml: word.meaning_html ?? undefined,
     example: word.example ?? undefined,
+    exampleHtml: word.example_html ?? undefined,
     audioUrl: word.audio_url ?? undefined,
     tags: asArray<string[]>(word.tags, []),
   };
@@ -238,12 +244,51 @@ function yesterdayString(now = Date.now()) {
 function mapWordInput(word: CreateWordInput) {
   return {
     target: word.target,
-    reading: word.reading ?? null,
-    romanization: word.romanization ?? null,
+    targetHtml: sanitizeImportedHtml(word.targetHtml),
+    reading: word.reading ?? undefined,
+    readingHtml: sanitizeImportedHtml(word.readingHtml),
+    romanization: word.romanization ?? undefined,
+    romanizationHtml: sanitizeImportedHtml(word.romanizationHtml),
     meaning: word.meaning,
-    example: word.example ?? null,
-    audio_url: word.audioUrl ?? null,
+    meaningHtml: sanitizeImportedHtml(word.meaningHtml),
+    example: word.example ?? undefined,
+    exampleHtml: sanitizeImportedHtml(word.exampleHtml),
+    audioUrl: word.audioUrl ?? undefined,
     tags: word.tags ?? [],
+  };
+}
+
+function sanitizeCreateWordInput(word: CreateWordInput) {
+  return {
+    target: word.target,
+    targetHtml: sanitizeImportedHtml(word.targetHtml),
+    reading: word.reading ?? null,
+    readingHtml: sanitizeImportedHtml(word.readingHtml),
+    romanization: word.romanization ?? null,
+    romanizationHtml: sanitizeImportedHtml(word.romanizationHtml),
+    meaning: word.meaning,
+    meaningHtml: sanitizeImportedHtml(word.meaningHtml),
+    example: word.example ?? null,
+    exampleHtml: sanitizeImportedHtml(word.exampleHtml),
+    audio_url: word.audioUrl ?? null,
+    tags: jsonb(word.tags ?? []),
+  };
+}
+
+function sanitizeUpdateWordInput(word: UpdateWordInput) {
+  return {
+    ...(word.target !== undefined ? { target: word.target } : {}),
+    ...(word.targetHtml !== undefined ? { target_html: sanitizeImportedHtml(word.targetHtml) ?? null } : {}),
+    ...(word.reading !== undefined ? { reading: word.reading ?? null } : {}),
+    ...(word.readingHtml !== undefined ? { reading_html: sanitizeImportedHtml(word.readingHtml) ?? null } : {}),
+    ...(word.romanization !== undefined ? { romanization: word.romanization ?? null } : {}),
+    ...(word.romanizationHtml !== undefined ? { romanization_html: sanitizeImportedHtml(word.romanizationHtml) ?? null } : {}),
+    ...(word.meaning !== undefined ? { meaning: word.meaning } : {}),
+    ...(word.meaningHtml !== undefined ? { meaning_html: sanitizeImportedHtml(word.meaningHtml) ?? null } : {}),
+    ...(word.example !== undefined ? { example: word.example ?? null } : {}),
+    ...(word.exampleHtml !== undefined ? { example_html: sanitizeImportedHtml(word.exampleHtml) ?? null } : {}),
+    ...(word.audioUrl !== undefined ? { audio_url: word.audioUrl ?? null } : {}),
+    ...(word.tags !== undefined ? { tags: jsonb(word.tags ?? []) } : {}),
   };
 }
 
@@ -497,7 +542,24 @@ export const repository = {
     const rows = await db
       .selectFrom("deck_words as dw")
       .innerJoin("words as w", "w.id", "dw.word_id")
-      .select(["dw.position as position", "w.id", "w.user_id", "w.language", "w.target", "w.reading", "w.romanization", "w.meaning", "w.example", "w.audio_url", "w.tags"])
+      .select([
+        "dw.position as position",
+        "w.id",
+        "w.user_id",
+        "w.language",
+        "w.target",
+        "w.target_html",
+        "w.reading",
+        "w.reading_html",
+        "w.romanization",
+        "w.romanization_html",
+        "w.meaning",
+        "w.meaning_html",
+        "w.example",
+        "w.example_html",
+        "w.audio_url",
+        "w.tags",
+      ])
       .where("dw.deck_id", "=", deckId)
       .where("dw.position", ">", positionCursor)
       .orderBy("dw.position asc")
@@ -514,10 +576,15 @@ export const repository = {
           user_id: row.user_id,
           language: row.language,
           target: row.target,
+          target_html: row.target_html,
           reading: row.reading,
+          reading_html: row.reading_html,
           romanization: row.romanization,
+          romanization_html: row.romanization_html,
           meaning: row.meaning,
+          meaning_html: row.meaning_html,
           example: row.example,
+          example_html: row.example_html,
           audio_url: row.audio_url,
           tags: row.tags,
           created_at: Date.now(),
@@ -547,13 +614,7 @@ export const repository = {
           id: wordId,
           user_id: userId,
           language: deck.language,
-          target: input.target,
-          reading: input.reading ?? null,
-          romanization: input.romanization ?? null,
-          meaning: input.meaning,
-          example: input.example ?? null,
-          audio_url: input.audioUrl ?? null,
-          tags: jsonb(input.tags ?? []),
+          ...sanitizeCreateWordInput(input),
           created_at: now,
         })
         .returningAll()
@@ -596,13 +657,7 @@ export const repository = {
               id: randomUUID(),
               user_id: userId,
               language: deck.language,
-              target: word.target,
-              reading: word.reading ?? null,
-              romanization: word.romanization ?? null,
-              meaning: word.meaning,
-              example: word.example ?? null,
-              audio_url: word.audioUrl ?? null,
-              tags: jsonb(word.tags ?? []),
+              ...sanitizeCreateWordInput(word),
               created_at: now,
             })
             .returningAll()
@@ -650,15 +705,7 @@ export const repository = {
     await requireWordOwnedByUser(userId, wordId);
     const word = await db
       .updateTable("words")
-      .set({
-        target: input.target,
-        reading: input.reading ?? null,
-        romanization: input.romanization ?? null,
-        meaning: input.meaning,
-        example: input.example ?? null,
-        audio_url: input.audioUrl ?? null,
-        tags: jsonb(input.tags ?? []),
-      })
+      .set(sanitizeUpdateWordInput(input))
       .where("id", "=", wordId)
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -863,7 +910,7 @@ export const repository = {
         card_count: input.words.length,
         tags: jsonb(input.tags ?? []),
         note_types: jsonb(input.noteTypes ?? []),
-        words: jsonb(input.words.map((word) => ({ ...word, tags: word.tags ?? [] }))),
+        words: jsonb(input.words.map(mapWordInput)),
         status: "pending",
         moderation_notes: null,
         reviewed_by_user_id: null,

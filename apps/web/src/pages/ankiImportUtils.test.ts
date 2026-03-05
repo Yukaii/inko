@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildWordsFromMapping, extractAnkiSoundReferences, inferFieldMapping, parseDelimitedImport } from "./ankiImportUtils";
+import {
+  buildWordsFromMapping,
+  extractAnkiSoundReferences,
+  extractImportedAudioReferences,
+  inferFieldMapping,
+  parseDelimitedImport,
+  sanitizeImportedFieldHtml,
+} from "./ankiImportUtils";
 
 describe("anki import utils", () => {
   it("parses tab-separated exports", () => {
@@ -29,12 +36,42 @@ describe("anki import utils", () => {
     expect(words).toEqual([
       {
         target: "食べる",
+        targetHtml: undefined,
         meaning: "to eat",
+        meaningHtml: undefined,
         reading: undefined,
+        readingHtml: undefined,
         romanization: "taberu",
+        romanizationHtml: undefined,
         example: "私は寿司を食べる。",
+        exampleHtml: undefined,
         audioUrl: "https://cdn.example/audio.mp3",
         tags: ["verb", "n5"],
+      },
+    ]);
+  });
+
+  it("preserves safe markup in dedicated html fields while normalizing text", () => {
+    const dataset = parseDelimitedImport(
+      "sample.tsv",
+      "Front\tMeaning\tExample\n<ruby>食<rt>た</rt></ruby>べる\t<p><strong>to eat</strong></p>\t<div>Line 1<br>Line 2</div>",
+    );
+
+    const words = buildWordsFromMapping(dataset!, ["target", "meaning", "example"]);
+    expect(words).toEqual([
+      {
+        target: "食べる",
+        targetHtml: "<ruby>食<rt>た</rt></ruby>べる",
+        reading: undefined,
+        readingHtml: undefined,
+        romanization: undefined,
+        romanizationHtml: undefined,
+        meaning: "to eat",
+        meaningHtml: "<p><strong>to eat</strong></p>",
+        example: "Line 1\nLine 2",
+        exampleHtml: "<p>Line 1<br />Line 2</p>",
+        audioUrl: undefined,
+        tags: [],
       },
     ]);
   });
@@ -49,5 +86,15 @@ describe("anki import utils", () => {
       "first.mp3",
       "folder/second.wav",
     ]);
+  });
+
+  it("extracts embedded audio references from html markup", () => {
+    expect(extractImportedAudioReferences('<audio controls src="collection.media/voice.mp3"></audio>')).toEqual([
+      "collection.media/voice.mp3",
+    ]);
+  });
+
+  it("sanitizes imported html and removes unsafe markup", () => {
+    expect(sanitizeImportedFieldHtml('<p>Hello</p><script>alert(1)</script><img src="evil.png" />')).toBe("<p>Hello</p>");
   });
 });
