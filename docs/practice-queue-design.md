@@ -15,7 +15,7 @@ Representative trace:
 - `session_start totalMs`: about `4136`
 - `candidateFetchMs`: about `3893`
 
-Convex traces showed the hot path query reading only a small amount of data, which pointed to query/storage latency rather than API CPU saturation or deck size alone.
+Earlier tracing showed the hot path query reading only a small amount of data, which pointed to query/storage latency rather than API CPU saturation or deck size alone.
 
 ## Root Cause
 

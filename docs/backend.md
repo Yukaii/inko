@@ -63,7 +63,7 @@ Auth notes:
 
 - The app now uses API-issued JWTs and email magic links only.
 - Magic-link tokens are stored in PostgreSQL.
-- Convex/OIDC verification and frontend Convex auth providers have been removed.
+- Legacy OIDC verification and older frontend auth providers have been removed.
 - Optional OAuth providers are now first-party API flows:
   - `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`
   - `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`

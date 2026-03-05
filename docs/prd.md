@@ -320,7 +320,6 @@ It is designed to turn passive learners into active producers of language — st
   * `apps/web` (Vite + React + TypeScript)
   * `apps/api` (Fastify + TypeScript)
   * `packages/shared` (zod schemas + scoring/scheduling logic)
-  * `convex/` (schema + domain functions)
 * Auth:
   * Email magic-link request/verify endpoints
   * JWT-based API auth for protected routes
@@ -344,12 +343,12 @@ It is designed to turn passive learners into active producers of language — st
 * Dashboard:
   * Summary endpoint and frontend cards for core KPIs
   * Recent session list support
-  * Bounded summary computation for large datasets to avoid Convex read/paginate limits
+  * Bounded summary computation for large datasets to avoid oversized reads/pagination
 * Starter seed:
-  * Convex mutation for `Core N5` deck + starter JP vocabulary
+  * `Core N5` deck + starter JP vocabulary seed path
   * Bun script for quick seeding
 * Performance and scalability hardening:
-  * Batch word create/delete now chunked to respect Convex argument and execution limits
+  * Batch word create/delete now chunked to respect backend argument and execution limits
   * Deck deletion made incremental/paged to avoid large read explosions
   * Practice submit latency reduced via session-level attempted-word tracking and candidate-window cache
   * Practice candidate scans reduced and bounded for faster start/submit under large decks

@@ -81,7 +81,7 @@ The `README` is intentionally product- and usage-focused. Technical and implemen
 
 - [docs/architecture.md](/Users/yukai/Projects/Personal/inko/docs/architecture.md): monorepo shape and request flow
 - [docs/frontend.md](/Users/yukai/Projects/Personal/inko/docs/frontend.md): web app structure and frontend commands
-- [docs/backend.md](/Users/yukai/Projects/Personal/inko/docs/backend.md): API, Convex, auth, and backend env details
+- [docs/backend.md](/Users/yukai/Projects/Personal/inko/docs/backend.md): API, auth, and backend env details
 - [docs/deployment.md](/Users/yukai/Projects/Personal/inko/docs/deployment.md): production deployment setup
 - [docs/prd.md](/Users/yukai/Projects/Personal/inko/docs/prd.md): product requirements and UX intent
 - [docs/practice-queue-design.md](/Users/yukai/Projects/Personal/inko/docs/practice-queue-design.md): practice queue architecture
