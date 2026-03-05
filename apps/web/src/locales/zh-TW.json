@@ -400,7 +400,24 @@
       "universal": "通用",
       "typing_mode_desc": "特定語言模式使用具備文字感知的比對（例如日文的羅馬拼音轉換假名）。通用模式則使用標準化的直接輸入。",
       "tts": "語音朗讀",
-      "tts_desc": "在練習時自動播放發音。"
+      "tts_desc": "在練習時自動播放發音。",
+      "srs": {
+        "title": "進階間隔重複設定",
+        "desc": "調整強度變化速度，以及各熟練區間在下次複習前要等待多久。",
+        "reset": "重設為預設值",
+        "starting_strength": "起始強度",
+        "strength_step_divisor": "強度變化除數",
+        "interval_low_minutes": "低強度間隔",
+        "interval_mid_minutes": "中強度間隔",
+        "interval_strong_minutes": "高強度間隔",
+        "interval_mastered_minutes": "已掌握間隔",
+        "interval_expert_minutes": "熟練間隔",
+        "units": {
+          "minutes": "分鐘",
+          "hours": "小時",
+          "days": "天"
+        }
+      }
     },
     "appearance": {
       "reset": "重設 {{mode}}",

@@ -1,4 +1,5 @@
 import { clampStrength } from "./scoring";
+import { DEFAULT_SRS_CONFIG, type SrsConfig } from "./schemas";
 
 export type ChannelState = {
   strength: number;
@@ -11,18 +12,18 @@ export type WordChannelStats = {
   listening: ChannelState;
 };
 
-const DAY = 24 * 60 * 60 * 1000;
+const MINUTE = 60 * 1000;
 
-function intervalByStrength(strength: number): number {
-  if (strength < 35) return DAY * 0.5;
-  if (strength < 55) return DAY;
-  if (strength < 70) return DAY * 2;
-  if (strength < 85) return DAY * 4;
-  return DAY * 7;
+function intervalByStrength(strength: number, config: SrsConfig): number {
+  if (strength < 35) return config.intervalLowMinutes * MINUTE;
+  if (strength < 55) return config.intervalMidMinutes * MINUTE;
+  if (strength < 70) return config.intervalStrongMinutes * MINUTE;
+  if (strength < 85) return config.intervalMasteredMinutes * MINUTE;
+  return config.intervalExpertMinutes * MINUTE;
 }
 
-function nextStrength(current: number, score: number): number {
-  const delta = Math.round((score - 60) / 4);
+function nextStrength(current: number, score: number, config: SrsConfig): number {
+  const delta = Math.round((score - 60) / config.strengthStepDivisor);
   return clampStrength(current + delta);
 }
 
@@ -30,23 +31,24 @@ export function applyAttempt(
   current: WordChannelStats,
   scores: { shape: number; typing: number; listening: number },
   now: number,
+  config: SrsConfig = DEFAULT_SRS_CONFIG,
 ): WordChannelStats {
-  const shapeStrength = nextStrength(current.shape.strength, scores.shape);
-  const typingStrength = nextStrength(current.typing.strength, scores.typing);
-  const listeningStrength = nextStrength(current.listening.strength, scores.listening);
+  const shapeStrength = nextStrength(current.shape.strength, scores.shape, config);
+  const typingStrength = nextStrength(current.typing.strength, scores.typing, config);
+  const listeningStrength = nextStrength(current.listening.strength, scores.listening, config);
 
   return {
     shape: {
       strength: shapeStrength,
-      dueAt: now + intervalByStrength(shapeStrength),
+      dueAt: now + intervalByStrength(shapeStrength, config),
     },
     typing: {
       strength: typingStrength,
-      dueAt: now + intervalByStrength(typingStrength),
+      dueAt: now + intervalByStrength(typingStrength, config),
     },
     listening: {
       strength: listeningStrength,
-      dueAt: now + intervalByStrength(listeningStrength),
+      dueAt: now + intervalByStrength(listeningStrength, config),
     },
   };
 }
@@ -66,10 +68,10 @@ export function nextDueAt(stats: WordChannelStats): number {
   return Math.min(stats.shape.dueAt, stats.typing.dueAt, stats.listening.dueAt);
 }
 
-export function defaultWordChannelStats(now: number): WordChannelStats {
+export function defaultWordChannelStats(now: number, config: SrsConfig = DEFAULT_SRS_CONFIG): WordChannelStats {
   return {
-    shape: { strength: 50, dueAt: now },
-    typing: { strength: 50, dueAt: now },
-    listening: { strength: 50, dueAt: now },
+    shape: { strength: config.startingStrength, dueAt: now },
+    typing: { strength: config.startingStrength, dueAt: now },
+    listening: { strength: config.startingStrength, dueAt: now },
   };
 }

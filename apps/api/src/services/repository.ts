@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
   DefaultThemes,
+  DEFAULT_SRS_CONFIG,
   PRACTICE_SESSION_CARD_CAP_DEFAULT,
   applyAttempt,
   sanitizeImportedHtml,
@@ -25,6 +26,7 @@ import {
   type PracticeCardDTO,
   type RateCommunityDeckInput,
   type ReviewCommunityDeckSubmissionInput,
+  type SrsConfig,
   type StartPracticeSessionInput,
   type SubmitPracticeCardInput,
   type ThemeConfig,
@@ -109,6 +111,10 @@ function asArray<T>(value: unknown, fallback: T): T {
   return (value as T | undefined) ?? fallback;
 }
 
+function asObject<T>(value: unknown, fallback: T): T {
+  return value && typeof value === "object" ? (value as T) : fallback;
+}
+
 function jsonb<T>(value: T) {
   return sql<T>`CAST(${JSON.stringify(value)} AS jsonb)`;
 }
@@ -122,6 +128,7 @@ function toUserDTO(user: UserRow) {
     themeMode: user.theme_mode ?? "dark",
     typingMode: user.typing_mode ?? "language_specific",
     ttsEnabled: user.tts_enabled ?? true,
+    srsConfig: asObject<SrsConfig>(user.srs_config, DEFAULT_SRS_CONFIG),
     canModerateCommunity: canModerateCommunity(user),
     themes: asArray<ThemeConfig>(user.themes, DefaultThemes),
     createdAt: asNumber(user.created_at),
@@ -442,6 +449,7 @@ export const repository = {
         theme_mode: "dark",
         typing_mode: "language_specific",
         tts_enabled: true,
+        srs_config: jsonb(DEFAULT_SRS_CONFIG),
         themes: jsonb(DefaultThemes),
         created_at: Date.now(),
       })
@@ -465,6 +473,7 @@ export const repository = {
         theme_mode: input.themeMode,
         typing_mode: input.typingMode,
         tts_enabled: input.ttsEnabled,
+        srs_config: jsonb(input.srsConfig),
         themes: jsonb(input.themes),
       })
       .where("id", "=", userId)
@@ -598,6 +607,8 @@ export const repository = {
 
   async createWord(userId: string, deckId: string, input: CreateWordInput) {
     const deck = await requireDeckOwnedByUser(userId, deckId);
+    const user = await requireUser(userId);
+    const srsConfig = asObject<SrsConfig>(user.srs_config, DEFAULT_SRS_CONFIG);
     const now = Date.now();
     const created = await db.transaction().execute(async (trx) => {
       const maxPositionRow = await trx
@@ -607,6 +618,7 @@ export const repository = {
         .executeTakeFirst();
       const position = (maxPositionRow?.max_position ?? -1) + 1;
       const wordId = randomUUID();
+      const initialStats = defaultWordChannelStats(now, srsConfig);
 
       const word = await trx
         .insertInto("words")
@@ -628,6 +640,22 @@ export const repository = {
         created_at: now,
       }).execute();
 
+      await trx
+        .insertInto("word_channel_stats")
+        .values({
+          id: randomUUID(),
+          user_id: userId,
+          word_id: wordId,
+          shape_strength: initialStats.shape.strength,
+          typing_strength: initialStats.typing.strength,
+          listening_strength: initialStats.listening.strength,
+          shape_due_at: initialStats.shape.dueAt,
+          typing_due_at: initialStats.typing.dueAt,
+          listening_due_at: initialStats.listening.dueAt,
+          last_practiced_at: null,
+        })
+        .execute();
+
       await trx.updateTable("decks").set({ word_count: deck.word_count + 1 }).where("id", "=", deckId).execute();
       return word;
     });
@@ -637,6 +665,8 @@ export const repository = {
 
   async createWordsBatch(userId: string, deckId: string, input: CreateWordsBatchInput) {
     const deck = await requireDeckOwnedByUser(userId, deckId);
+    const user = await requireUser(userId);
+    const srsConfig = asObject<SrsConfig>(user.srs_config, DEFAULT_SRS_CONFIG);
     const createdWords: ReturnType<typeof toWordDTO>[] = [];
 
     for (const wordsChunk of chunkArray(input.words, BATCH_WORDS_CHUNK_SIZE)) {
@@ -651,6 +681,7 @@ export const repository = {
         const rows: WordRow[] = [];
 
         for (const word of wordsChunk) {
+          const initialStats = defaultWordChannelStats(now, srsConfig);
           const inserted = await trx
             .insertInto("words")
             .values({
@@ -671,6 +702,21 @@ export const repository = {
             position,
             created_at: now,
           }).execute();
+          await trx
+            .insertInto("word_channel_stats")
+            .values({
+              id: randomUUID(),
+              user_id: userId,
+              word_id: inserted.id,
+              shape_strength: initialStats.shape.strength,
+              typing_strength: initialStats.typing.strength,
+              listening_strength: initialStats.listening.strength,
+              shape_due_at: initialStats.shape.dueAt,
+              typing_due_at: initialStats.typing.dueAt,
+              listening_due_at: initialStats.listening.dueAt,
+              last_practiced_at: null,
+            })
+            .execute();
           position += 1;
         }
 
@@ -1130,6 +1176,7 @@ export const repository = {
     if (!inDeck) throw new RepositoryError("Word not in session deck", 403);
 
     const user = await requireUser(userId);
+    const srsConfig = asObject<SrsConfig>(user.srs_config, DEFAULT_SRS_CONFIG);
     const shape = scoreShape(input.handwritingCompleted);
     const typing = scoreTyping(
       input.typingInput,
@@ -1161,8 +1208,8 @@ export const repository = {
           typing: { strength: existing.typing_strength, dueAt: existing.typing_due_at as number },
           listening: { strength: existing.listening_strength, dueAt: existing.listening_due_at as number },
         }
-      : defaultWordChannelStats(now);
-    const next = applyAttempt(current, { shape, typing, listening }, now);
+      : defaultWordChannelStats(now, srsConfig);
+    const next = applyAttempt(current, { shape, typing, listening }, now, srsConfig);
 
     if (session.cards_completed >= PRACTICE_SESSION_CARD_CAP_DEFAULT) {
       return {

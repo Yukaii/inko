@@ -400,7 +400,24 @@
       "universal": "Universal",
       "typing_mode_desc": "Language-specific uses script-aware matching (e.g. romaji to kana for Japanese). Universal uses normalized direct typing.",
       "tts": "Text to Speech",
-      "tts_desc": "Automatically play pronunciation during practice."
+      "tts_desc": "Automatically play pronunciation during practice.",
+      "srs": {
+        "title": "Advanced Spaced Repetition",
+        "desc": "Tune how quickly strengths move and how long each mastery band waits before the next review.",
+        "reset": "Reset to Defaults",
+        "starting_strength": "Starting Strength",
+        "strength_step_divisor": "Strength Step Divisor",
+        "interval_low_minutes": "Low Strength Interval",
+        "interval_mid_minutes": "Mid Strength Interval",
+        "interval_strong_minutes": "Strong Interval",
+        "interval_mastered_minutes": "Mastered Interval",
+        "interval_expert_minutes": "Expert Interval",
+        "units": {
+          "minutes": "Minutes",
+          "hours": "Hours",
+          "days": "Days"
+        }
+      }
     },
     "appearance": {
       "reset": "Reset {{mode}}",

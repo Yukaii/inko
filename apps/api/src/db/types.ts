@@ -1,4 +1,4 @@
-import type { LanguageCode, ThemeConfig, TypingMode } from "@inko/shared";
+import type { LanguageCode, SrsConfig, ThemeConfig, TypingMode } from "@inko/shared";
 import type { ColumnType } from "kysely";
 
 export type TimestampMs = ColumnType<number, number | undefined, number | undefined>;
@@ -32,6 +32,7 @@ export interface UsersTable {
   theme_mode: ThemeMode | null;
   typing_mode: TypingMode | null;
   tts_enabled: boolean;
+  srs_config: JsonColumn<SrsConfig>;
   themes: JsonColumn<ThemeConfig>;
   created_at: TimestampMs;
 }

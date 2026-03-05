@@ -130,6 +130,26 @@ export function getDefaultEdgeTtsVoice(language: z.infer<typeof LanguageSchema>)
   return EDGE_TTS_VOICE_OPTIONS_BY_LANGUAGE[language][0].value;
 }
 
+export const SrsConfigSchema = z.object({
+  startingStrength: z.number().int().min(0).max(100),
+  strengthStepDivisor: z.number().int().min(1).max(20),
+  intervalLowMinutes: z.number().int().min(1).max(60 * 24 * 30),
+  intervalMidMinutes: z.number().int().min(1).max(60 * 24 * 30),
+  intervalStrongMinutes: z.number().int().min(1).max(60 * 24 * 30),
+  intervalMasteredMinutes: z.number().int().min(1).max(60 * 24 * 60),
+  intervalExpertMinutes: z.number().int().min(1).max(60 * 24 * 180),
+});
+
+export const DEFAULT_SRS_CONFIG = {
+  startingStrength: 30,
+  strengthStepDivisor: 5,
+  intervalLowMinutes: 10,
+  intervalMidMinutes: 24 * 60,
+  intervalStrongMinutes: 3 * 24 * 60,
+  intervalMasteredMinutes: 7 * 24 * 60,
+  intervalExpertMinutes: 15 * 24 * 60,
+} satisfies z.infer<typeof SrsConfigSchema>;
+
 export const ThemePaletteSchema = z.object({
   accentOrange: HexColorSchema,
   accentTeal: HexColorSchema,
@@ -176,6 +196,7 @@ export const UserSchema = z.object({
   themeMode: ThemeModeSchema,
   typingMode: TypingModeSchema,
   ttsEnabled: z.boolean(),
+  srsConfig: SrsConfigSchema,
   canModerateCommunity: z.boolean().default(false),
   themes: ThemeConfigSchema,
   createdAt: z.number(),
@@ -239,6 +260,7 @@ export const UpdateProfileSchema = z.object({
   themeMode: ThemeModeSchema,
   typingMode: TypingModeSchema.default("language_specific"),
   ttsEnabled: z.boolean().default(true),
+  srsConfig: SrsConfigSchema.default(DEFAULT_SRS_CONFIG),
   themes: ThemeConfigSchema,
 });
 
@@ -459,6 +481,7 @@ export type SubmitPracticeCardInput = z.infer<typeof SubmitPracticeCardSchema>;
 export type ThemeMode = z.infer<typeof ThemeModeSchema>;
 export type ThemePalette = z.infer<typeof ThemePaletteSchema>;
 export type ThemeConfig = z.infer<typeof ThemeConfigSchema>;
+export type SrsConfig = z.infer<typeof SrsConfigSchema>;
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
 export type UpdatePreferencesInput = z.infer<typeof UpdatePreferencesSchema>;
 export type LanguageCode = z.infer<typeof LanguageSchema>;

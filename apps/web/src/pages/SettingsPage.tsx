@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { DefaultThemes, type ThemeConfig, type ThemeMode, type ThemePalette, type TypingMode } from "@inko/shared";
+import { DEFAULT_SRS_CONFIG, DefaultThemes, type SrsConfig, type ThemeConfig, type ThemeMode, type ThemePalette, type TypingMode } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { authQueryKey } from "../lib/queryKeys";
@@ -17,6 +17,7 @@ type MeResponse = {
   themeMode: ThemeMode;
   typingMode: TypingMode;
   ttsEnabled: boolean;
+  srsConfig?: SrsConfig;
   themes: ThemeConfig;
   createdAt: number;
 };
@@ -28,6 +29,13 @@ type ThemePreset = {
 };
 
 type SettingsSection = "profile" | "preferences" | "appearance" | "about";
+type IntervalFieldKey =
+  | "intervalLowMinutes"
+  | "intervalMidMinutes"
+  | "intervalStrongMinutes"
+  | "intervalMasteredMinutes"
+  | "intervalExpertMinutes";
+type IntervalUnit = "minutes" | "hours" | "days";
 
 const PALETTE_FIELDS: Array<{ key: keyof ThemePalette; labelKey: string }> = [
   { key: "accentOrange", labelKey: "settings.appearance.palette_fields.accent_orange" },
@@ -50,6 +58,32 @@ const CSS_VAR_TO_PALETTE_KEY: Record<string, keyof ThemePalette> = {
   "text-secondary": "textSecondary",
   "text-on-accent": "textOnAccent",
 };
+
+const INTERVAL_FIELD_KEYS: IntervalFieldKey[] = [
+  "intervalLowMinutes",
+  "intervalMidMinutes",
+  "intervalStrongMinutes",
+  "intervalMasteredMinutes",
+  "intervalExpertMinutes",
+];
+
+function inferIntervalUnit(totalMinutes: number): IntervalUnit {
+  if (totalMinutes % (60 * 24) === 0) return "days";
+  if (totalMinutes % 60 === 0) return "hours";
+  return "minutes";
+}
+
+function minutesToUnitValue(totalMinutes: number, unit: IntervalUnit) {
+  if (unit === "days") return Math.max(1, Math.round(totalMinutes / (60 * 24)));
+  if (unit === "hours") return Math.max(1, Math.round(totalMinutes / 60));
+  return Math.max(1, totalMinutes);
+}
+
+function unitValueToMinutes(value: number, unit: IntervalUnit) {
+  if (unit === "days") return value * 60 * 24;
+  if (unit === "hours") return value * 60;
+  return value;
+}
 
 const THEME_PRESETS: ThemePreset[] = [
   {
@@ -338,15 +372,32 @@ export function SettingsPage() {
   const [themeMode, setThemeMode] = useState<ThemeMode>("dark");
   const [typingMode, setTypingMode] = useState<TypingMode>("language_specific");
   const [ttsEnabled, setTtsEnabled] = useState(true);
+  const [srsConfig, setSrsConfig] = useState<SrsConfig>(DEFAULT_SRS_CONFIG);
+  const [srsIntervalUnits, setSrsIntervalUnits] = useState<Record<IntervalFieldKey, IntervalUnit>>({
+    intervalLowMinutes: inferIntervalUnit(DEFAULT_SRS_CONFIG.intervalLowMinutes),
+    intervalMidMinutes: inferIntervalUnit(DEFAULT_SRS_CONFIG.intervalMidMinutes),
+    intervalStrongMinutes: inferIntervalUnit(DEFAULT_SRS_CONFIG.intervalStrongMinutes),
+    intervalMasteredMinutes: inferIntervalUnit(DEFAULT_SRS_CONFIG.intervalMasteredMinutes),
+    intervalExpertMinutes: inferIntervalUnit(DEFAULT_SRS_CONFIG.intervalExpertMinutes),
+  });
   const [themes, setThemes] = useState<ThemeConfig>(DefaultThemes);
   const [hexDrafts, setHexDrafts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!user) return;
+    const nextSrsConfig = { ...DEFAULT_SRS_CONFIG, ...(user.srsConfig ?? {}) };
     setDisplayName(user.displayName);
     setThemeMode(user.themeMode);
     setTypingMode(user.typingMode);
     setTtsEnabled(user.ttsEnabled);
+    setSrsConfig(nextSrsConfig);
+    setSrsIntervalUnits({
+      intervalLowMinutes: inferIntervalUnit(nextSrsConfig.intervalLowMinutes),
+      intervalMidMinutes: inferIntervalUnit(nextSrsConfig.intervalMidMinutes),
+      intervalStrongMinutes: inferIntervalUnit(nextSrsConfig.intervalStrongMinutes),
+      intervalMasteredMinutes: inferIntervalUnit(nextSrsConfig.intervalMasteredMinutes),
+      intervalExpertMinutes: inferIntervalUnit(nextSrsConfig.intervalExpertMinutes),
+    });
     setThemes(user.themes);
     setActiveThemeEditor(user.themeMode);
   }, [user]);
@@ -358,6 +409,7 @@ export function SettingsPage() {
         themeMode,
         typingMode,
         ttsEnabled,
+        srsConfig,
         themes,
       }),
     onSuccess: (updated) => {
@@ -376,6 +428,36 @@ export function SettingsPage() {
     () => displayName.trim().length > 0 && displayName.trim().length <= 60 && !updateProfileMutation.isPending,
     [displayName, updateProfileMutation.isPending],
   );
+
+  const updateSrsConfig = (key: keyof SrsConfig, raw: string) => {
+    const numeric = Number.parseInt(raw, 10);
+    if (Number.isNaN(numeric)) return;
+    setSrsConfig((current: SrsConfig) => ({ ...current, [key]: numeric }));
+  };
+
+  const updateSrsIntervalValue = (key: IntervalFieldKey, raw: string) => {
+    const numeric = Number.parseInt(raw, 10);
+    if (Number.isNaN(numeric)) return;
+    setSrsConfig((current: SrsConfig) => ({
+      ...current,
+      [key]: unitValueToMinutes(numeric, srsIntervalUnits[key]),
+    }));
+  };
+
+  const updateSrsIntervalUnit = (key: IntervalFieldKey, nextUnit: IntervalUnit) => {
+    setSrsIntervalUnits((current) => ({ ...current, [key]: nextUnit }));
+  };
+
+  const resetSrsConfig = () => {
+    setSrsConfig(DEFAULT_SRS_CONFIG);
+    setSrsIntervalUnits({
+      intervalLowMinutes: inferIntervalUnit(DEFAULT_SRS_CONFIG.intervalLowMinutes),
+      intervalMidMinutes: inferIntervalUnit(DEFAULT_SRS_CONFIG.intervalMidMinutes),
+      intervalStrongMinutes: inferIntervalUnit(DEFAULT_SRS_CONFIG.intervalStrongMinutes),
+      intervalMasteredMinutes: inferIntervalUnit(DEFAULT_SRS_CONFIG.intervalMasteredMinutes),
+      intervalExpertMinutes: inferIntervalUnit(DEFAULT_SRS_CONFIG.intervalExpertMinutes),
+    });
+  };
 
   const updatePaletteColor = (mode: ThemeMode, key: keyof ThemePalette, value: string) => {
     setThemes((prev) => {
@@ -810,6 +892,66 @@ export function SettingsPage() {
                       <p className="m-0 text-[12px] text-text-secondary">
                         {t("settings.preferences.typing_mode_desc")}
                       </p>
+                    </div>
+
+                    <div className="flex flex-col gap-4 border-t border-[var(--border-subtle)] py-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">{t("settings.preferences.srs.title")}</span>
+                          <p className="m-0 text-[12px] text-text-secondary">{t("settings.preferences.srs.desc")}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className="bg-bg-card text-text-primary hover:bg-bg-card"
+                          onClick={resetSrsConfig}
+                        >
+                          {t("settings.preferences.srs.reset")}
+                        </button>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {([
+                          ["startingStrength", "settings.preferences.srs.starting_strength"],
+                          ["strengthStepDivisor", "settings.preferences.srs.strength_step_divisor"],
+                        ] as Array<[Exclude<keyof SrsConfig, IntervalFieldKey>, string]>).map(([key, label]) => (
+                          <label key={String(key)} className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-bg-elevated p-3">
+                            <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">{t(label)}</span>
+                            <input
+                              type="number"
+                              min={key === "strengthStepDivisor" ? 1 : 0}
+                              value={srsConfig[key]}
+                              onChange={(event) => updateSrsConfig(key, event.target.value)}
+                            />
+                          </label>
+                        ))}
+                        {([
+                          ["intervalLowMinutes", "settings.preferences.srs.interval_low_minutes"],
+                          ["intervalMidMinutes", "settings.preferences.srs.interval_mid_minutes"],
+                          ["intervalStrongMinutes", "settings.preferences.srs.interval_strong_minutes"],
+                          ["intervalMasteredMinutes", "settings.preferences.srs.interval_mastered_minutes"],
+                          ["intervalExpertMinutes", "settings.preferences.srs.interval_expert_minutes"],
+                        ] as Array<[IntervalFieldKey, string]>).map(([key, label]) => (
+                          <label key={key} className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-bg-elevated p-3">
+                            <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">{t(label)}</span>
+                            <div className="grid max-w-[260px] gap-2 sm:grid-cols-[110px_120px]">
+                              <input
+                                type="number"
+                                min={1}
+                                value={minutesToUnitValue(srsConfig[key], srsIntervalUnits[key])}
+                                onChange={(event) => updateSrsIntervalValue(key, event.target.value)}
+                              />
+                              <select
+                                value={srsIntervalUnits[key]}
+                                onChange={(event) => updateSrsIntervalUnit(key, event.target.value as IntervalUnit)}
+                              >
+                                <option value="minutes">{t("settings.preferences.srs.units.minutes")}</option>
+                                <option value="hours">{t("settings.preferences.srs.units.hours")}</option>
+                                <option value="days">{t("settings.preferences.srs.units.days")}</option>
+                              </select>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </section>

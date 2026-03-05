@@ -400,7 +400,24 @@
       "universal": "ユニバーサル",
       "typing_mode_desc": "言語固有モードはスクリプトを意識したマッチング（例: 日本語のローマ字からかなへ）を使用します。ユニバーサルモードは正規化された直接タイピングを使用します。",
       "tts": "音声読み上げ",
-      "tts_desc": "練習中に発音を自動再生します。"
+      "tts_desc": "練習中に発音を自動再生します。",
+      "srs": {
+        "title": "詳細な間隔反復設定",
+        "desc": "強度の変化量と、各習熟帯で次回復習まで待つ時間を調整します。",
+        "reset": "初期値に戻す",
+        "starting_strength": "開始強度",
+        "strength_step_divisor": "強度変化の分母",
+        "interval_low_minutes": "低強度の間隔",
+        "interval_mid_minutes": "中強度の間隔",
+        "interval_strong_minutes": "高強度の間隔",
+        "interval_mastered_minutes": "習得済みの間隔",
+        "interval_expert_minutes": "熟達の間隔",
+        "units": {
+          "minutes": "分",
+          "hours": "時間",
+          "days": "日"
+        }
+      }
     },
     "appearance": {
       "reset": "{{mode}}をリセット",
