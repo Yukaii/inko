@@ -4,27 +4,13 @@ import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App";
 import "./i18n";
+import { initGoogleAnalytics } from "./lib/analytics";
 import "./styles/theme.css";
 import { applyThemePreferences, loadThemePreferences } from "./theme/theme";
 
 const queryClient = new QueryClient();
 applyThemePreferences(loadThemePreferences());
-
-const gaMeasurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
-
-if (gaMeasurementId) {
-  const gaScript = document.createElement("script");
-  gaScript.async = true;
-  gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaMeasurementId)}`;
-  document.head.appendChild(gaScript);
-
-  window.dataLayer = window.dataLayer || [];
-  window.gtag = function gtag(...args: unknown[]) {
-    window.dataLayer?.push(args);
-  };
-  window.gtag("js", new Date());
-  window.gtag("config", gaMeasurementId);
-}
+initGoogleAnalytics(import.meta.env.VITE_GA_MEASUREMENT_ID);
 
 window.__INKO_ENV__ = {
   apiUrl: import.meta.env.VITE_API_URL,

@@ -13,7 +13,7 @@ interface ImportMeta {
 
 // NOTE: prevent exposing secrets! This is just for some easy debug on production
 interface Window {
-  dataLayer?: unknown[][];
+  dataLayer?: unknown[];
   gtag?: (...args: unknown[]) => void;
   __INKO_ENV__?: {
     apiUrl?: string;
