@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
@@ -7,6 +7,11 @@ import { useAuth } from "../hooks/useAuth";
 import { registerShortcut } from "../hooks/useKeyboard";
 import { authQueryKey } from "../lib/queryKeys";
 import { BookOpen, ChevronRight, Clock, Flame, Play, Star, Target, TrendingUp } from "lucide-react";
+import {
+  buildSampleDeckWords,
+  DASHBOARD_ONBOARDING_STORAGE_KEY,
+  shouldShowDashboardOnboarding,
+} from "./dashboardOnboarding";
 
 function clampProgress(value: number, max: number) {
   if (max <= 0) return 0;
@@ -108,8 +113,14 @@ export function DashboardPage() {
   const { t, i18n } = useTranslation();
   const { token } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const practiceGridRef = useRef<HTMLUListElement>(null);
   const [focusedDeckIndex, setFocusedDeckIndex] = useState(-1);
+  const [hasStartedPracticeFlag, setHasStartedPracticeFlag] = useState(false);
+  const [createdSampleDeckId, setCreatedSampleDeckId] = useState<string | null>(null);
+  const [sampleDeckDraftId, setSampleDeckDraftId] = useState<string | null>(null);
+  const [isCreatingSampleDeck, setIsCreatingSampleDeck] = useState(false);
+  const [onboardingError, setOnboardingError] = useState<string | null>(null);
 
   const statsQuery = useQuery({
     queryKey: authQueryKey(token, "dashboard", "stats"),
@@ -145,6 +156,19 @@ export function DashboardPage() {
   const learningStreak = stats?.learningStreak ?? 0;
   const sessionTimeSeconds = stats?.sessionTimeSeconds ?? 0;
   const canQuickStart = activeDecks.length > 0;
+  const recentSessionsCount = sessionsQuery.data?.recentSessions.length ?? 0;
+  const shouldShowOnboarding = shouldShowDashboardOnboarding({
+    decksCount: decks.length,
+    recentSessionsCount,
+    hasStartedPracticeFlag,
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const localStorageApi = window.localStorage;
+    if (!localStorageApi || typeof localStorageApi.getItem !== "function") return;
+    setHasStartedPracticeFlag(localStorageApi.getItem(DASHBOARD_ONBOARDING_STORAGE_KEY) === "1");
+  }, []);
 
   useEffect(() => {
     const cleanups: Array<() => void> = [];
@@ -236,6 +260,44 @@ export function DashboardPage() {
     }
     navigate("/word-bank");
   };
+
+  const handleCreateSampleDeck = async () => {
+    if (!token || isCreatingSampleDeck) return;
+
+    setIsCreatingSampleDeck(true);
+    setOnboardingError(null);
+    try {
+      const targetDeckId = sampleDeckDraftId ?? (
+        await api.createDeck(token, {
+          name: t("dashboard.onboarding.sample_deck_name", "Starter Japanese"),
+          language: "ja",
+        })
+      ).id;
+      setSampleDeckDraftId(targetDeckId);
+      await api.createWordsBatch(token, targetDeckId, { words: buildSampleDeckWords() });
+      setCreatedSampleDeckId(targetDeckId);
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "decks") });
+    } catch (error) {
+      setOnboardingError(error instanceof Error ? error.message : t("errors.unknown", "Something went wrong."));
+    } finally {
+      setIsCreatingSampleDeck(false);
+    }
+  };
+
+  const handleStartFirstPractice = () => {
+    if (!createdSampleDeckId) return;
+
+    const localStorageApi = typeof window === "undefined" ? null : window.localStorage;
+    if (localStorageApi && typeof localStorageApi.setItem === "function") {
+      localStorageApi.setItem(DASHBOARD_ONBOARDING_STORAGE_KEY, "1");
+    }
+    setHasStartedPracticeFlag(true);
+    navigate(`/practice/${createdSampleDeckId}`);
+  };
+
+  const onboardingStepLabel = createdSampleDeckId
+    ? t("dashboard.onboarding.step_label", { current: 2, total: 2, defaultValue: "Step 2 of 2" })
+    : t("dashboard.onboarding.step_label", { current: 1, total: 2, defaultValue: "Step 1 of 2" });
 
   const sessionTimeMinutes = Math.floor(sessionTimeSeconds / 60);
 
@@ -447,6 +509,60 @@ export function DashboardPage() {
               );
             })}
           </ul>
+        ) : shouldShowOnboarding ? (
+          <section className="rounded-[24px] border border-accent-orange/30 bg-bg-card px-8 py-8 text-left text-text-secondary">
+            <div className="flex flex-col gap-3">
+              <p className="m-0 font-mono text-[11px] uppercase tracking-[0.12em] text-accent-orange">
+                {onboardingStepLabel}
+              </p>
+              {createdSampleDeckId ? (
+                <>
+                  <h3 className="m-0 text-[28px] leading-tight font-semibold [font-family:var(--font-display)] text-text-primary">
+                    {t("dashboard.onboarding.launch_title", "Your sample deck is ready")}
+                  </h3>
+                  <p className="m-0 max-w-xl text-sm leading-6">
+                    {t("dashboard.onboarding.launch_body", "Jump straight into your first practice session.")}
+                  </p>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={handleStartFirstPractice}
+                      className="inline-flex items-center justify-center rounded-[16px] bg-accent-orange px-5 py-3 font-semibold text-text-on-accent transition-transform hover:scale-[1.01] active:scale-[0.99]"
+                    >
+                      {t("dashboard.onboarding.launch_cta", "Start first practice")}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="m-0 text-[28px] leading-tight font-semibold [font-family:var(--font-display)] text-text-primary">
+                    {t("dashboard.onboarding.title", "Create your sample deck")}
+                  </h3>
+                  <p className="m-0 max-w-xl text-sm leading-6">
+                    {t(
+                      "dashboard.onboarding.body",
+                      "We'll set up a starter deck so you can begin practicing right away.",
+                    )}
+                  </p>
+                  {onboardingError ? <p className="m-0 text-sm text-[var(--danger-text,#b42318)]">{onboardingError}</p> : null}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => void handleCreateSampleDeck()}
+                      disabled={isCreatingSampleDeck}
+                      className="inline-flex items-center justify-center rounded-[16px] bg-accent-orange px-5 py-3 font-semibold text-text-on-accent transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {isCreatingSampleDeck
+                        ? t("common.creating", "Creating...")
+                        : onboardingError
+                          ? t("dashboard.onboarding.retry", "Try again")
+                          : t("dashboard.onboarding.create_cta", "Create sample deck")}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </section>
         ) : (
           <section className="rounded-[24px] border border-dashed border-[var(--border-strong)] bg-bg-card px-8 py-10 text-center text-text-secondary">
             <p className="m-0 text-base text-text-primary">{t("dashboard.no_decks")}</p>

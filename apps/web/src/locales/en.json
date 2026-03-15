@@ -195,7 +195,18 @@
     "create_first_deck": "to create your first deck.",
     "recent_sessions": "Recent Sessions",
     "cards_count": "{{count}} cards",
-    "no_sessions": "No completed sessions yet."
+    "no_sessions": "No completed sessions yet.",
+    "onboarding": {
+      "title": "Create your sample deck",
+      "body": "We'll set up a starter deck so you can begin practicing right away.",
+      "step_label": "Step {{current}} of {{total}}",
+      "create_cta": "Create sample deck",
+      "launch_title": "Your sample deck is ready",
+      "launch_body": "Jump straight into your first practice session.",
+      "launch_cta": "Start first practice",
+      "retry": "Try again",
+      "sample_deck_name": "Starter Japanese"
+    }
   },
   "session_details": {
     "back": "Back",

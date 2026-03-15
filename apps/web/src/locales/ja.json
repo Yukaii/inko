@@ -195,7 +195,18 @@
     "create_first_deck": "へ移動して最初のデッキを作成してください。",
     "recent_sessions": "最近のセッション",
     "cards_count": "{{count}} 枚のカード",
-    "no_sessions": "完了したセッションはまだありません。"
+    "no_sessions": "完了したセッションはまだありません。",
+    "onboarding": {
+      "title": "サンプルデッキを作成",
+      "body": "すぐに練習を始められるように、スターターデッキを用意します。",
+      "step_label": "ステップ {{current}} / {{total}}",
+      "create_cta": "サンプルデッキを作成",
+      "launch_title": "サンプルデッキの準備ができました",
+      "launch_body": "そのまま最初の練習セッションを始めましょう。",
+      "launch_cta": "最初の練習を始める",
+      "retry": "もう一度試す",
+      "sample_deck_name": "日本語スターター"
+    }
   },
   "session_details": {
     "back": "戻る",

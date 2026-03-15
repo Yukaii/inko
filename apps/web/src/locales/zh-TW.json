@@ -195,7 +195,18 @@
     "create_first_deck": "建立你的第一個牌組。",
     "recent_sessions": "最近的學習階段",
     "cards_count": "{{count}} 張字卡",
-    "no_sessions": "尚未有完成的學習階段。"
+    "no_sessions": "尚未有完成的學習階段。",
+    "onboarding": {
+      "title": "建立你的示範牌組",
+      "body": "我們會先幫你準備一個牌組，讓你可以立刻開始練習。",
+      "step_label": "步驟 {{current}} / {{total}}",
+      "create_cta": "建立示範牌組",
+      "launch_title": "示範牌組已準備完成",
+      "launch_body": "直接開始你的第一個練習階段。",
+      "launch_cta": "開始第一次練習",
+      "retry": "再試一次",
+      "sample_deck_name": "日語入門牌組"
+    }
   },
   "session_details": {
     "back": "返回",
