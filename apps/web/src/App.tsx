@@ -42,6 +42,46 @@ function RouteFallback() {
   return <div className="p-[60px] text-center text-base text-text-secondary">Loading...</div>;
 }
 
+function HomeRoute() {
+  const { token, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <RouteFallback />;
+  }
+
+  if (token) {
+    return (
+      <ProtectedLayout>
+        <Suspense fallback={<RouteFallback />}>
+          <DashboardPage />
+        </Suspense>
+      </ProtectedLayout>
+    );
+  }
+
+  return <LandingPage />;
+}
+
+function LandingRoute() {
+  const { token, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <RouteFallback />;
+  }
+
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <ProtectedLayout>
+      <Suspense fallback={<RouteFallback />}>
+        <LandingPage />
+      </Suspense>
+    </ProtectedLayout>
+  );
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedLayout>
@@ -85,7 +125,8 @@ export function App() {
         Skip to main content
       </a>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<HomeRoute />} />
+        <Route path="/home" element={<LandingRoute />} />
         <Route path="/login" element={<LoginPage />} />
         <Route
           path="/community"
