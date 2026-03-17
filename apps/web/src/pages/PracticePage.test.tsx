@@ -4,7 +4,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { canSubmitCard, getNextCleanStreak, getPracticeCompletionTitle, getTypingFeedback, isEscDoublePress, PracticePage } from "./PracticePage";
+import { PracticePage } from "./PracticePage";
+import {
+  canSubmitCard,
+  getNextCleanStreak,
+  getPracticeCompletionTitle,
+  getTypingFeedback,
+  isEscDoublePress,
+} from "../features/practice/utils/practiceUtils";
 
 const {
   mockStartPractice,

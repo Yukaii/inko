@@ -5,7 +5,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DashboardPage } from "./DashboardPage";
-import { buildSampleDeckWords, shouldShowDashboardOnboarding } from "./dashboardOnboarding";
+import { buildSampleDeckWords, shouldShowDashboardOnboarding } from "../features/dashboard/utils/dashboardOnboarding";
 
 const {
   mockDashboardStats,
