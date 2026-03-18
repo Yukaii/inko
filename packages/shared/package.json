@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "vitest run",
+    "test": "vp test run",
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@types/sanitize-html": "^2.16.0",
-    "vitest": "^3.0.8"
+    "vitest": "catalog:",
+    "vite-plus": "catalog:"
   }
 }

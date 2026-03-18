@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { Repository } from "../services/repository";
 import { RepositoryError } from "../services/repository";
 import { buildServer } from "../server";

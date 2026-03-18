@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { DEFAULT_SRS_CONFIG } from "./schemas";
 import { applyAttempt, defaultWordChannelStats, weakestChannel } from "./scheduling";
 

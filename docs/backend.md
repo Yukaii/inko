@@ -12,11 +12,11 @@ Design docs:
 Common commands:
 
 - `docker compose up -d garage`
-- `bun run --filter @inko/api dev`
-- `bun run db:migrate`
-- `bun run --filter @inko/api test`
-- `bun run --filter @inko/api lint`
-- `bun run --filter @inko/api build`
+- `vp run --filter @inko/api dev`
+- `vp run db:migrate`
+- `vp run --filter @inko/api test`
+- `vp run --filter @inko/api lint`
+- `vp run --filter @inko/api build`
 
 Mail provider envs (`apps/api`):
 
@@ -56,7 +56,7 @@ Local bootstrap:
 - Use these local compose credentials in `apps/api/.env`:
   - `OBJECT_STORAGE_ACCESS_KEY_ID=GKb599967dd3416890fee1b9bf`
   - `OBJECT_STORAGE_SECRET_ACCESS_KEY=68af3881281301775c8a62b05c2cd30e40d7572bb8fa33b0c8945538a60c658d`
-- Run `bun run db:migrate`
+- Run `vp run db:migrate`
 - Then start the API or run tests
 
 Auth notes:

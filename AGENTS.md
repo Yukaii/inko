@@ -4,11 +4,11 @@ Minimal developer map for this repo.
 
 ## Quick dev
 
-- `bun install` - install workspace deps
-- `bun run dev` - run API + web together
-- `bun run test` - run all tests
-- `bun run lint` - type/lint checks
-- `bun run build` - build shared, API, and web
+- `vp install` - install workspace deps
+- `vp run dev` - run API + web together
+- `vp run test` - run all tests
+- `vp run lint` - type/lint checks
+- `vp run build` - build shared, API, and web
 
 ## Docs (TOC)
 

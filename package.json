@@ -4,18 +4,16 @@
   "devDependencies": {
     "@auth/core": "0.37.0",
     "concurrently": "^9.1.2",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vite-plus": "catalog:"
   },
   "private": true,
   "scripts": {
-    "build": "bun run --filter @inko/shared build && bun run --filter @inko/api build && bun run --filter @inko/web build",
-    "dev": "concurrently \"bun run --filter @inko/api dev\" \"bun run --filter @inko/web dev\"",
-    "db:migrate": "bun run --filter @inko/api migrate",
-    "test": "bun run --filter @inko/shared test && bun run --filter @inko/api test && bun run --filter @inko/web test",
-    "lint": "bun run --filter @inko/shared lint && bun run --filter @inko/api lint && bun run --filter @inko/web lint"
+    "build": "vp run --filter @inko/shared build && vp run --filter @inko/api build && vp run --filter @inko/web build",
+    "dev": "concurrently \"vp run --filter @inko/api dev\" \"vp run --filter @inko/web dev\"",
+    "db:migrate": "vp run --filter @inko/api migrate",
+    "test": "vp run --filter @inko/shared test && vp run --filter @inko/api test && vp run --filter @inko/web test",
+    "lint": "vp run --filter @inko/shared lint && vp run --filter @inko/api lint && vp run --filter @inko/web lint"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
+  "packageManager": "pnpm@10.32.1"
 }

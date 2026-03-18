@@ -4,14 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "node ./scripts/generate-seo.mjs && tsc -p tsconfig.json && vite build",
-    "preview": "vite preview",
-    "test": "vitest run",
+    "dev": "vp dev",
+    "build": "node ./scripts/generate-seo.mjs && tsc -p tsconfig.json && vp build",
+    "preview": "vp preview",
+    "test": "vp test run",
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@inko/shared": "0.1.0",
+    "@inko/shared": "workspace:*",
     "@tanstack/react-query": "^5.66.8",
     "framer-motion": "^12.34.3",
     "i18next": "^25.8.13",
@@ -31,13 +31,14 @@
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@types/sql.js": "^1.4.9",
-    "@vitejs/plugin-react": "^4.4.1",
+    "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.27",
     "jsdom": "^26.0.0",
     "postcss": "^8.5.6",
     "tailwindcss": "3.4.17",
     "typescript": "^5.8.2",
-    "vite": "^6.2.0",
-    "vitest": "^3.0.8"
+    "vite": "catalog:",
+    "vitest": "catalog:",
+    "vite-plus": "catalog:"
   }
 }
