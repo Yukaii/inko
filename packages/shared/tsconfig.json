@@ -4,7 +4,9 @@
     "outDir": "dist",
     "rootDir": "src",
     "declaration": true,
-    "emitDeclarationOnly": true
+    "module": "CommonJS",
+    "moduleResolution": "Node"
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/*.spec.ts", "src/**/*.spec.tsx"]
 }

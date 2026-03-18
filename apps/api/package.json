@@ -2,12 +2,11 @@
   "name": "@inko/api",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx watch src/server.ts",
     "migrate": "tsx src/scripts/migrate.ts",
-    "start": "bun dist/apps/api/src/server.js",
+    "start": "node dist/apps/api/src/server.js",
     "test": "vp test run",
     "lint": "tsc -p tsconfig.json --noEmit"
   },

@@ -91,7 +91,14 @@ export async function buildServer(options?: {
   return app;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+async function main() {
   const app = await buildServer();
   await app.listen({ port: env.PORT, host: "0.0.0.0" });
+}
+
+if (require.main === module) {
+  void main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
 }
