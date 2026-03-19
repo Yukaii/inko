@@ -12,7 +12,7 @@
     "build": "vp run --filter @inko/shared build && vp run --filter @inko/api build && vp run --filter @inko/web build",
     "dev": "concurrently \"vp run --filter @inko/api dev\" \"vp run --filter @inko/web dev\"",
     "db:migrate": "vp run --filter @inko/api migrate",
-    "test": "vp run --filter @inko/shared test && vp run --filter @inko/api test && vp run --filter @inko/web test",
+    "test": "vp test",
     "lint": "vp run --filter @inko/shared lint && vp run --filter @inko/api lint && vp run --filter @inko/web lint"
   },
   "packageManager": "pnpm@10.32.1"
