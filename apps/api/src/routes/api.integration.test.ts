@@ -583,6 +583,17 @@ describe("API integration", () => {
     });
     expect(finishRes.statusCode).toBe(200);
 
+    const emptyContentTypeFinishRes = await app.inject({
+      method: "POST",
+      url: "/api/practice/session/session_1/finish",
+      headers: {
+        ...auth,
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      payload: "",
+    });
+    expect(emptyContentTypeFinishRes.statusCode).toBe(200);
+
     const dashboardRes = await app.inject({
       method: "GET",
       url: "/api/dashboard/summary",

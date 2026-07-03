@@ -77,6 +77,20 @@ export async function buildServer(options?: {
       fileSize: 10 * 1024 * 1024,
     },
   });
+  app.addContentTypeParser("*", { parseAs: "buffer" }, (_request, body, done) => {
+    if (body.length === 0) {
+      done(null, undefined);
+      return;
+    }
+
+    const error = new Error("Unsupported Media Type") as Error & {
+      statusCode?: number;
+      code?: string;
+    };
+    error.statusCode = 415;
+    error.code = "FST_ERR_CTP_INVALID_MEDIA_TYPE";
+    done(error);
+  });
 
   await app.register(async (instance) => authRoutes(instance, repo, mailer, options?.magicTokenStore));
   await app.register(async (instance) => deckRoutes(instance, repo));

@@ -356,7 +356,11 @@ export const api = {
     ),
 
   finishPractice: (token: string, sessionId: string) =>
-    request<SessionSummaryDTO>(`/api/practice/session/${sessionId}/finish`, { method: "POST" }, token),
+    request<SessionSummaryDTO>(
+      `/api/practice/session/${sessionId}/finish`,
+      { method: "POST", body: JSON.stringify({}) },
+      token,
+    ),
   getPracticeSessionDetails: (token: string, sessionId: string) =>
     request<PracticeSessionDetails>(`/api/practice/session/${sessionId}`, {}, token),
 
