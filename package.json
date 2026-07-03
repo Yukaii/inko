@@ -15,5 +15,20 @@
     "test": "vp test",
     "lint": "vp run --filter @inko/shared lint && vp run --filter @inko/api lint && vp run --filter @inko/web lint"
   },
-  "packageManager": "pnpm@10.32.1"
+  "packageManager": "pnpm@10.32.1",
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+      "vitest": "npm:@voidzero-dev/vite-plus-test@latest",
+      "vite-plus": "latest"
+    }
+  },
+  "overrides": {
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
 }
