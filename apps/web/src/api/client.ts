@@ -177,6 +177,10 @@ export const api = {
   exchangeOAuthSession: async () => {
     const res = await fetch(`${API_BASE}/api/auth/oauth/exchange`, {
       method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({}),
       credentials: "include",
     });
 
