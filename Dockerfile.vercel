@@ -21,6 +21,7 @@ RUN pnpm run --filter @inko/shared build \
 FROM node:24-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+ENV PORT=80
 ENV STATIC_ASSETS_DIR=/app/apps/web/dist
 
 COPY --from=builder /app/node_modules ./node_modules
@@ -29,6 +30,6 @@ COPY --from=builder /app/apps/web/dist ./apps/web/dist
 COPY --from=builder /app/packages/shared ./packages/shared
 COPY --from=builder /app/tsconfig.base.json ./tsconfig.base.json
 
-EXPOSE 4000
+EXPOSE 80
 
 CMD ["node", "apps/api/dist/apps/api/src/server.js"]

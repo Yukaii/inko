@@ -5,6 +5,8 @@ Backend is split between:
 - `apps/api` - Fastify HTTP API
 - PostgreSQL - primary application database
 
+In production monolith deployments, the Fastify process also serves `apps/web/dist` when `STATIC_ASSETS_DIR` points at the built frontend. API routes remain under `/api/*`; client-side web routes fall back to `index.html`.
+
 Design docs:
 
 - `docs/practice-queue-design.md` - queue-backed practice selection architecture, migration, and observability
@@ -29,7 +31,8 @@ Database envs:
 
 - `apps/api/.env`: `DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/inko`
 - optional: `DATABASE_POOL_MAX=10`
-- `API_PUBLIC_URL=http://localhost:4000`
+- `API_PUBLIC_URL=http://localhost:5173` when using the Vite `/api` proxy
+- optional: `STATIC_ASSETS_DIR=apps/web/dist`
 
 Object storage envs:
 

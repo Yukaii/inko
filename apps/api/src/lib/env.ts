@@ -26,6 +26,7 @@ const EnvSchema = z.object({
   OBJECT_STORAGE_FORCE_PATH_STYLE: z.coerce.boolean().default(true),
   PRACTICE_TRACE_SLOW_MS: z.coerce.number().int().nonnegative().default(1000),
   MODERATOR_EMAILS: z.string().default(""),
+  STATIC_ASSETS_DIR: z.string().min(1).optional(),
 });
 
 const parsedEnv = EnvSchema.parse(process.env);

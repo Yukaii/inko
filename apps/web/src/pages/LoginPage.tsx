@@ -145,7 +145,7 @@ export function LoginPage() {
   const startOauth = (provider: "google" | "github") => {
     setLoading(true);
     setOauthProvider(provider);
-    const url = new URL(`${import.meta.env.VITE_API_URL ?? "http://localhost:4000"}/api/auth/${provider}/start`);
+    const url = new URL(`${import.meta.env.VITE_API_URL ?? window.location.origin}/api/auth/${provider}/start`);
     url.searchParams.set("redirectTo", "/dashboard");
     window.location.href = url.toString();
   };

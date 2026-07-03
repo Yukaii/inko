@@ -1,12 +1,53 @@
 # Deployment Guide (Production)
 
 This project uses:
-- Frontend (`apps/web`) on Zeabur or GitHub Pages
-- API (`apps/api`) on Zeabur
-- PostgreSQL on Zeabur
+- A monolith Docker image for Vercel Container Images
+- Frontend (`apps/web`) and API (`apps/api`) served by the same Fastify process
+- PostgreSQL managed outside the app container
 - Cloudflare R2 for object storage
 
-## 1. Zeabur template (multi-service)
+## 1. Vercel monolith Docker deploy
+
+Vercel Container Images detect the root `Dockerfile.vercel`. That image:
+
+- installs workspace dependencies
+- builds `packages/shared`, `apps/api`, and `apps/web`
+- runs the Fastify API server
+- serves the built Vite app from the same process
+- falls back to `index.html` for client-side routes outside `/api/*`
+
+Deploy by connecting the Git repository to Vercel or with the Vercel CLI from the repo root:
+
+```bash
+vercel deploy
+```
+
+Required production environment variables:
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `FRONTEND_URL=https://<your-vercel-domain>`
+- `API_PUBLIC_URL=https://<your-vercel-domain>`
+- `MAIL_PROVIDER=log|resend`
+- `RESEND_API_KEY` when `MAIL_PROVIDER=resend`
+- `MAIL_FROM`
+- `OBJECT_STORAGE_ENDPOINT`
+- `OBJECT_STORAGE_REGION=auto`
+- `OBJECT_STORAGE_BUCKET`
+- `OBJECT_STORAGE_ACCESS_KEY_ID`
+- `OBJECT_STORAGE_SECRET_ACCESS_KEY`
+- `OBJECT_STORAGE_FORCE_PATH_STYLE=false` for Cloudflare R2
+
+Do not set `VITE_API_URL` for the Vercel monolith unless the browser should call a separate API origin. With no `VITE_API_URL`, the frontend uses same-origin `/api/*` requests.
+
+OAuth provider callback URLs should use the same Vercel domain:
+
+- `https://<your-vercel-domain>/api/auth/github/callback`
+- `https://<your-vercel-domain>/api/auth/google/callback`
+
+The generic root `Dockerfile` also builds the monolith and exposes port `4000` for non-Vercel container hosts.
+
+## 2. Zeabur template (multi-service, legacy)
 
 This repo now includes a multi-service template:
 - `zeabur.yml`
@@ -24,7 +65,7 @@ Dockerfile selection for API:
 - Zeabur CLI (`template deploy`)
 - Zeabur review-app automation that consumes template YAML
 
-## 2. Deploy with Zeabur CLI
+## 3. Deploy with Zeabur CLI
 
 Official CLI repo:
 - [zeabur/cli](https://github.com/zeabur/cli)
@@ -59,7 +100,7 @@ Notes:
 - Set `OBJECT_STORAGE_REGION=auto` for R2.
 - Set `OBJECT_STORAGE_FORCE_PATH_STYLE=false` for R2 (template default).
 
-## 2.2 Deploy only selected services
+## 3.1 Deploy only selected services
 
 If you only want to redeploy part of the stack, use:
 
@@ -134,7 +175,7 @@ So `ZEABUR_API_DOMAIN` satisfies `API_DOMAIN`, `ZEABUR_OBJECT_STORAGE_BUCKET` sa
 
 The env file is parsed as a simple dotenv-style file. Blank lines, `# comments`, and optional leading `export ` are supported.
 
-## 2.1 R2 credentials
+## 3.2 R2 credentials
 
 Use these exact formats:
 
@@ -149,7 +190,7 @@ R2 endpoint rule:
 - Wrong: `https://<bucket>.<accountid>.r2.cloudflarestorage.com`
 - Wrong: `https://<accountid>.r2.cloudflarestorage.com/<bucket>`
 
-## 3. GitHub Action for CLI deploy
+## 4. GitHub Action for CLI deploy
 
 Workflow file:
 - `.github/workflows/deploy-zeabur-template.yml`
@@ -166,7 +207,7 @@ Required GitHub secrets:
 
 This workflow is `workflow_dispatch` (manual trigger) to avoid accidental production redeploys.
 
-## 4. PostgreSQL runtime notes
+## 5. PostgreSQL runtime notes
 
 - PostgreSQL persists data at `/var/lib/postgresql/data`
 - API gets its connection string from `${POSTGRES_CONNECTION_STRING}`
@@ -174,13 +215,13 @@ This workflow is `workflow_dispatch` (manual trigger) to avoid accidental produc
 - API runs Kysely migrations on boot, so a fresh project should initialize its schema automatically
 - If you rotate credentials in the PostgreSQL service later, redeploy the API service so `DATABASE_URL` stays in sync with the new `${POSTGRES_CONNECTION_STRING}`
 
-## 5. R2 runtime notes
+## 6. R2 runtime notes
 
 - API talks to R2 through `${OBJECT_STORAGE_ENDPOINT}` with S3-compatible auth.
 - Use `OBJECT_STORAGE_REGION=auto`.
 - Bucket and key credentials are managed in Cloudflare, not in Zeabur runtime.
 
-## 6. Frontend on Zeabur (recommended when GitHub Actions quota is limited)
+## 7. Frontend on Zeabur (legacy split deployment)
 
 The template deploys `Frontend` from `apps/web` and sets:
 - `VITE_API_URL=https://${API_DOMAIN}.zeabur.app`
@@ -189,7 +230,7 @@ The template deploys `Frontend` from `apps/web` and sets:
 After deploy, use:
 - `https://<FRONTEND_DOMAIN>.zeabur.app`
 
-## 7. Frontend on GitHub Pages (optional alternative)
+## 8. Frontend on GitHub Pages (optional alternative)
 
 Workflow file:
 - `.github/workflows/deploy-frontend-pages.yml`
@@ -202,7 +243,7 @@ Notes:
 - Workflow builds Vite with repo base path: `/<repo-name>/`
 - Workflow copies `index.html` to `404.html` for SPA fallback on GitHub Pages
 
-## 8. CI checks
+## 9. CI checks
 
 Workflow file:
 - `.github/workflows/ci.yml`
@@ -213,9 +254,9 @@ Runs on PRs and pushes to `main`:
 - test
 - build
 
-## 9. Recommended production checklist
+## 10. Recommended production checklist
 
-- `zeabur.yml` deployed successfully (3 services created)
+- Vercel monolith deployment or `zeabur.yml` legacy split deployment succeeds
 - PostgreSQL volume mounted at `/var/lib/postgresql/data`
 - API `JWT_SECRET` replaced with strong value
 - API `MAIL_PROVIDER` set to `resend`
@@ -225,6 +266,6 @@ Runs on PRs and pushes to `main`:
 - API `API_PUBLIC_URL` matches API domain
 - OAuth provider envs configured when GitHub or Google login is enabled
 - API object storage envs point at R2 endpoint and valid bucket/key
-- frontend `VITE_API_URL` points to API domain
+- frontend `VITE_API_URL` is unset for monolith or points to the API domain for split deployment
 - CORS requests from frontend domain succeed
 - API `/health` returns `{"ok": true}`
