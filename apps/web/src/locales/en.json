@@ -482,6 +482,7 @@
     "esc_hint": "Press Esc again within 1 second to exit",
     "end_confirm_title": "End this practice session?",
     "end_confirm_desc": "Progress for this session will be saved.",
+    "continue_session": "Continue practice",
     "confirm_exit": "Confirm Exit",
     "no_words_available": "No words available in this deck yet.",
     "type_romaji": "type romaji...",

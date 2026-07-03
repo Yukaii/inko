@@ -482,6 +482,7 @@
     "esc_hint": "終了するには、1秒以内にもう一度Escを押してください",
     "end_confirm_title": "この練習セッションを終了しますか？",
     "end_confirm_desc": "このセッションの進捗は保存されます。",
+    "continue_session": "練習を続ける",
     "confirm_exit": "終了を確認",
     "no_words_available": "このデッキにはまだ単語がありません。",
     "type_romaji": "ローマ字を入力...",

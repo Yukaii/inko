@@ -31,6 +31,11 @@ function isReplayTtsShortcut(event: Pick<KeyboardEvent, "key" | "code" | "altKey
   return event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && (event.code === "KeyR" || event.key.toLowerCase() === "r");
 }
 
+function isInteractiveElement(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest("button, a, input, select, textarea, [role='button'], [tabindex]:not([tabindex='-1'])"));
+}
+
 export function PracticePage() {
   const { t } = useTranslation();
   const { deckId } = useParams<{ deckId: string }>();
@@ -66,6 +71,7 @@ export function PracticePage() {
   const startedAtRef = useRef<number>(Date.now());
   const autoSubmitKeyRef = useRef<string>("");
   const hiddenInputRef = useRef<HTMLInputElement | null>(null);
+  const exitConfirmButtonRef = useRef<HTMLButtonElement | null>(null);
   const zoneRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ttsUrlCacheRef = useRef<Map<string, string>>(new Map());
@@ -160,6 +166,14 @@ export function PracticePage() {
   const focusInput = useCallback(() => {
     hiddenInputRef.current?.focus();
   }, []);
+
+  const closeExitConfirm = useCallback(() => {
+    setExitConfirmOpen(false);
+    setExitEscHint(false);
+    window.requestAnimationFrame(() => {
+      focusInput();
+    });
+  }, [focusInput]);
 
   useEffect(() => {
     focusInput();
@@ -290,6 +304,11 @@ export function PracticePage() {
     finishMutation.mutate({ token, sessionId });
   }, [finishMutation, sessionDone, sessionId, token]);
 
+  const confirmExit = useCallback(() => {
+    setExitConfirmOpen(false);
+    requestFinish();
+  }, [requestFinish]);
+
   useEffect(() => {
     if (lastEscPressedAt === null) return;
     const timer = window.setTimeout(() => {
@@ -321,6 +340,11 @@ export function PracticePage() {
     },
     [lastEscPressedAt],
   );
+
+  useEffect(() => {
+    if (!exitConfirmOpen) return;
+    exitConfirmButtonRef.current?.focus();
+  }, [exitConfirmOpen]);
 
   const submitEnabled = useMemo(() => {
     if (!card) return false;
@@ -512,8 +536,7 @@ export function PracticePage() {
           return;
         }
         if (exitConfirmOpen) {
-          setExitConfirmOpen(false);
-          setExitEscHint(false);
+          closeExitConfirm();
           return;
         }
         requestExitIntent("esc");
@@ -521,9 +544,10 @@ export function PracticePage() {
       }
       // Any printable key focuses the hidden input
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isInteractiveElement(event.target)) return;
       focusInput();
     },
-    [card, exitConfirmOpen, focusInput, replayCardAudio, requestExitIntent, showShortcutHelp],
+    [card, closeExitConfirm, exitConfirmOpen, focusInput, replayCardAudio, requestExitIntent, showShortcutHelp],
   );
 
   // Build character-by-character display for monkeytype effect
@@ -654,7 +678,10 @@ export function PracticePage() {
       tabIndex={-1}
       aria-label="Practice session"
       onKeyDown={handleKeyDown}
-      onClick={focusInput}
+      onClick={(event) => {
+        if (isInteractiveElement(event.target)) return;
+        focusInput();
+      }}
     >
       {/* Minimal top bar */}
       <div className="fixed inset-x-0 top-0 z-[210] flex flex-col gap-2 px-3 py-3 opacity-60 transition-opacity hover:opacity-100 focus-within:opacity-100 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
@@ -837,26 +864,32 @@ export function PracticePage() {
         </div>
       ) : null}
       {exitConfirmOpen ? (
-        <div className="fixed left-1/2 top-16 z-[230] w-[min(92vw,420px)] -translate-x-1/2 rounded-xl border border-[var(--border-strong)] bg-bg-card p-4 shadow-xl">
-          <p className="m-0 text-sm text-text-primary">{t("practice.end_confirm_title")}</p>
+        <div
+          className="fixed left-1/2 top-16 z-[230] w-[min(92vw,420px)] -translate-x-1/2 rounded-xl border border-[var(--border-strong)] bg-bg-card p-4 shadow-xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="practice-exit-confirm-title"
+        >
+          <p id="practice-exit-confirm-title" className="m-0 text-sm text-text-primary">{t("practice.end_confirm_title")}</p>
           <p className="mt-1 mb-0 text-xs text-text-secondary">{t("practice.end_confirm_desc")}</p>
           <div className="mt-3 flex items-center justify-end gap-2">
             <button
               type="button"
               className="rounded-md border border-[var(--border-strong)] bg-bg-page px-3 py-1.5 text-xs font-medium text-text-primary hover:border-accent-orange hover:text-text-primary"
-              onClick={() => {
-                setExitConfirmOpen(false);
-                setExitEscHint(false);
-              }}
+              onClick={closeExitConfirm}
             >
-              {t("common.cancel")}
+              {t("practice.continue_session", "Continue practice")}
             </button>
             <button
               type="button"
+              ref={exitConfirmButtonRef}
               className="rounded-md border border-[var(--danger-border)] bg-[var(--danger-toast-bg)] px-3 py-1.5 text-xs text-[var(--danger-text)]"
-              onClick={() => {
-                setExitConfirmOpen(false);
-                requestFinish();
+              onClick={confirmExit}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" && event.key !== " ") return;
+                event.preventDefault();
+                event.stopPropagation();
+                confirmExit();
               }}
             >
               {t("practice.confirm_exit")}
@@ -959,8 +992,7 @@ export function PracticePage() {
                 return;
               }
               if (exitConfirmOpen) {
-                setExitConfirmOpen(false);
-                setExitEscHint(false);
+                closeExitConfirm();
               } else {
                 requestExitIntent("esc");
               }

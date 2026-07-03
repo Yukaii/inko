@@ -482,6 +482,7 @@
     "esc_hint": "在1秒內再次按下 Esc 鍵以退出",
     "end_confirm_title": "要結束這個練習階段嗎？",
     "end_confirm_desc": "這個階段的進度將被保存。",
+    "continue_session": "繼續練習",
     "confirm_exit": "確認退出",
     "no_words_available": "此牌組目前沒有可練習的字詞。",
     "type_romaji": "輸入羅馬拼音...",

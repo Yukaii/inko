@@ -321,6 +321,60 @@ describe("PracticePage", () => {
     await screen.findByTitle("Practice shortcuts");
   });
 
+  it("can confirm exit from the keyboard after double escape", async () => {
+    mockPracticeStart({ ttsEnabled: false });
+    mockFinishPractice.mockResolvedValue({
+      cardsCompleted: 1,
+      avgTypingScore: 100,
+    });
+
+    renderPracticePage();
+
+    const input = await screen.findByLabelText("Type answer for 勉強");
+    input.focus();
+
+    fireEvent.keyDown(input, { key: "Escape" });
+    fireEvent.keyDown(input, { key: "Escape" });
+
+    const dialog = await screen.findByRole("dialog", { name: "practice.end_confirm_title" });
+    expect(dialog).toBeTruthy();
+
+    const confirmButton = screen.getByRole("button", { name: "practice.confirm_exit" });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(confirmButton);
+    });
+
+    fireEvent.keyDown(confirmButton, { key: "Enter" });
+
+    await waitFor(() => {
+      expect(mockFinishPractice).toHaveBeenCalledWith("test-token", "session-1");
+    });
+  });
+
+  it("continues practice with escape from the exit confirmation", async () => {
+    mockPracticeStart({ ttsEnabled: false });
+
+    renderPracticePage();
+
+    const input = await screen.findByLabelText("Type answer for 勉強");
+    input.focus();
+
+    fireEvent.keyDown(input, { key: "Escape" });
+    fireEvent.keyDown(input, { key: "Escape" });
+
+    const confirmButton = await screen.findByRole("button", { name: "practice.confirm_exit" });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(confirmButton);
+    });
+
+    fireEvent.keyDown(confirmButton, { key: "Escape" });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "practice.end_confirm_title" })).toBeNull();
+      expect(document.activeElement).toBe(input);
+    });
+  });
+
   it("hides visible card content in audio challenge mode", async () => {
     mockPracticeStart({
       card: {
