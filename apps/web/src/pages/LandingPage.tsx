@@ -81,13 +81,13 @@ export function LandingPage() {
           </motion.h1>
           <motion.p 
             variants={fadeInUp}
-            className="mb-10 max-w-[600px] font-mono text-base text-text-secondary md:text-lg leading-relaxed"
+            className="mb-10 max-w-[600px] text-base leading-relaxed text-text-secondary md:text-lg"
           >
             {t("landing.hero.subtitle")}
           </motion.p>
           <motion.div 
             variants={fadeInUp}
-            className="mb-20 flex flex-col gap-4 sm:flex-row sm:gap-6 font-mono font-semibold"
+            className="mb-20 flex flex-col gap-4 font-semibold sm:flex-row sm:gap-6"
           >
             <GetStartedLink
               className="rounded-base bg-accent-orange px-7 py-3.5 text-text-on-accent transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-accent-orange/20"
@@ -132,7 +132,7 @@ export function LandingPage() {
             <h2 className="font-display text-3xl md:text-4xl font-bold text-text-primary">
               {t("landing.how_it_works.title")}
             </h2>
-            <p className="font-mono text-sm text-text-secondary">
+            <p className="text-sm text-text-secondary">
               {t("landing.how_it_works.subtitle")}
             </p>
           </motion.div>
@@ -159,8 +159,8 @@ export function LandingPage() {
                   <div className="h-8 w-8 rounded-full bg-bg-card flex items-center justify-center text-accent-teal font-bold">{step.num.replace('0','')}</div>
                 </div>
                 <div>
-                  <h3 className="mb-2 font-mono font-bold text-text-primary">{step.title}</h3>
-                  <p className="font-mono text-sm leading-relaxed text-text-secondary">
+                  <h3 className="mb-2 font-bold text-text-primary">{step.title}</h3>
+                  <p className="text-sm leading-relaxed text-text-secondary">
                     {step.desc}
                   </p>
                 </div>
@@ -185,7 +185,7 @@ export function LandingPage() {
             <h2 className="font-display text-3xl md:text-4xl font-bold text-text-primary">
               {t("landing.features.title")}
             </h2>
-            <p className="max-w-[500px] font-mono text-sm text-text-secondary">
+            <p className="max-w-[500px] text-sm text-text-secondary">
               {t("landing.features.subtitle")}
             </p>
           </motion.div>
@@ -245,7 +245,7 @@ export function LandingPage() {
                 <h3 className="font-display text-xl font-semibold text-text-primary">
                   {feat.title}
                 </h3>
-                <p className="font-mono text-sm leading-relaxed text-text-secondary">
+                <p className="text-sm leading-relaxed text-text-secondary">
                   {feat.desc}
                 </p>
               </motion.div>
@@ -266,12 +266,12 @@ export function LandingPage() {
           <h2 className="font-display text-4xl md:text-[64px] font-bold leading-tight text-text-primary">
             {t("landing.cta.title")}
           </h2>
-          <p className="max-w-[550px] font-mono text-sm md:text-base leading-relaxed text-text-secondary">
+          <p className="max-w-[550px] text-sm leading-relaxed text-text-secondary md:text-base">
             {t("landing.cta.subtitle")}
           </p>
           <div className="flex flex-col items-center gap-4 mt-4">
             <GetStartedLink
-              className="rounded-base bg-accent-orange px-8 py-4 font-mono font-semibold text-text-on-accent transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-accent-orange/20"
+              className="rounded-base bg-accent-orange px-8 py-4 font-semibold text-text-on-accent shadow-lg shadow-accent-orange/20 transition-transform hover:scale-105 active:scale-95"
             >
               {t("landing.cta.button")}
             </GetStartedLink>
@@ -287,11 +287,11 @@ export function LandingPage() {
               <span className="font-display text-2xl font-bold text-accent-orange">
                 inko_
               </span>
-              <p className="font-mono text-xs leading-relaxed text-text-secondary">
+              <p className="text-xs leading-relaxed text-text-secondary">
                 {t("landing.footer.desc")}
               </p>
             </div>
-            <div className="flex flex-wrap gap-16 font-mono text-sm">
+            <div className="flex flex-wrap gap-16 text-sm">
               <div className="flex flex-col gap-3">
                 <span className="font-bold text-text-primary mb-2">{t("landing.footer.product")}</span>
                 <a href="#features" className="text-text-secondary hover:text-accent-teal transition-colors">{t("landing.nav.features")}</a>
@@ -308,7 +308,7 @@ export function LandingPage() {
             </div>
           </div>
           <div className="mb-6 mt-6 h-[1px] w-full bg-[var(--border-subtle)]" />
-          <div className="flex flex-col items-center justify-between font-mono text-xs text-text-secondary sm:flex-row">
+          <div className="flex flex-col items-center justify-between text-xs text-text-secondary sm:flex-row">
             <span>{t("landing.footer.rights")}</span>
             <span>{t("landing.footer.built_with")}</span>
           </div>

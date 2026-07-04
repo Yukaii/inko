@@ -51,7 +51,7 @@ export function PublicNavbar({ showAnchors = false }: PublicNavbarProps) {
           >
             inko
           </Link>
-          <div className="hidden items-center gap-6 font-mono text-sm text-text-secondary md:flex">
+          <div className="hidden items-center gap-6 text-sm font-medium text-text-secondary md:flex">
             {showAnchors ? (
               <>
                 <a href="#how-it-works" className="text-text-secondary transition-colors hover:text-text-primary no-underline">
@@ -84,7 +84,7 @@ export function PublicNavbar({ showAnchors = false }: PublicNavbarProps) {
               type="button"
               onClick={() => setShowLangMenu((current) => !current)}
               title={t("common.change_language")}
-              className="flex items-center gap-2 rounded-full border border-accent-orange/20 bg-accent-orange px-4 py-2 font-mono text-xs font-bold text-text-on-accent transition-transform hover:scale-105 active:scale-95"
+              className="flex items-center gap-2 rounded-full border border-accent-orange/20 bg-accent-orange px-4 py-2 text-xs font-bold text-text-on-accent transition-transform hover:scale-105 active:scale-95"
             >
               <Globe className="h-3.5 w-3.5" />
               <span className="min-w-[20px] text-left uppercase">{currentLang.short}</span>
@@ -110,7 +110,7 @@ export function PublicNavbar({ showAnchors = false }: PublicNavbarProps) {
                           void i18n.changeLanguage(lang.code);
                           setShowLangMenu(false);
                         }}
-                        className={`flex w-full items-center rounded-lg px-3 py-2 text-left font-mono text-[11px] font-bold transition-all ${
+                        className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-[11px] font-bold transition-all ${
                           isActive
                             ? "bg-accent-teal text-text-on-accent"
                             : "text-text-secondary hover:bg-bg-elevated hover:text-text-primary"
@@ -127,7 +127,7 @@ export function PublicNavbar({ showAnchors = false }: PublicNavbarProps) {
 
           <Link
             to="/dashboard"
-            className="rounded-xl bg-accent-orange px-5 py-2 font-mono text-xs font-bold text-text-on-accent no-underline transition-transform hover:scale-105 active:scale-95"
+            className="rounded-xl bg-accent-orange px-5 py-2 text-xs font-bold text-text-on-accent no-underline transition-transform hover:scale-105 active:scale-95"
           >
             {t("landing.nav.get_started")}
           </Link>

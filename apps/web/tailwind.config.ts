@@ -25,9 +25,10 @@ export default {
         base: "16px",
       },
       fontFamily: {
-        display: ["Oswald", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
-        jp: ["Noto Sans JP", "sans-serif"],
+        sans: ["var(--font-sans)"],
+        display: ["var(--font-display)"],
+        mono: ["var(--font-mono)"],
+        jp: ["var(--font-jp)"],
       },
       keyframes: {
         shake: {
