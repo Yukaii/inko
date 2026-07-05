@@ -84,7 +84,7 @@ function MappingSelect({
 }
 
 export function AnkiImportPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -361,7 +361,7 @@ export function AnkiImportPage() {
 
   useEffect(() => {
     applyNoIndexMetadata(t("importer.seo_title"));
-  }, [t]);
+  }, [i18n.resolvedLanguage, t]);
 
   useEffect(() => {
     if (!presetCommunitySlug) return;

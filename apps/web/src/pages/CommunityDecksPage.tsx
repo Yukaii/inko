@@ -7,7 +7,7 @@ import { api } from "../api/client";
 import { applyMetadata } from "../lib/seo";
 
 export function CommunityDecksPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [query, setQuery] = useState("");
   const [language, setLanguage] = useState("all");
 
@@ -18,7 +18,7 @@ export function CommunityDecksPage() {
       path: "/community",
       robots: "index,follow",
     });
-  }, [t]);
+  }, [i18n.resolvedLanguage, t]);
 
   const decksQuery = useQuery({
     queryKey: ["community-decks", language, query],

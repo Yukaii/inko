@@ -128,7 +128,7 @@ function SubmissionCard({
 }
 
 export function CommunityModerationPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<StatusFilter>("pending");
@@ -137,7 +137,7 @@ export function CommunityModerationPage() {
 
   useEffect(() => {
     applyNoIndexMetadata(t("community.moderation.seo_title"));
-  }, [t]);
+  }, [i18n.resolvedLanguage, t]);
 
   const submissionsQuery = useQuery({
     queryKey: authQueryKey(token, "community-submissions", status),

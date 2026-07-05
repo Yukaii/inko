@@ -12,7 +12,7 @@ import { authQueryKey } from "../lib/queryKeys";
 const STAR_VALUES = [1, 2, 3, 4, 5] as const;
 
 export function CommunityDeckDetailPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token } = useAuth();
   const { slug } = useParams<{ slug: string }>();
   const queryClient = useQueryClient();
@@ -62,7 +62,7 @@ export function CommunityDeckDetailPage() {
       path: `/community/decks/${deck.slug}`,
       robots: "index,follow",
     });
-  }, [deck, t]);
+  }, [deck, i18n.resolvedLanguage, t]);
 
   if (!deck && !deckQuery.isLoading) {
     return <Navigate to="/community" replace />;

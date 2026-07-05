@@ -7,6 +7,7 @@ import { PublicNavbar } from "../components/PublicNavbar";
 import { LandingPage } from "../pages/LandingPage";
 import { LoginPage } from "../pages/LoginPage";
 import { applyNoIndexMetadata } from "../lib/seo";
+import { useTranslation } from "react-i18next";
 
 const DashboardPage = lazy(() => import("../pages/DashboardPage").then((m) => ({ default: m.DashboardPage })));
 const WordBankPage = lazy(() => import("../pages/WordBankPage").then((m) => ({ default: m.WordBankPage })));
@@ -25,12 +26,13 @@ function RouteFallback() {
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth();
+  const { i18n } = useTranslation();
 
   useKeyboardShortcuts();
 
   useEffect(() => {
-    applyNoIndexMetadata("Inko App");
-  }, []);
+    applyNoIndexMetadata("Inko");
+  }, [i18n.resolvedLanguage]);
 
   if (isLoading) {
     return <RouteFallback />;

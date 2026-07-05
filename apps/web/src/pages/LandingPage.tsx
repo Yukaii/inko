@@ -43,7 +43,7 @@ function GetStartedLink({
 }
 
 export function LandingPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     applyMetadata({
@@ -53,7 +53,7 @@ export function LandingPage() {
       path: "/",
       robots: "index,follow",
     });
-  }, [t]);
+  }, [i18n.resolvedLanguage, t]);
 
   return (
     <div className="min-h-screen bg-bg-page text-text-primary selection:bg-accent-orange/30">

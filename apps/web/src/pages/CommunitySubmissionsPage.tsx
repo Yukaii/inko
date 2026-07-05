@@ -9,13 +9,13 @@ import { applyNoIndexMetadata } from "../lib/seo";
 import { authQueryKey } from "../lib/queryKeys";
 
 export function CommunitySubmissionsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token } = useAuth();
   const queryClient = useQueryClient();
 
   useEffect(() => {
     applyNoIndexMetadata(t("community.submissions.seo_title"));
-  }, [t]);
+  }, [i18n.resolvedLanguage, t]);
 
   const submissionsQuery = useQuery({
     queryKey: authQueryKey(token, "community-submissions", "mine"),

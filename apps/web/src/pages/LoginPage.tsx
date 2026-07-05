@@ -62,7 +62,7 @@ const ENABLED_PROVIDERS = [
 type OAuthProvider = (typeof ENABLED_PROVIDERS)[number]["id"];
 
 export function LoginPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [email, setEmail] = useState(import.meta.env.DEV ? "user@example.com" : "");
   const [tokenInput, setTokenInput] = useState("");
   const [message, setMessage] = useState("");
@@ -72,8 +72,8 @@ export function LoginPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    applyNoIndexMetadata("Log In | Inko");
-  }, []);
+    applyNoIndexMetadata(`${t("auth.login")} | Inko`);
+  }, [i18n.resolvedLanguage, t]);
 
   const getErrorMessage = (error: any) => {
     if (error.code) {
