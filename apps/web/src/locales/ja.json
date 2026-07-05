@@ -516,7 +516,14 @@
     "clean_streak_desc": "クリーン連続は、一度も外さずにカードを終えたときだけ増えます。"
   },
   "shortcuts": {
-    "go_to_page_sequence": "ページ移動 (g の後に d/w/s)"
+    "go_to_page_sequence": "ページ移動 (g の後に d/w/s)",
+    "nav_numbers": "ダッシュボード / 単語帳 / コミュニティへ移動",
+    "go_dashboard": "ダッシュボードへ移動",
+    "go_word_bank": "単語帳へ移動",
+    "go_settings": "設定へ移動",
+    "go_settings_direct": "設定へ移動",
+    "toggle_help": "ヘルプを表示/非表示",
+    "close_dialogs": "ダイアログを閉じる / キャンセル"
   },
   "importer": {
     "seo_title": "Ankiデッキをインポート | Inko",

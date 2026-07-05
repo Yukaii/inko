@@ -516,7 +516,14 @@
     "clean_streak_desc": "只有在整張卡片過程中都沒有偏離輸入時，乾淨連擊才會增加。"
   },
   "shortcuts": {
-    "go_to_page_sequence": "前往頁面（先按 g 再按 d/w/s）"
+    "go_to_page_sequence": "前往頁面（先按 g 再按 d/w/s）",
+    "nav_numbers": "前往儀表板 / 單字庫 / 社群",
+    "go_dashboard": "前往儀表板",
+    "go_word_bank": "前往單字庫",
+    "go_settings": "前往設定",
+    "go_settings_direct": "前往設定",
+    "toggle_help": "顯示/隱藏說明",
+    "close_dialogs": "關閉對話框 / 取消"
   },
   "importer": {
     "seo_title": "匯入 Anki 牌組 | Inko",
