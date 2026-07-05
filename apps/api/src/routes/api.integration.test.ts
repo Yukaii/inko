@@ -414,7 +414,7 @@ describe("API integration", () => {
       const nonce = csp.match(/'nonce-([^']+)'/)?.[1];
       expect(nonce).toBeTruthy();
       expect(csp).toContain("'wasm-unsafe-eval'");
-      expect(res.body.match(new RegExp(`nonce="${nonce}"`, "g"))).toHaveLength(2);
+      expect(res.body.split(`nonce="${nonce}"`).length - 1).toBe(2);
       expect(res.body).not.toContain("__INKO_CSP_NONCE__");
     } finally {
       await app.close();
