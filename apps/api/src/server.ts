@@ -3,7 +3,8 @@ import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import sensible from "@fastify/sensible";
 import fastifyStatic from "@fastify/static";
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import path from "node:path";
 import { ErrorCode } from "@inko/shared";
 import { env } from "./lib/env";
@@ -41,6 +42,11 @@ export async function buildServer(options?: {
   const repo = options?.repository ?? repository;
   const mailer = options?.mailer ?? createMailer();
   const tts = options?.ttsService ?? ttsService;
+  const cspNonces = new WeakMap<object, string>();
+
+  app.addHook("onRequest", async (request) => {
+    cspNonces.set(request, createCspNonce());
+  });
 
   app.setErrorHandler((error: FastifyError, request, reply) => {
     app.log.error(error);
@@ -113,12 +119,20 @@ export async function buildServer(options?: {
       root: staticAssetsDir,
       prefix: "/",
       wildcard: false,
+      index: false,
     });
 
     app.get("/*", async (request, reply) => {
       const staticPath = getStaticPath(staticAssetsDir, request.url);
       if (!staticPath) {
         return reply.callNotFound();
+      }
+
+      if (staticPath === "index.html") {
+        const nonce = cspNonces.get(request) ?? createCspNonce();
+        reply.header("content-security-policy", buildContentSecurityPolicy(nonce));
+        reply.type("text/html; charset=utf-8");
+        return renderIndexHtml(staticAssetsDir, nonce);
       }
 
       return reply.sendFile(staticPath);
@@ -130,6 +144,32 @@ export async function buildServer(options?: {
   });
 
   return app;
+}
+
+function createCspNonce() {
+  return randomBytes(16).toString("base64");
+}
+
+function buildContentSecurityPolicy(nonce: string) {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'wasm-unsafe-eval' https://www.googletagmanager.com`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self'",
+    "connect-src 'self' https://www.google-analytics.com",
+    "media-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join("; ");
+}
+
+function renderIndexHtml(staticAssetsDir: string, nonce: string) {
+  return readFileSync(path.join(staticAssetsDir, "index.html"), "utf8")
+    .replaceAll("__INKO_CSP_NONCE__", nonce)
+    .replace(/<script(?![^>]*\snonce=)/g, `<script nonce="${nonce}"`);
 }
 
 function buildPublicConfig() {

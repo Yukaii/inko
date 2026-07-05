@@ -1,4 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { Repository } from "../services/repository";
 import { RepositoryError } from "../services/repository";
 import { buildServer } from "../server";
@@ -388,6 +391,34 @@ describe("API integration", () => {
         process.env.VITE_AUTH_GITHUB_ENABLED = previousGithubFlag;
       }
       await app.close();
+    }
+  });
+
+  it("serves the SPA shell with a CSP nonce", async () => {
+    const staticDir = mkdtempSync(join(tmpdir(), "inko-static-"));
+    writeFileSync(
+      join(staticDir, "index.html"),
+      '<!doctype html><script src="/assets/app.js"></script><script nonce="__INKO_CSP_NONCE__" src="/api/config/public.js"></script>',
+      "utf8",
+    );
+    const app = await buildServer({ repository: repo, mailer, magicTokenStore, skipMigrations: true, staticAssetsDir: staticDir });
+
+    try {
+      const res = await app.inject({
+        method: "GET",
+        url: "/",
+      });
+
+      expect(res.statusCode).toBe(200);
+      const csp = String(res.headers["content-security-policy"]);
+      const nonce = csp.match(/'nonce-([^']+)'/)?.[1];
+      expect(nonce).toBeTruthy();
+      expect(csp).toContain("'wasm-unsafe-eval'");
+      expect(res.body.match(new RegExp(`nonce="${nonce}"`, "g"))).toHaveLength(2);
+      expect(res.body).not.toContain("__INKO_CSP_NONCE__");
+    } finally {
+      await app.close();
+      rmSync(staticDir, { recursive: true, force: true });
     }
   });
 
