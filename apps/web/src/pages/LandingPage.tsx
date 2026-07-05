@@ -261,7 +261,7 @@ export function LandingPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="mx-auto flex max-w-[1200px] flex-col items-center gap-8 rounded-[24px] border border-[var(--border-subtle)] bg-[radial-gradient(circle_at_top,rgba(255,107,53,0.12),transparent_35%),linear-gradient(180deg,var(--bg-card),var(--bg-elevated))] p-12 text-center shadow-[0_24px_80px_rgba(0,0,0,0.12)] md:p-20"
+          className="mx-auto flex max-w-[1200px] flex-col items-center gap-8 rounded-[24px] border border-[var(--border-subtle)] bg-[radial-gradient(circle_at_top,rgba(255,107,53,0.12),transparent_35%),linear-gradient(180deg,var(--bg-card),var(--bg-elevated))] p-12 text-center shadow-[0_24px_80px_var(--shadow)] md:p-20"
         >
           <h2 className="font-display text-4xl md:text-[64px] font-bold leading-tight text-text-primary">
             {t("landing.cta.title")}

@@ -11,6 +11,7 @@
   --text-primary: #ffffff;
   --text-secondary: #777777;
   --text-on-accent: #0d0d0d;
+  --shadow: color-mix(in oklab, #000000 45%, transparent);
   --border-subtle: color-mix(in oklab, var(--text-secondary) 25%, var(--bg-page));
   --border-muted: color-mix(in oklab, var(--text-secondary) 40%, var(--bg-page));
   --border-strong: color-mix(in oklab, var(--text-secondary) 55%, var(--bg-page));
@@ -41,6 +42,7 @@
   --text-primary: #111827;
   --text-secondary: #4b5563;
   --text-on-accent: #111827;
+  --shadow: color-mix(in oklab, #000000 10%, transparent);
   --border-subtle: color-mix(in oklab, var(--text-secondary) 22%, var(--bg-page));
   --border-muted: color-mix(in oklab, var(--text-secondary) 35%, var(--bg-page));
   --border-strong: color-mix(in oklab, var(--text-secondary) 48%, var(--bg-page));

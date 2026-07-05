@@ -98,7 +98,7 @@ export function PublicNavbar({ showAnchors = false }: PublicNavbarProps) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.95 }}
                   transition={{ duration: 0.1 }}
-                  className="absolute right-0 mt-2 flex w-40 flex-col gap-1 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-bg-card p-1.5 shadow-2xl ring-1 ring-black/10"
+                  className="absolute right-0 mt-2 flex w-40 flex-col gap-1 overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-bg-card p-1.5 shadow-2xl ring-1 ring-[var(--border-subtle)]"
                 >
                   {SUPPORTED_UI_LANGUAGES.map((lang) => {
                     const isActive = i18n.language.startsWith(lang.code);

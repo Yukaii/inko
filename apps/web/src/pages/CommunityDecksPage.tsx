@@ -85,7 +85,7 @@ export function CommunityDecksPage() {
             <Link
               key={deck.slug}
               to={`/community/decks/${deck.slug}`}
-              className="group flex flex-col gap-4 rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-6 shadow-[0_18px_70px_rgba(0,0,0,0.12)] no-underline transition-all hover:border-accent-orange/40 hover:shadow-[0_18px_70px_rgba(0,0,0,0.16)]"
+              className="group flex flex-col gap-4 rounded-[24px] border border-[var(--border-subtle)] bg-bg-card p-6 shadow-[0_18px_70px_var(--shadow)] no-underline transition-all hover:border-accent-orange/40"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-accent-teal/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-accent-teal">
