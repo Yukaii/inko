@@ -87,6 +87,16 @@ export function isEscDoublePress(lastEscPressedAt: number | null, now: number, w
   return now - lastEscPressedAt <= windowMs;
 }
 
+const PENDING_ACCENT_KEYS = new Set(["`", "^"]);
+
+export function isCompositionInputIntent(input: { inputType?: string | null; data?: string | null; isComposing?: boolean }) {
+  return input.isComposing === true || input.inputType === "insertCompositionText" || input.data === "Dead" || PENDING_ACCENT_KEYS.has(input.data ?? "");
+}
+
+export function isCompositionKeyIntent(input: { key?: string | null; isComposing?: boolean }) {
+  return input.isComposing === true || input.key === "Dead" || PENDING_ACCENT_KEYS.has(input.key ?? "");
+}
+
 export function getNextCleanStreak(previousStreak: number, hadMistake: boolean) {
   return hadMistake ? 0 : previousStreak + 1;
 }

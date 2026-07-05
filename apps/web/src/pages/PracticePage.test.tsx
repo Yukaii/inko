@@ -10,6 +10,8 @@ import {
   getNextCleanStreak,
   getPracticeCompletionTitle,
   getTypingFeedback,
+  isCompositionInputIntent,
+  isCompositionKeyIntent,
   isEscDoublePress,
 } from "../features/practice/utils/practiceUtils";
 
@@ -254,6 +256,45 @@ describe("isEscDoublePress", () => {
   });
 });
 
+describe("isCompositionInputIntent", () => {
+  it("detects active composition input", () => {
+    expect(isCompositionInputIntent({ isComposing: true })).toBe(true);
+  });
+
+  it("detects browser composition text input", () => {
+    expect(isCompositionInputIntent({ inputType: "insertCompositionText", data: "^" })).toBe(true);
+  });
+
+  it("detects dead-key input intent", () => {
+    expect(isCompositionInputIntent({ data: "Dead" })).toBe(true);
+  });
+
+  it("detects literal pending accent input", () => {
+    expect(isCompositionInputIntent({ inputType: "insertText", data: "^" })).toBe(true);
+    expect(isCompositionInputIntent({ inputType: "insertText", data: "`" })).toBe(true);
+  });
+
+  it("ignores ordinary text input", () => {
+    expect(isCompositionInputIntent({ inputType: "insertText", data: "b" })).toBe(false);
+  });
+});
+
+describe("isCompositionKeyIntent", () => {
+  it("detects dead and literal accent keys", () => {
+    expect(isCompositionKeyIntent({ key: "Dead" })).toBe(true);
+    expect(isCompositionKeyIntent({ key: "^" })).toBe(true);
+    expect(isCompositionKeyIntent({ key: "`" })).toBe(true);
+  });
+
+  it("detects composing key events", () => {
+    expect(isCompositionKeyIntent({ key: "a", isComposing: true })).toBe(true);
+  });
+
+  it("ignores ordinary keys", () => {
+    expect(isCompositionKeyIntent({ key: "b" })).toBe(false);
+  });
+});
+
 describe("getNextCleanStreak", () => {
   it("increments streak after a clean card", () => {
     expect(getNextCleanStreak(3, false)).toBe(4);
@@ -319,6 +360,44 @@ describe("PracticePage", () => {
 
     await screen.findByText("Replay");
     await screen.findByTitle("Practice shortcuts");
+  });
+
+  it("resets clean streak immediately for pending accent keys", async () => {
+    mockPracticeStart({
+      ttsEnabled: false,
+      cardsCompleted: 1,
+    });
+
+    renderPracticePage();
+
+    const input = await screen.findByLabelText("Type answer for 勉強");
+    expect(screen.getByLabelText("Clean streak: 0")).toBeTruthy();
+
+    mockSubmitPractice.mockResolvedValueOnce({
+      accepted: true,
+      nextCard: {
+        wordId: "word-2",
+        deckId: "deck-1",
+        language: "fr",
+        target: "ecole",
+        meaning: "school",
+      },
+      upcomingCards: [],
+      cardsCompleted: 1,
+      sessionTargetCards: 50,
+    });
+
+    fireEvent.change(input, { target: { value: "benkyou" } });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Clean streak: 1")).toBeTruthy();
+    });
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "^" }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Clean streak: 0")).toBeTruthy();
+    });
   });
 
   it("can confirm exit from the keyboard after double escape", async () => {

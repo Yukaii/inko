@@ -22,6 +22,8 @@ import {
   getInitialTtsAudioWarmupCards,
   getPracticeCompletionTitle,
   getTypingFeedback,
+  isCompositionInputIntent,
+  isCompositionKeyIntent,
   isEscDoublePress,
   getNextCleanStreak,
   getTtsCacheKey,
@@ -175,6 +177,11 @@ export function PracticePage() {
     });
   }, [focusInput]);
 
+  const markCardMistake = useCallback(() => {
+    setCardHadMistake(true);
+    setCardStreak(0);
+  }, []);
+
   useEffect(() => {
     focusInput();
   }, [focusInput]);
@@ -237,8 +244,7 @@ export function PracticePage() {
         }, 400);
       } else {
         setLastSubmitAccepted(false);
-        setCardStreak(0);
-        setCardHadMistake(true);
+        markCardMistake();
         if (res.sessionCapped) {
           requestFinish();
         }
@@ -446,6 +452,20 @@ export function PracticePage() {
   useEffect(() => {
     if (sessionDone || !card) return;
 
+    const handleCompositionKeyIntent = (event: KeyboardEvent) => {
+      if (!isCompositionKeyIntent(event)) return;
+      markCardMistake();
+    };
+
+    window.addEventListener("keydown", handleCompositionKeyIntent, { capture: true });
+    return () => {
+      window.removeEventListener("keydown", handleCompositionKeyIntent, { capture: true });
+    };
+  }, [card, markCardMistake, sessionDone]);
+
+  useEffect(() => {
+    if (sessionDone || !card) return;
+
     const handleReplayShortcut = (event: KeyboardEvent) => {
       if (!isReplayTtsShortcut(event)) return;
       event.preventDefault();
@@ -466,8 +486,8 @@ export function PracticePage() {
 
   useEffect(() => {
     if (!typingInput || typingFeedback.onTrack || cardHadMistake) return;
-    setCardHadMistake(true);
-  }, [cardHadMistake, typingFeedback.onTrack, typingInput]);
+    markCardMistake();
+  }, [cardHadMistake, markCardMistake, typingFeedback.onTrack, typingInput]);
 
   useEffect(() => {
     if (!card) return;
@@ -529,6 +549,9 @@ export function PracticePage() {
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
+      if (isCompositionKeyIntent({ key: event.key, isComposing: event.nativeEvent.isComposing })) {
+        markCardMistake();
+      }
       if (event.key === "Escape") {
         event.preventDefault();
         if (showShortcutHelp) {
@@ -547,7 +570,7 @@ export function PracticePage() {
       if (isInteractiveElement(event.target)) return;
       focusInput();
     },
-    [card, closeExitConfirm, exitConfirmOpen, focusInput, replayCardAudio, requestExitIntent, showShortcutHelp],
+    [closeExitConfirm, exitConfirmOpen, focusInput, markCardMistake, requestExitIntent, showShortcutHelp],
   );
 
   // Build character-by-character display for monkeytype effect
@@ -982,8 +1005,19 @@ export function PracticePage() {
           ref={hiddenInputRef}
           className="pointer-events-none absolute h-px w-px overflow-hidden border-0 p-0 opacity-0"
           value={typingInput}
+          onBeforeInput={(event) => {
+            const nativeEvent = event.nativeEvent as InputEvent;
+            if (isCompositionInputIntent(nativeEvent)) {
+              markCardMistake();
+            }
+          }}
           onChange={(event) => setTypingInput(event.target.value)}
+          onCompositionStart={markCardMistake}
+          onCompositionUpdate={markCardMistake}
           onKeyDown={(event) => {
+            if (isCompositionKeyIntent({ key: event.key, isComposing: event.nativeEvent.isComposing })) {
+              markCardMistake();
+            }
             if (event.key === "Escape") {
               event.preventDefault();
               event.stopPropagation();
