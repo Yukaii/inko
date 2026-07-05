@@ -708,7 +708,7 @@ export function PracticePage() {
     >
       {/* Minimal top bar */}
       <div className="fixed inset-x-0 top-0 z-[210] flex flex-col gap-2 px-3 py-3 opacity-60 transition-opacity hover:opacity-100 focus-within:opacity-100 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4 portrait:max-sm:flex-row portrait:max-sm:items-center portrait:max-sm:justify-between portrait:max-sm:gap-2 portrait:max-sm:px-2 portrait:max-sm:py-2">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3 portrait:max-sm:flex-nowrap portrait:max-sm:gap-1 portrait:max-sm:overflow-x-auto portrait:max-sm:[&::-webkit-scrollbar]:hidden">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3 portrait:max-sm:flex-nowrap portrait:max-sm:gap-1 portrait:max-sm:overflow-x-auto portrait:max-sm:overflow-y-hidden portrait:max-sm:[&::-webkit-scrollbar]:hidden">
           <span
             className="inline-flex items-center rounded-full border border-[var(--border-muted)] bg-bg-page px-3 py-1 text-xs text-text-secondary font-medium portrait:max-sm:px-2 portrait:max-sm:text-[11px]"
             aria-label={`Session progress: ${cardsCompleted} of ${sessionTargetCards}`}
@@ -961,7 +961,7 @@ export function PracticePage() {
               </div>
             ) : null}
             {card.example ? (
-              <div className="mt-2 max-w-[min(90vw,42rem)] rounded-2xl border border-[var(--border-muted)] bg-bg-card/70 px-4 py-3 text-center text-sm leading-6 text-text-secondary backdrop-blur-sm md:px-5 portrait:max-sm:hidden">
+              <div className="mt-2 max-w-[min(90vw,42rem)] rounded-2xl border border-[var(--border-muted)] bg-bg-card/70 px-4 py-3 text-center text-sm leading-6 text-text-secondary backdrop-blur-sm md:px-5 portrait:max-sm:max-h-16 portrait:max-sm:overflow-hidden portrait:max-sm:px-3 portrait:max-sm:py-2 portrait:max-sm:text-xs portrait:max-sm:leading-5">
                 <p className={`m-0 ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`} lang={card.language}>
                   {card.example}
                 </p>
