@@ -151,7 +151,8 @@ export function LoginPage() {
   const startOauth = (provider: OAuthProvider) => {
     setLoading(true);
     setOauthProvider(provider);
-    const url = new URL(`${import.meta.env.VITE_API_URL ?? window.location.origin}/api/auth/${provider}/start`);
+    const apiBase = window.__INKO_ENV__?.apiUrl || import.meta.env.VITE_API_URL || window.location.origin;
+    const url = new URL(`/api/auth/${provider}/start`, apiBase);
     url.searchParams.set("redirectTo", "/dashboard");
     window.location.href = url.toString();
   };
