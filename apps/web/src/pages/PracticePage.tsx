@@ -697,7 +697,7 @@ export function PracticePage() {
   return (
     <section
       ref={zoneRef}
-      className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-center overflow-hidden bg-bg-page"
+      className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-start overflow-hidden bg-bg-page"
       tabIndex={-1}
       aria-label="Practice session"
       onKeyDown={handleKeyDown}
@@ -707,15 +707,15 @@ export function PracticePage() {
       }}
     >
       {/* Minimal top bar */}
-      <div className="fixed inset-x-0 top-0 z-[210] flex flex-col gap-2 px-3 py-3 opacity-60 transition-opacity hover:opacity-100 focus-within:opacity-100 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+      <div className="fixed inset-x-0 top-0 z-[210] flex flex-col gap-2 px-3 py-3 opacity-60 transition-opacity hover:opacity-100 focus-within:opacity-100 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4 portrait:max-sm:flex-row portrait:max-sm:items-center portrait:max-sm:justify-between portrait:max-sm:gap-2 portrait:max-sm:px-2 portrait:max-sm:py-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3 portrait:max-sm:flex-nowrap portrait:max-sm:gap-1 portrait:max-sm:overflow-x-auto portrait:max-sm:[&::-webkit-scrollbar]:hidden">
           <span
-            className="inline-flex items-center rounded-full border border-[var(--border-muted)] bg-bg-page px-3 py-1 text-xs text-text-secondary font-medium"
+            className="inline-flex items-center rounded-full border border-[var(--border-muted)] bg-bg-page px-3 py-1 text-xs text-text-secondary font-medium portrait:max-sm:px-2 portrait:max-sm:text-[11px]"
             aria-label={`Session progress: ${cardsCompleted} of ${sessionTargetCards}`}
           >
             {cardsCompleted}/{sessionTargetCards}
           </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border-muted)] bg-bg-page px-3.5 py-1.5 text-sm text-accent-orange font-bold [font-family:var(--font-display)]" aria-label={`${t("practice.clean_streak", "Clean streak")}: ${cardStreak}`}>
+          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border-muted)] bg-bg-page px-3.5 py-1.5 text-sm text-accent-orange font-bold [font-family:var(--font-display)] portrait:max-sm:gap-1 portrait:max-sm:px-2 portrait:max-sm:py-1 portrait:max-sm:text-xs" aria-label={`${t("practice.clean_streak", "Clean streak")}: ${cardStreak}`}>
             {cardStreak > 0 ? (
               <>
                 <span className="text-base" aria-hidden="true">🔥</span>
@@ -724,7 +724,7 @@ export function PracticePage() {
             ) : (
               <span className="text-text-secondary">0</span>
             )}
-            <span className="font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
+            <span className="font-sans text-[10px] font-semibold uppercase tracking-[0.08em] text-text-secondary portrait:max-sm:hidden">
               {t("practice.clean_streak", "Clean streak")}
             </span>
           </span>
@@ -742,7 +742,7 @@ export function PracticePage() {
           >
             <span className="inline-flex items-center gap-1.5">
               {ttsEnabled ? <Radio size={13} aria-hidden="true" /> : <VolumeX size={13} aria-hidden="true" />}
-              <span>{ttsEnabled ? t("practice.tts_on", "TTS on") : t("practice.tts_off", "TTS off")}</span>
+              <span className="portrait:max-sm:hidden">{ttsEnabled ? t("practice.tts_on", "TTS on") : t("practice.tts_off", "TTS off")}</span>
             </span>
           </button>
           {ttsEnabled ? (
@@ -832,11 +832,11 @@ export function PracticePage() {
         </div>
         <button
           type="button"
-          className="inline-flex h-8 shrink-0 items-center justify-center gap-2 self-end whitespace-nowrap rounded-lg border border-[var(--border-muted)] bg-transparent px-3 text-xs font-normal text-text-secondary hover:border-[var(--border-strong)] hover:text-text-primary sm:h-auto sm:self-auto sm:px-3.5 sm:py-1.5 sm:text-[13px]"
+          className="inline-flex h-8 shrink-0 items-center justify-center gap-2 self-end whitespace-nowrap rounded-lg border border-[var(--border-muted)] bg-transparent px-3 text-xs font-normal text-text-secondary hover:border-[var(--border-strong)] hover:text-text-primary sm:h-auto sm:self-auto sm:px-3.5 sm:py-1.5 sm:text-[13px] portrait:max-sm:h-7 portrait:max-sm:self-auto portrait:max-sm:px-2 portrait:max-sm:text-[11px]"
           onClick={() => requestExitIntent("button")}
         >
           {t("practice.end_session")}
-          <kbd className="rounded border border-[var(--border-strong)] bg-bg-card px-1.5 py-0.5 font-mono text-[11px] text-text-secondary">esc</kbd>
+          <kbd className="rounded border border-[var(--border-strong)] bg-bg-card px-1.5 py-0.5 font-mono text-[11px] text-text-secondary portrait:max-sm:hidden">esc</kbd>
         </button>
       </div>
       {finishError ? <div className="fixed left-1/2 top-14 z-[220] -translate-x-1/2 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-toast-bg)] px-3 py-2 text-xs text-[var(--danger-text)]">{finishError}</div> : null}
@@ -925,43 +925,43 @@ export function PracticePage() {
       <div className={`pointer-events-none fixed inset-0 z-[190] bg-[radial-gradient(circle_at_center,var(--accent-teal)_0%,transparent_40%)] opacity-0 transition-opacity duration-300 ${cardTransition ? "opacity-5" : ""}`} aria-hidden="true" />
 
       {/* Center focus area */}
-      <div className={`relative z-[200] flex flex-col items-center gap-4 transition-all duration-300 ${cardTransition ? "-translate-y-2 opacity-0" : ""}`}>
+      <div className={`relative z-[200] mt-[clamp(7rem,18svh,9.5rem)] flex h-[min(52svh,28rem)] w-[min(92vw,44rem)] flex-col items-center justify-start gap-3 overflow-y-auto overflow-x-hidden px-2 text-center transition-all duration-300 portrait:max-sm:mt-[3.5rem] portrait:max-sm:h-[calc(50svh-3.5rem)] portrait:max-sm:min-h-[10.5rem] portrait:max-sm:w-[min(92vw,24rem)] portrait:max-sm:gap-1.5 ${cardTransition ? "-translate-y-2 opacity-0" : ""}`}>
         {isAudioChallengeActive ? (
-          <div className="flex max-w-[min(90vw,32rem)] flex-col items-center gap-3 rounded-[28px] border border-[var(--border-strong)] bg-bg-card/80 px-6 py-7 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-sm">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[var(--border-muted)] bg-bg-page text-accent-orange">
+          <div className="flex max-w-[min(90vw,32rem)] flex-col items-center gap-3 rounded-[28px] border border-[var(--border-strong)] bg-bg-card/80 px-6 py-7 text-center shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-sm portrait:max-sm:gap-2 portrait:max-sm:rounded-2xl portrait:max-sm:px-4 portrait:max-sm:py-4">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[var(--border-muted)] bg-bg-page text-accent-orange portrait:max-sm:h-9 portrait:max-sm:w-9">
               <Headphones size={18} aria-hidden="true" />
             </div>
-            <p className="m-0 text-xs font-semibold uppercase tracking-[0.14em] text-text-secondary">
+            <p className="m-0 text-xs font-semibold uppercase tracking-[0.14em] text-text-secondary portrait:max-sm:text-[10px]">
               {t("practice.audio_challenge", "Audio challenge")}
             </p>
-            <h2 className="m-0 text-2xl leading-tight text-text-primary [font-family:var(--font-display)]">
+            <h2 className="m-0 text-2xl leading-tight text-text-primary [font-family:var(--font-display)] portrait:max-sm:text-lg">
               {t("practice.audio_challenge_title", "Listen first. Type from memory.")}
             </h2>
-            <p className="m-0 text-sm leading-6 text-text-secondary">
+            <p className="m-0 text-sm leading-6 text-text-secondary portrait:max-sm:line-clamp-2 portrait:max-sm:text-xs portrait:max-sm:leading-5">
               {t("practice.audio_challenge_body", "The prompt is hidden in this mode. Replay the audio if you need another pass, then type the word exactly.")}
             </p>
           </div>
         ) : (
           <>
             {card.meaning ? (
-              <div className="text-base tracking-[0.02em] text-text-secondary">{card.meaning}</div>
+              <div className="max-w-full truncate text-base tracking-[0.02em] text-text-secondary portrait:max-sm:text-xs">{card.meaning}</div>
             ) : null}
             <div
-              className={`select-none text-5xl leading-tight tracking-[0.04em] text-text-primary md:text-7xl ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}
+              className={`max-w-full select-none text-5xl leading-tight tracking-[0.04em] text-text-primary md:text-7xl portrait:max-sm:text-[clamp(2rem,12vw,3rem)] ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}
               lang={card.language}
             >
               {card.target}
             </div>
             {card.reading ? (
               <div
-                className={`-mt-1 text-lg text-text-secondary ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}
+                className={`-mt-1 max-w-full truncate text-lg text-text-secondary portrait:max-sm:text-sm ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`}
                 lang={card.language}
               >
                 {card.reading}
               </div>
             ) : null}
             {card.example ? (
-              <div className="mt-2 max-w-[min(90vw,42rem)] rounded-2xl border border-[var(--border-muted)] bg-bg-card/70 px-4 py-3 text-center text-sm leading-6 text-text-secondary backdrop-blur-sm md:px-5">
+              <div className="mt-2 max-w-[min(90vw,42rem)] rounded-2xl border border-[var(--border-muted)] bg-bg-card/70 px-4 py-3 text-center text-sm leading-6 text-text-secondary backdrop-blur-sm md:px-5 portrait:max-sm:hidden">
                 <p className={`m-0 ${card.language === "ja" ? "[font-family:var(--font-jp)]" : ""}`} lang={card.language}>
                   {card.example}
                 </p>
@@ -971,7 +971,7 @@ export function PracticePage() {
         )}
 
         {/* Monkeytype-style character display */}
-        <div className={`mt-3 flex min-h-[42px] justify-center gap-0.5 font-mono text-[22px] tracking-[0.08em] md:text-[28px] ${lastSubmitAccepted === false ? "animate-shake text-[var(--danger-text)]" : ""}`} aria-hidden="true">
+        <div className={`mt-2 flex min-h-[42px] max-w-full justify-center gap-0.5 overflow-hidden font-mono text-[22px] tracking-[0.08em] md:text-[28px] portrait:max-sm:mt-1 portrait:max-sm:min-h-8 portrait:max-sm:text-base portrait:max-sm:tracking-[0.04em] ${lastSubmitAccepted === false ? "animate-shake text-[var(--danger-text)]" : ""}`} aria-hidden="true">
           {romajiChars.map((c) => (
             <span
               key={`${focusKey}-p${c.pos}-${c.char}`}
@@ -989,7 +989,7 @@ export function PracticePage() {
             </span>
           ))}
           {romajiChars.length === 0 ? (
-            <span className="text-lg tracking-[0.02em] text-text-secondary">
+            <span className="text-lg tracking-[0.02em] text-text-secondary portrait:max-sm:text-sm">
               {typingPrompt}
             </span>
           ) : null}
@@ -1039,7 +1039,7 @@ export function PracticePage() {
         />
 
         {/* Feedback line */}
-        <div className="mt-2 min-h-6 text-sm" aria-live="polite">
+        <div className="mt-1 min-h-6 text-sm portrait:max-sm:text-xs" aria-live="polite">
           {lastSubmitAccepted === false ? (
             <span className="text-sm text-[var(--danger-text)]">{t("practice.not_quite")}</span>
           ) : typingInput && !typingFeedback.onTrack ? (
