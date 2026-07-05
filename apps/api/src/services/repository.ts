@@ -73,6 +73,7 @@ export function chunkArray<T>(items: T[], chunkSize: number): T[][] {
 }
 
 export const testChunkArray = chunkArray;
+export const testSanitizeCreateWordInput = sanitizeCreateWordInput;
 
 export class RepositoryError extends Error {
   statusCode: number;
@@ -268,15 +269,15 @@ function mapWordInput(word: CreateWordInput) {
 function sanitizeCreateWordInput(word: CreateWordInput) {
   return {
     target: word.target,
-    targetHtml: sanitizeImportedHtml(word.targetHtml),
+    target_html: sanitizeImportedHtml(word.targetHtml),
     reading: word.reading ?? null,
-    readingHtml: sanitizeImportedHtml(word.readingHtml),
+    reading_html: sanitizeImportedHtml(word.readingHtml),
     romanization: word.romanization ?? null,
-    romanizationHtml: sanitizeImportedHtml(word.romanizationHtml),
+    romanization_html: sanitizeImportedHtml(word.romanizationHtml),
     meaning: word.meaning,
-    meaningHtml: sanitizeImportedHtml(word.meaningHtml),
+    meaning_html: sanitizeImportedHtml(word.meaningHtml),
     example: word.example ?? null,
-    exampleHtml: sanitizeImportedHtml(word.exampleHtml),
+    example_html: sanitizeImportedHtml(word.exampleHtml),
     audio_url: word.audioUrl ?? null,
     tags: jsonb(word.tags ?? []),
   };

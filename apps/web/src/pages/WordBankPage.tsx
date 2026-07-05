@@ -11,6 +11,7 @@ import { registerShortcut } from "../hooks/useKeyboard";
 import { authQueryKey } from "../lib/queryKeys";
 import { getLanguageLabel } from "../lib/languages";
 import { downloadDeckCsv, fetchAllDeckWords } from "./wordBankExport";
+import { getWordsPageShownCount } from "./wordBankPagination";
 
 type AddTab = "single" | "import";
 const IMPORT_BATCH_SIZE = 10000;
@@ -359,6 +360,12 @@ export function WordBankPage() {
   const hasNextWordsPage = !!wordsQuery.data?.nextCursor;
   const wordsPageLabel = wordsCursorHistory.length + 1;
   const totalWordsCount = wordsQuery.data?.totalCount ?? null;
+  const wordsShownCount = getWordsPageShownCount({
+    pageIndex: wordsCursorHistory.length,
+    pageSize: WORDS_PAGE_SIZE,
+    currentPageCount: words.length,
+    totalCount: totalWordsCount,
+  });
   const isWordsLoading = wordsQuery.isLoading;
   const showWordActionsColumn = isWordsLoading || pagedWords.length > 0;
   const wordsTableColumnCount = showWordActionsColumn ? 6 : 5;
@@ -887,8 +894,8 @@ export function WordBankPage() {
                     </button>
                     <span className="text-xs text-text-secondary">
                       {totalWordsCount === null
-                        ? t("word_bank.words.page_summary_no_total", { page: wordsPageLabel, shown: pagedWords.length })
-                        : t("word_bank.words.page_summary", { page: wordsPageLabel, shown: pagedWords.length, total: totalWordsCount })}
+                        ? t("word_bank.words.page_summary_no_total", { page: wordsPageLabel, shown: wordsShownCount })
+                        : t("word_bank.words.page_summary", { page: wordsPageLabel, shown: wordsShownCount, total: totalWordsCount })}
                     </span>
                     <button
                       type="button"
