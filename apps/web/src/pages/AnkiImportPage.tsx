@@ -35,6 +35,22 @@ type SubmissionForm = {
   tags: string;
 };
 
+type ImportProgress = {
+  title: string;
+  detail: string;
+  eta?: string;
+  completed: number;
+  total: number;
+};
+
+function estimateRemainingSeconds(input: { startedAt: number; completed: number; total: number; now?: number }) {
+  if (input.completed <= 0 || input.completed >= input.total) return null;
+  const elapsedSeconds = ((input.now ?? Date.now()) - input.startedAt) / 1000;
+  if (elapsedSeconds <= 0) return null;
+  const secondsPerItem = elapsedSeconds / input.completed;
+  return Math.max(1, Math.round((input.total - input.completed) * secondsPerItem));
+}
+
 function chunkWords<T>(items: T[], size: number) {
   const chunks: T[][] = [];
   for (let index = 0; index < items.length; index += size) {
@@ -86,6 +102,7 @@ export function AnkiImportPage() {
   const [noteTypeId, setNoteTypeId] = useState("");
   const [mapping, setMapping] = useState<ImportableField[]>([]);
   const [status, setStatus] = useState<string | null>(null);
+  const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
   const [submissionForm, setSubmissionForm] = useState<SubmissionForm>({
@@ -104,6 +121,11 @@ export function AnkiImportPage() {
     audioUrl: t("importer.fields.audio_url"),
     tags: t("importer.fields.tags"),
     skip: t("importer.fields.skip"),
+  };
+  const formatEta = (seconds: number | null) => {
+    if (seconds === null) return undefined;
+    if (seconds < 60) return t("importer.status.eta_seconds", { count: seconds });
+    return t("importer.status.eta_minutes", { count: Math.max(1, Math.ceil(seconds / 60)) });
   };
 
   const decksQuery = useQuery({
@@ -162,7 +184,14 @@ export function AnkiImportPage() {
       });
     }
 
-    setStatus(t("importer.status.uploading_audio", { count: uploadEntries.size }));
+    const uploadStartedAt = Date.now();
+    setStatus(null);
+    setImportProgress({
+      title: t("importer.status.uploading_audio", { count: uploadEntries.size }),
+      detail: t("importer.status.uploading_audio_progress", { uploaded: 0, total: uploadEntries.size }),
+      completed: 0,
+      total: uploadEntries.size,
+    });
     const uploadedByReference = new Map<string, string>();
     for (const uploadBatch of chunkWords(Array.from(uploadEntries.entries()), 4)) {
       const batchResults = await Promise.all(
@@ -174,6 +203,13 @@ export function AnkiImportPage() {
       for (const [soundReference, audioUrl] of batchResults) {
         uploadedByReference.set(soundReference, audioUrl);
       }
+      setImportProgress({
+        title: t("importer.status.uploading_audio", { count: uploadEntries.size }),
+        detail: t("importer.status.uploading_audio_progress", { uploaded: uploadedByReference.size, total: uploadEntries.size }),
+        eta: formatEta(estimateRemainingSeconds({ startedAt: uploadStartedAt, completed: uploadedByReference.size, total: uploadEntries.size })),
+        completed: uploadedByReference.size,
+        total: uploadEntries.size,
+      });
     }
 
     return words.map((word) => {
@@ -193,21 +229,39 @@ export function AnkiImportPage() {
       if (words.length === 0) throw new Error(t("importer.errors.map_target_meaning"));
 
       let imported = 0;
-      for (const batch of chunkWords(words, 500)) {
+      const batches = chunkWords(words, 500);
+      const importStartedAt = Date.now();
+      setImportProgress({
+        title: t("importer.status.importing_notes"),
+        detail: t("importer.status.importing_batch", { batch: 0, batches: batches.length, imported, total: words.length }),
+        completed: imported,
+        total: words.length,
+      });
+      for (const [batchIndex, batch] of batches.entries()) {
         const result = await api.createWordsBatch(token ?? "", selectedDeckId, { words: batch });
         imported += result.created;
+        setImportProgress({
+          title: t("importer.status.importing_notes"),
+          detail: t("importer.status.importing_batch", { batch: batchIndex + 1, batches: batches.length, imported, total: words.length }),
+          eta: formatEta(estimateRemainingSeconds({ startedAt: importStartedAt, completed: imported, total: words.length })),
+          completed: imported,
+          total: words.length,
+        });
       }
       return imported;
     },
     onMutate: () => {
       setError(null);
-      setStatus(t("importer.status.importing_notes"));
+      setStatus(null);
+      setImportProgress(null);
     },
     onSuccess: async (imported) => {
+      setImportProgress(null);
       setStatus(t("importer.status.imported_cards", { count: imported }));
       await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "words-page", selectedDeckId) });
     },
     onError: (mutationError) => {
+      setImportProgress(null);
       setStatus(null);
       setError(mutationError instanceof Error ? mutationError.message : t("importer.errors.import_failed"));
     },
@@ -256,13 +310,16 @@ export function AnkiImportPage() {
     },
     onMutate: () => {
       setError(null);
+      setImportProgress(null);
       setStatus(t("importer.status.submitting_moderation"));
     },
     onSuccess: async (submission) => {
+      setImportProgress(null);
       setStatus(t("importer.status.submitted_for_moderation", { title: submission.title }));
       await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "community-submissions", "mine") });
     },
     onError: (mutationError) => {
+      setImportProgress(null);
       setStatus(null);
       setError(mutationError instanceof Error ? mutationError.message : t("importer.errors.submission_failed"));
     },
@@ -277,6 +334,9 @@ export function AnkiImportPage() {
   const importedWordsCount = dataset ? buildWordsFromMapping(dataset, mapping).length : 0;
   const currentDeckLanguage =
     (decksQuery.data ?? []).find((deck) => deck.id === selectedDeckId)?.language ?? selectedCommunityDeck?.language ?? "ja";
+  const importProgressPercent = importProgress && importProgress.total > 0
+    ? Math.min(100, Math.round((importProgress.completed / importProgress.total) * 100))
+    : 0;
   const hasDestinationDeck = Boolean(selectedDeckId);
   const hasMappedTarget = mapping.includes("target");
   const hasMappedMeaning = mapping.includes("meaning");
@@ -537,7 +597,25 @@ export function AnkiImportPage() {
             ) : null}
           </div>
 
-          {status ? (
+          {importProgress ? (
+            <div className="rounded-2xl bg-accent-teal/10 px-4 py-3 text-sm text-accent-teal">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-semibold">{importProgress.title}</span>
+                <span className="font-mono text-xs">{importProgressPercent}%</span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-bg-page" aria-hidden="true">
+                <div className="h-full rounded-full bg-accent-teal transition-[width] duration-200" style={{ width: `${importProgressPercent}%` }} />
+              </div>
+              <div className="mt-2 break-words text-xs text-text-secondary [overflow-wrap:anywhere]">
+                {importProgress.detail}
+              </div>
+              {importProgress.eta ? (
+                <div className="mt-1 break-words text-xs text-text-secondary [overflow-wrap:anywhere]">
+                  {importProgress.eta}
+                </div>
+              ) : null}
+            </div>
+          ) : status ? (
             <p className="m-0 overflow-hidden break-words rounded-2xl bg-accent-teal/10 px-4 py-3 text-sm text-accent-teal [overflow-wrap:anywhere]">
               {status}
             </p>

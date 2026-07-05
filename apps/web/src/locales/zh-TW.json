@@ -622,10 +622,14 @@
     "status": {
       "reading_file": "讀取檔案中...",
       "uploading_audio": "正在上傳 {{count}} 個匯入用音訊檔...",
+      "uploading_audio_progress": "已上傳 {{uploaded}}/{{total}} 個音訊檔",
       "loaded_note_types": "已從 {{fileName}} 載入 {{count}} 種筆記類型。",
       "loaded_rows": "已從 {{fileName}} 載入 {{count}} 列。",
       "parsed_rows": "已從貼上內容解析 {{count}} 列。",
       "importing_notes": "匯入筆記中...",
+      "importing_batch": "批次 {{batch}}/{{batches}} ・ 已匯入 {{imported}}/{{total}} 張卡片",
+      "eta_seconds": "約剩 {{count}} 秒",
+      "eta_minutes": "約剩 {{count}} 分鐘",
       "imported_cards": "已將 {{count}} 張卡片匯入你的牌組。",
       "submitting_moderation": "正在提交牌組至審核...",
       "submitted_for_moderation": "已將「{{title}}」送交審核。"
