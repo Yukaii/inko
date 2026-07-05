@@ -365,6 +365,32 @@ describe("API integration", () => {
     magicTokenStore = createInMemoryMagicTokenStore();
   });
 
+  it("serves runtime public config for frontend bootstrap", async () => {
+    const previousGithubFlag = process.env.VITE_AUTH_GITHUB_ENABLED;
+    process.env.VITE_AUTH_GITHUB_ENABLED = "true";
+    const app = await buildServer({ repository: repo, mailer, magicTokenStore, skipMigrations: true });
+
+    try {
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/config/public.js",
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers["content-type"]).toContain("application/javascript");
+      expect(res.body).toContain('"authGithubEnabled":true');
+      expect(res.body).toContain("window.__INKO_ENV__");
+      expect(res.body).not.toContain("AUTH_GITHUB_SECRET");
+    } finally {
+      if (previousGithubFlag === undefined) {
+        delete process.env.VITE_AUTH_GITHUB_ENABLED;
+      } else {
+        process.env.VITE_AUTH_GITHUB_ENABLED = previousGithubFlag;
+      }
+      await app.close();
+    }
+  });
+
   it("supports auth verify and /api/me", async () => {
     const app = await buildServer({ repository: repo, mailer, magicTokenStore, skipMigrations: true });
 

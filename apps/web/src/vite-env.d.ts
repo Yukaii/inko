@@ -17,8 +17,8 @@ interface Window {
   gtag?: (...args: unknown[]) => void;
   __INKO_ENV__?: {
     apiUrl?: string;
-    authGoogleEnabled?: string;
-    authGithubEnabled?: string;
-    authAppleEnabled?: string;
+    authGoogleEnabled?: boolean | string;
+    authGithubEnabled?: boolean | string;
+    authAppleEnabled?: boolean | string;
   };
 }

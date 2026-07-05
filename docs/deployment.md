@@ -38,7 +38,7 @@ Required production environment variables:
 - `OBJECT_STORAGE_SECRET_ACCESS_KEY`
 - `OBJECT_STORAGE_FORCE_PATH_STYLE=false` for Cloudflare R2
 
-Public Vite flags are compiled into the frontend during the `Dockerfile.vercel` image build. For OAuth buttons, set these as Vercel build-time environment variables and redeploy:
+The Vercel container serves `/api/config/public.js` before the React app starts, so OAuth button flags can come from runtime environment variables. If a public flag is omitted, the server falls back to whether that provider's OAuth credentials are configured.
 
 - `VITE_AUTH_GITHUB_ENABLED=true`
 - `VITE_AUTH_GOOGLE_ENABLED=true`

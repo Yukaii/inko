@@ -13,10 +13,11 @@ applyThemePreferences(loadThemePreferences());
 initGoogleAnalytics(import.meta.env.VITE_GA_MEASUREMENT_ID);
 
 window.__INKO_ENV__ = {
-  apiUrl: import.meta.env.VITE_API_URL,
-  authGoogleEnabled: import.meta.env.VITE_AUTH_GOOGLE_ENABLED,
-  authGithubEnabled: import.meta.env.VITE_AUTH_GITHUB_ENABLED,
-  authAppleEnabled: import.meta.env.VITE_AUTH_APPLE_ENABLED,
+  ...window.__INKO_ENV__,
+  apiUrl: window.__INKO_ENV__?.apiUrl ?? import.meta.env.VITE_API_URL,
+  authGoogleEnabled: window.__INKO_ENV__?.authGoogleEnabled ?? import.meta.env.VITE_AUTH_GOOGLE_ENABLED,
+  authGithubEnabled: window.__INKO_ENV__?.authGithubEnabled ?? import.meta.env.VITE_AUTH_GITHUB_ENABLED,
+  authAppleEnabled: window.__INKO_ENV__?.authAppleEnabled ?? import.meta.env.VITE_AUTH_APPLE_ENABLED,
 };
 
 createRoot(document.getElementById("root")!).render(

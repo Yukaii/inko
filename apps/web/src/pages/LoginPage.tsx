@@ -36,11 +36,15 @@ function GitHubIcon() {
   );
 }
 
+function isPublicEnabled(value: boolean | string | undefined) {
+  return value === true || value === "true";
+}
+
 const ENABLED_PROVIDERS = [
   {
     id: "google" as const,
     name: "Google",
-    enabled: import.meta.env.VITE_AUTH_GOOGLE_ENABLED === "true",
+    enabled: isPublicEnabled(window.__INKO_ENV__?.authGoogleEnabled) || import.meta.env.VITE_AUTH_GOOGLE_ENABLED === "true",
     className:
       "flex items-center justify-center gap-3 border border-[#DADCE0] bg-white text-[#1F1F1F] hover:bg-[#F8F9FA] disabled:border-[#DADCE0] disabled:bg-white/80 disabled:text-[#5F6368]",
     Icon: GoogleIcon,
@@ -48,7 +52,7 @@ const ENABLED_PROVIDERS = [
   {
     id: "github" as const,
     name: "GitHub",
-    enabled: import.meta.env.VITE_AUTH_GITHUB_ENABLED === "true",
+    enabled: isPublicEnabled(window.__INKO_ENV__?.authGithubEnabled) || import.meta.env.VITE_AUTH_GITHUB_ENABLED === "true",
     className:
       "flex items-center justify-center gap-3 border border-[#30363D] bg-[#24292F] text-white hover:bg-[#2F363D] disabled:border-[#30363D] disabled:bg-[#24292F]/80 disabled:text-white/80",
     Icon: GitHubIcon,

@@ -102,6 +102,10 @@ export async function buildServer(options?: {
   await app.register(async (instance) => ttsRoutes(instance, repo, tts));
 
   app.get("/health", async () => ({ ok: true }));
+  app.get("/api/config/public.js", async (_request, reply) => {
+    reply.type("application/javascript; charset=utf-8");
+    return `window.__INKO_ENV__ = ${JSON.stringify(buildPublicConfig())};`;
+  });
 
   const staticAssetsDir = resolveStaticAssetsDir(options?.staticAssetsDir);
   if (staticAssetsDir) {
@@ -126,6 +130,20 @@ export async function buildServer(options?: {
   });
 
   return app;
+}
+
+function buildPublicConfig() {
+  return {
+    authGoogleEnabled: resolvePublicBoolean(process.env.VITE_AUTH_GOOGLE_ENABLED, Boolean(env.AUTH_GOOGLE_ID && env.AUTH_GOOGLE_SECRET)),
+    authGithubEnabled: resolvePublicBoolean(process.env.VITE_AUTH_GITHUB_ENABLED, Boolean(env.AUTH_GITHUB_ID && env.AUTH_GITHUB_SECRET)),
+    authAppleEnabled: resolvePublicBoolean(process.env.VITE_AUTH_APPLE_ENABLED, false),
+  };
+}
+
+function resolvePublicBoolean(value: string | undefined, fallback: boolean) {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return fallback;
 }
 
 function resolveStaticAssetsDir(staticAssetsDir?: string | false) {
