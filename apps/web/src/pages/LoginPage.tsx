@@ -55,6 +55,8 @@ const ENABLED_PROVIDERS = [
   },
 ].filter((provider) => provider.enabled);
 
+type OAuthProvider = (typeof ENABLED_PROVIDERS)[number]["id"];
+
 export function LoginPage() {
   const { t } = useTranslation();
   const [email, setEmail] = useState(import.meta.env.DEV ? "user@example.com" : "");
@@ -142,7 +144,7 @@ export function LoginPage() {
     }
   };
 
-  const startOauth = (provider: "google" | "github") => {
+  const startOauth = (provider: OAuthProvider) => {
     setLoading(true);
     setOauthProvider(provider);
     const url = new URL(`${import.meta.env.VITE_API_URL ?? window.location.origin}/api/auth/${provider}/start`);
