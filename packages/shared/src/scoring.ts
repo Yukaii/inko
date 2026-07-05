@@ -124,7 +124,7 @@ function normalizeRomajiInput(input: string): string {
 export function normalizeTypingInput(input: string): string {
   return input
     .normalize("NFKC")
-    .replace(/\s+/g, "")
+    .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
 }

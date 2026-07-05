@@ -3,6 +3,7 @@ import {
   isJapaneseTypingMatch,
   isTypingMatch,
   normalizeJapaneseInput,
+  normalizeTypingInput,
   romajiToHiragana,
   scoreListening,
   scoreTyping,
@@ -11,6 +12,12 @@ import {
 describe("scoring", () => {
   it("normalizes full-width and spaces", () => {
     expect(normalizeJapaneseInput("　べ ん きょう　")).toBe("べんきょう");
+  });
+
+  it("preserves required word spaces for general typing", () => {
+    expect(normalizeTypingInput("  New   York  ")).toBe("new york");
+    expect(isTypingMatch("new york", "New York", undefined, undefined, "en", "language_specific")).toBe(true);
+    expect(isTypingMatch("newyork", "New York", undefined, undefined, "en", "language_specific")).toBe(false);
   });
 
   it("scores typing with speed bonus", () => {
