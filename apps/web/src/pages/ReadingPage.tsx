@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { BookOpenText, Download, Languages, Library, Plus, Sparkles } from "lucide-react";
+import { BookOpenText, Download, Languages, Library, Plus, Sparkles, Volume2 } from "lucide-react";
 import {
+  getDefaultEdgeTtsVoice,
   LANGUAGE_LABELS,
   SUPPORTED_LANGUAGES,
   type LanguageCode,
@@ -24,6 +25,33 @@ function formatExport(document: ReadingDocumentDTO) {
     .join("\n\n---\n\n");
 }
 
+function groupParagraphsByChapter(paragraphs: ReadingParagraphDTO[]) {
+  const groups: Array<{ id: string; title: string; index: number; paragraphs: Array<{ paragraph: ReadingParagraphDTO; globalIndex: number }>; completedCount: number }> = [];
+  const groupsById = new Map<string, (typeof groups)[number]>();
+
+  paragraphs.forEach((paragraph, globalIndex) => {
+    const id = paragraph.chapterId ?? "main";
+    let group = groupsById.get(id);
+    if (!group) {
+      group = {
+        id,
+        title: paragraph.chapterTitle ?? "Imported text",
+        index: paragraph.chapterIndex ?? groups.length,
+        paragraphs: [],
+        completedCount: 0,
+      };
+      groupsById.set(id, group);
+      groups.push(group);
+    }
+    group.paragraphs.push({ paragraph, globalIndex });
+    if (paragraph.translation.trim().length > 0) {
+      group.completedCount += 1;
+    }
+  });
+
+  return groups.sort((a, b) => a.index - b.index);
+}
+
 export function ReadingPage() {
   const { token } = useAuth();
   const { documentId } = useParams();
@@ -34,6 +62,7 @@ export function ReadingPage() {
   const [translationLanguage, setTranslationLanguage] = useState("English");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   useEffect(() => {
     applyNoIndexMetadata("Library | Inko", "View imported books and texts, then open a reading workspace for sentence-level translation.");
@@ -103,6 +132,27 @@ export function ReadingPage() {
     },
   });
 
+  const playParagraphTts = useMutation({
+    mutationFn: async (paragraph: ReadingParagraphDTO) => {
+      if (!currentDocument) throw new Error("No reading selected.");
+      const voice = getDefaultEdgeTtsVoice(currentDocument.sourceLanguage);
+      const audio = await api.fetchReadingParagraphTts(token ?? "", currentDocument.id, paragraph.id, voice, "default");
+      return { paragraph, audio };
+    },
+    onSuccess: ({ audio }) => {
+      setError(null);
+      const nextUrl = URL.createObjectURL(audio);
+      setAudioUrl((current) => {
+        if (current) URL.revokeObjectURL(current);
+        return nextUrl;
+      });
+      void new Audio(nextUrl).play();
+    },
+    onError: (ttsError) => {
+      setError(ttsError instanceof Error ? ttsError.message : "Could not play audio.");
+    },
+  });
+
   const currentDocument = documentQuery.data;
   const completedCount = currentDocument?.completedCount ?? 0;
   const progressPercent = currentDocument && currentDocument.paragraphCount > 0
@@ -112,6 +162,14 @@ export function ReadingPage() {
   const activeTranslationParagraphId = useMemo(() => {
     return translateParagraph.variables?.id ?? null;
   }, [translateParagraph.variables]);
+  const activeTtsParagraphId = playParagraphTts.variables?.id ?? null;
+  const chapterGroups = useMemo(() => groupParagraphsByChapter(currentDocument?.paragraphs ?? []), [currentDocument?.paragraphs]);
+
+  useEffect(() => {
+    return () => {
+      if (audioUrl) URL.revokeObjectURL(audioUrl);
+    };
+  }, [audioUrl]);
 
   async function saveMetadata() {
     if (!currentDocument) return;
@@ -297,21 +355,51 @@ export function ReadingPage() {
               </p>
             </div>
           ) : (
-            <ol className="m-0 flex list-none flex-col divide-y divide-[var(--border-subtle)] p-0">
-              {currentDocument.paragraphs.map((paragraph, index) => (
-                <li key={paragraph.id} className="grid gap-4 p-4 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="flex flex-col divide-y divide-[var(--border-subtle)]">
+              {chapterGroups.map((chapter) => (
+                <section key={chapter.id} className="flex flex-col">
+                  <header className="border-b border-[var(--border-subtle)] bg-bg-page/60 px-4 py-3">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <h2 className="m-0 text-lg font-semibold text-text-primary">{chapter.title}</h2>
+                        <p className="m-0 mt-1 text-xs text-text-secondary">
+                          {chapter.completedCount}/{chapter.paragraphs.length} paragraphs translated
+                        </p>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-bg-card md:w-48">
+                        <div
+                          className="h-full rounded-full bg-accent-teal transition-all"
+                          style={{ width: `${chapter.paragraphs.length ? Math.round((chapter.completedCount / chapter.paragraphs.length) * 100) : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  </header>
+                  <ol className="m-0 flex list-none flex-col divide-y divide-[var(--border-subtle)] p-0">
+                    {chapter.paragraphs.map(({ paragraph, globalIndex }) => (
+                      <li key={paragraph.id} className="grid gap-4 p-4 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                   <article className="rounded-xl bg-bg-page p-4">
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Paragraph {index + 1}</span>
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-bg-card px-2.5 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
-                        onClick={() => translateParagraph.mutate(paragraph)}
-                        disabled={translateParagraph.isPending && activeTranslationParagraphId === paragraph.id}
-                      >
-                        <Sparkles className="h-3.5 w-3.5 text-accent-orange" aria-hidden="true" />
-                        {translateParagraph.isPending && activeTranslationParagraphId === paragraph.id ? "Translating..." : "Translate"}
-                      </button>
+                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Paragraph {globalIndex + 1}</span>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-bg-card px-2.5 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
+                          onClick={() => playParagraphTts.mutate(paragraph)}
+                          disabled={playParagraphTts.isPending && activeTtsParagraphId === paragraph.id}
+                        >
+                          <Volume2 className="h-3.5 w-3.5 text-accent-teal" aria-hidden="true" />
+                          {playParagraphTts.isPending && activeTtsParagraphId === paragraph.id ? "Loading..." : "Listen"}
+                        </button>
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-bg-card px-2.5 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
+                          onClick={() => translateParagraph.mutate(paragraph)}
+                          disabled={translateParagraph.isPending && activeTranslationParagraphId === paragraph.id}
+                        >
+                          <Sparkles className="h-3.5 w-3.5 text-accent-orange" aria-hidden="true" />
+                          {translateParagraph.isPending && activeTranslationParagraphId === paragraph.id ? "Translating..." : "Translate"}
+                        </button>
+                      </div>
                     </div>
                     <p className="m-0 whitespace-pre-wrap text-base leading-8 text-text-primary" lang={sourceLanguage}>
                       {paragraph.source}
@@ -364,9 +452,12 @@ export function ReadingPage() {
                       </div>
                     ) : null}
                   </div>
-                </li>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
               ))}
-            </ol>
+            </div>
           )}
         </div>
       </div>

@@ -58,8 +58,8 @@ describe("reading utils", () => {
     const paragraphs = await extractReadingParagraphsFromFile(new File([blob], "book.epub", { type: "application/epub+zip" }));
 
     expect(paragraphs).toEqual([
-      { id: "p-1", source: "First chapter." },
-      { id: "p-2", source: "Second chapter." },
+      { id: "chapter-1-p-1", source: "First chapter.", chapterId: "chapter-1", chapterTitle: "Chapter 1", chapterIndex: 0 },
+      { id: "chapter-2-p-1", source: "Second chapter.", chapterId: "chapter-2", chapterTitle: "Chapter 2", chapterIndex: 1 },
     ]);
   });
 
@@ -91,6 +91,53 @@ describe("reading utils", () => {
       author: "Writer",
       language: "ko",
     });
-    expect(extraction.paragraphs).toEqual([{ id: "p-1", source: "첫 문장입니다." }]);
+    expect(extraction.paragraphs).toEqual([
+      { id: "chapter-1-p-1", source: "첫 문장입니다.", chapterId: "chapter-1", chapterTitle: "Chapter 1", chapterIndex: 0 },
+    ]);
+  });
+
+  it("filters Project Gutenberg title-page boilerplate from epub content", async () => {
+    const zip = new JSZip();
+    zip.file(
+      "META-INF/container.xml",
+      `<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="content.opf" /></rootfiles></container>`,
+    );
+    zip.file(
+      "content.opf",
+      `<package xmlns="http://www.idpf.org/2007/opf">
+        <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+          <dc:title>ABC: Petits Contes</dc:title>
+          <dc:creator>Jules Lemaître</dc:creator>
+          <dc:language>fr</dc:language>
+        </metadata>
+        <manifest><item id="title-page" href="title.xhtml" media-type="application/xhtml+xml" /></manifest>
+        <spine><itemref idref="title-page" /></spine>
+      </package>`,
+    );
+    zip.file(
+      "title.xhtml",
+      `<html><body>
+        <h1>The Project Gutenberg eBook of ABC: Petits Contes</h1>
+        <p>Title: ABC: Petits Contes</p>
+        <p>Author: Jules Lemaître</p>
+        <p>Il était une fois un petit enfant.</p>
+      </body></html>`,
+    );
+
+    const blob = await zip.generateAsync({ type: "blob", mimeType: "application/epub+zip" });
+    const extraction = await extractReadingFileFromFile(new File([blob], "petits-contes.epub", { type: "application/epub+zip" }));
+
+    expect(extraction.metadata.title).toBe("ABC: Petits Contes");
+    expect(extraction.metadata.author).toBe("Jules Lemaître");
+    expect(extraction.metadata.language).toBe("fr");
+    expect(extraction.paragraphs).toEqual([
+      {
+        id: "chapter-1-p-1",
+        source: "Il était une fois un petit enfant.",
+        chapterId: "chapter-1",
+        chapterTitle: "The Project Gutenberg eBook of ABC: Petits Contes",
+        chapterIndex: 0,
+      },
+    ]);
   });
 });

@@ -397,4 +397,11 @@ export const api = {
       {},
       token,
     ),
+
+  fetchReadingParagraphTts: (token: string, documentId: string, paragraphId: string, voice: string, rate: "-20%" | "default" | "+20%") =>
+    requestBlob(
+      `/api/readings/${documentId}/paragraphs/${paragraphId}/tts?voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(rate)}`,
+      {},
+      token,
+    ),
 };

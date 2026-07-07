@@ -234,6 +234,9 @@ function normalizeReadingParagraphs(paragraphs: Array<Pick<ReadingDocumentDTO["p
   return paragraphs.map((paragraph, index) => ({
     id: paragraph.id || `p-${index + 1}`,
     source: paragraph.source,
+    chapterId: paragraph.chapterId,
+    chapterTitle: paragraph.chapterTitle,
+    chapterIndex: paragraph.chapterIndex,
     translation: paragraph.translation ?? "",
     engineTranslation: paragraph.engineTranslation,
     sentenceTranslations: paragraph.sentenceTranslations ?? [],

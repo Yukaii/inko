@@ -4,6 +4,9 @@ import type { LanguageCode } from "@inko/shared";
 export type ReadingParagraph = {
   id: string;
   source: string;
+  chapterId?: string;
+  chapterTitle?: string;
+  chapterIndex?: number;
 };
 
 export type ReadingFileMetadata = {
@@ -19,6 +22,18 @@ export type ReadingFileExtraction = {
 
 const XHTML_FILE_PATTERN = /\.(xhtml|html|htm|xml)$/i;
 const PARAGRAPH_BREAK_PATTERN = /\n\s*\n+/;
+const GUTENBERG_BOILERPLATE_PATTERNS = [
+  /^the project gutenberg ebook of\b/i,
+  /^project gutenberg(?:'s)?\b/i,
+  /^title:\s+/i,
+  /^author:\s+/i,
+  /^illustrator:\s+/i,
+  /^translator:\s+/i,
+  /^release date:\s+/i,
+  /^language:\s+/i,
+  /^credits:\s+/i,
+  /^\*{3}\s*(?:start|end) of (?:the )?project gutenberg ebook\b/i,
+];
 const LANGUAGE_ALIASES: Record<string, LanguageCode> = {
   ja: "ja",
   jp: "ja",
@@ -49,14 +64,32 @@ function normalizeWhitespace(value: string) {
   return value.replace(/\r\n?/g, "\n").replace(/[ \t\f\v]+/g, " ").trim();
 }
 
-function makeParagraphs(chunks: string[]) {
+function makeParagraphs(chunks: string[], chapter?: { id: string; title: string; index: number }) {
   return chunks
     .map((chunk) => normalizeWhitespace(chunk))
     .filter(Boolean)
     .map((source, index) => ({
-      id: `p-${index + 1}`,
+      id: chapter ? `${chapter.id}-p-${index + 1}` : `p-${index + 1}`,
       source,
+      ...(chapter
+        ? {
+            chapterId: chapter.id,
+            chapterTitle: chapter.title,
+            chapterIndex: chapter.index,
+          }
+        : {}),
     }));
+}
+
+function filterEpubTextChunks(chunks: string[]) {
+  const normalizedChunks = chunks.map((chunk) => normalizeWhitespace(chunk)).filter(Boolean);
+  const startIndex = normalizedChunks.findIndex((chunk) => /^\*{3}\s*start of (?:the )?project gutenberg ebook\b/i.test(chunk));
+  const endIndex = normalizedChunks.findIndex((chunk) => /^\*{3}\s*end of (?:the )?project gutenberg ebook\b/i.test(chunk));
+  const contentChunks = normalizedChunks.slice(
+    startIndex >= 0 ? startIndex + 1 : 0,
+    endIndex >= 0 ? endIndex : normalizedChunks.length,
+  );
+  return contentChunks.filter((chunk) => !GUTENBERG_BOILERPLATE_PATTERNS.some((pattern) => pattern.test(chunk)));
 }
 
 export function splitReadingParagraphs(text: string): ReadingParagraph[] {
@@ -78,12 +111,19 @@ function extractDocumentParagraphs(markup: string, mimeType: DOMParserSupportedT
     return extractDocumentParagraphs(markup, "text/html");
   }
 
-  const paragraphNodes = Array.from(document.querySelectorAll("p, blockquote, li, h1, h2, h3, h4, h5, h6"));
+  const paragraphNodes = Array.from(document.querySelectorAll("p, blockquote, li"));
   const chunks = paragraphNodes.length > 0
     ? paragraphNodes.map((node) => node.textContent ?? "")
     : [(document.body ?? document.documentElement).textContent ?? ""];
 
-  return makeParagraphs(chunks).map((paragraph) => paragraph.source);
+  const title = Array.from(document.querySelectorAll("h1, h2, h3, title"))
+    .map((node) => normalizeWhitespace(node.textContent ?? ""))
+    .find(Boolean);
+
+  return {
+    title,
+    chunks: filterEpubTextChunks(chunks),
+  };
 }
 
 function resolveRelativePath(basePath: string, relativePath: string) {
@@ -138,43 +178,59 @@ function getEpubMetadata(packageDocument: Document): ReadingFileMetadata {
   };
 }
 
-function getEpubContentFilePaths(packagePath: string, packageDocument: Document) {
-  const manifestById = new Map<string, string>();
+function getEpubContentFiles(packagePath: string, packageDocument: Document) {
+  const manifestById = new Map<string, { path: string; title?: string }>();
   for (const item of Array.from(packageDocument.querySelectorAll("manifest item"))) {
     const id = item.getAttribute("id");
     const href = item.getAttribute("href");
     const mediaType = item.getAttribute("media-type") ?? "";
     if (!id || !href) continue;
     if (mediaType.includes("html") || XHTML_FILE_PATTERN.test(href)) {
-      manifestById.set(id, resolveRelativePath(packagePath, href));
+      manifestById.set(id, {
+        path: resolveRelativePath(packagePath, href),
+        title: item.getAttribute("title") ?? undefined,
+      });
     }
   }
 
   return Array.from(packageDocument.querySelectorAll("spine itemref"))
     .map((itemref) => itemref.getAttribute("idref"))
     .filter((idref): idref is string => Boolean(idref))
-    .map((idref) => manifestById.get(idref))
-    .filter((path): path is string => Boolean(path));
+    .map((idref, index) => {
+      const file = manifestById.get(idref);
+      return file ? { id: `chapter-${index + 1}`, index, ...file } : undefined;
+    })
+    .filter((file): file is { id: string; index: number; path: string; title?: string } => Boolean(file));
 }
 
 export async function extractEpubReading(file: File): Promise<ReadingFileExtraction> {
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const epubPackage = await getEpubPackage(zip);
-  const spinePaths = epubPackage ? getEpubContentFilePaths(epubPackage.packagePath, epubPackage.packageDocument) : [];
+  const spineFiles = epubPackage ? getEpubContentFiles(epubPackage.packagePath, epubPackage.packageDocument) : [];
   const fallbackPaths = Object.keys(zip.files)
     .filter((path) => !zip.files[path].dir && XHTML_FILE_PATTERN.test(path))
     .sort((a, b) => a.localeCompare(b));
-  const contentPaths = spinePaths.length > 0 ? spinePaths : fallbackPaths;
+  const contentFiles = spineFiles.length > 0
+    ? spineFiles
+    : fallbackPaths.map((path, index) => ({ id: `chapter-${index + 1}`, index, path, title: undefined as string | undefined }));
 
-  const chunks: string[] = [];
-  for (const path of contentPaths) {
-    const entry = zip.file(path);
+  const paragraphs: ReadingParagraph[] = [];
+  for (const fileEntry of contentFiles) {
+    const entry = zip.file(fileEntry.path);
     if (!entry) continue;
-    chunks.push(...extractDocumentParagraphs(await entry.async("text")));
+    const extracted = extractDocumentParagraphs(await entry.async("text"));
+    const title = extracted.title || fileEntry.title || `Chapter ${fileEntry.index + 1}`;
+    paragraphs.push(
+      ...makeParagraphs(extracted.chunks, {
+        id: fileEntry.id,
+        title,
+        index: fileEntry.index,
+      }),
+    );
   }
 
   return {
-    paragraphs: makeParagraphs(chunks),
+    paragraphs,
     metadata: epubPackage ? getEpubMetadata(epubPackage.packageDocument) : {},
   };
 }

@@ -27,10 +27,18 @@ const EnvSchema = z.object({
   PRACTICE_TRACE_SLOW_MS: z.coerce.number().int().nonnegative().default(1000),
   MODERATOR_EMAILS: z.string().default(""),
   STATIC_ASSETS_DIR: z.string().min(1).optional(),
-  TRANSLATION_PROVIDER: z.enum(["fallback", "openai_compatible"]).default("fallback"),
+  TRANSLATION_PROVIDER: z.enum(["fallback", "openai", "openai_compatible", "opencode_zen", "vercel_gateway"]).default("fallback"),
   TRANSLATION_API_URL: z.string().url().optional(),
+  TRANSLATION_BASE_URL: z.string().url().optional(),
   TRANSLATION_API_KEY: z.string().min(1).optional(),
   TRANSLATION_MODEL: z.string().min(1).default("gpt-4o-mini"),
+  TRANSLATION_OPENAI_COMPATIBLE_NAME: z.string().min(1).default("openai-compatible"),
+  TRANSLATION_SUPPORTS_STRUCTURED_OUTPUTS: z.coerce.boolean().default(true),
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  AI_GATEWAY_API_KEY: z.string().min(1).optional(),
+  AI_GATEWAY_BASE_URL: z.string().url().optional(),
+  OPENCODE_ZEN_BASE_URL: z.string().url().optional(),
+  OPENCODE_ZEN_API_KEY: z.string().min(1).optional(),
 });
 
 const parsedEnv = EnvSchema.parse(process.env);
@@ -39,8 +47,20 @@ if (parsedEnv.MAIL_PROVIDER === "resend" && !parsedEnv.RESEND_API_KEY) {
   throw new Error("RESEND_API_KEY is required when MAIL_PROVIDER=resend");
 }
 
-if (parsedEnv.TRANSLATION_PROVIDER === "openai_compatible" && (!parsedEnv.TRANSLATION_API_URL || !parsedEnv.TRANSLATION_API_KEY)) {
-  throw new Error("TRANSLATION_API_URL and TRANSLATION_API_KEY are required when TRANSLATION_PROVIDER=openai_compatible");
+if (parsedEnv.TRANSLATION_PROVIDER === "openai" && !(parsedEnv.OPENAI_API_KEY || parsedEnv.TRANSLATION_API_KEY)) {
+  throw new Error("OPENAI_API_KEY or TRANSLATION_API_KEY is required when TRANSLATION_PROVIDER=openai");
+}
+
+if (parsedEnv.TRANSLATION_PROVIDER === "openai_compatible" && (!(parsedEnv.TRANSLATION_BASE_URL || parsedEnv.TRANSLATION_API_URL) || !parsedEnv.TRANSLATION_API_KEY)) {
+  throw new Error("TRANSLATION_BASE_URL (or TRANSLATION_API_URL) and TRANSLATION_API_KEY are required when TRANSLATION_PROVIDER=openai_compatible");
+}
+
+if (parsedEnv.TRANSLATION_PROVIDER === "opencode_zen" && (!(parsedEnv.OPENCODE_ZEN_BASE_URL || parsedEnv.TRANSLATION_BASE_URL || parsedEnv.TRANSLATION_API_URL) || !(parsedEnv.OPENCODE_ZEN_API_KEY || parsedEnv.TRANSLATION_API_KEY))) {
+  throw new Error("OPENCODE_ZEN_BASE_URL and OPENCODE_ZEN_API_KEY are required when TRANSLATION_PROVIDER=opencode_zen");
+}
+
+if (parsedEnv.TRANSLATION_PROVIDER === "vercel_gateway" && !(parsedEnv.AI_GATEWAY_API_KEY || parsedEnv.TRANSLATION_API_KEY)) {
+  throw new Error("AI_GATEWAY_API_KEY or TRANSLATION_API_KEY is required when TRANSLATION_PROVIDER=vercel_gateway");
 }
 
 export const env = {

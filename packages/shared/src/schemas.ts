@@ -413,6 +413,9 @@ export const CommunityDeckSubmissionSchema = z.object({
 export const ReadingParagraphSchema = z.object({
   id: z.string().min(1),
   source: z.string().min(1),
+  chapterId: z.string().optional(),
+  chapterTitle: z.string().optional(),
+  chapterIndex: z.number().int().nonnegative().optional(),
   translation: z.string().default(""),
   engineTranslation: z.string().optional(),
   sentenceTranslations: z
@@ -456,7 +459,7 @@ export const CreateReadingDocumentSchema = z.object({
   translationLanguage: z.string().trim().min(1).max(80),
   sourceKind: z.union([z.literal("txt"), z.literal("epub"), z.literal("paste"), z.literal("manual")]),
   sourceName: z.string().trim().max(240).optional(),
-  paragraphs: z.array(ReadingParagraphSchema.pick({ id: true, source: true })).min(1).max(5000),
+  paragraphs: z.array(ReadingParagraphSchema.pick({ id: true, source: true, chapterId: true, chapterTitle: true, chapterIndex: true })).min(1).max(5000),
 });
 
 export const UpdateReadingDocumentSchema = z.object({

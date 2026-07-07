@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { getDefaultEdgeTtsVoice } from "@inko/shared";
 import { repository, type Repository } from "../services/repository";
 import { requireAuth } from "../plugins/auth";
 import { rethrowAsHttp } from "../lib/http";
@@ -72,6 +73,64 @@ export async function ttsRoutes(
           },
         },
         "tts request failed",
+      );
+      rethrowAsHttp(app, error);
+    }
+  });
+
+  app.get("/api/readings/:documentId/paragraphs/:paragraphId/tts", { preHandler: requireAuth }, async (request, reply) => {
+    const requestStartedAt = Date.now();
+    try {
+      const { documentId, paragraphId } = request.params as { documentId: string; paragraphId: string };
+      const { voice, rate } = request.query as {
+        voice?: string;
+        rate?: "-20%" | "default" | "+20%";
+      };
+      const document = await repo.getReadingDocument(request.auth!.userId, documentId);
+      const paragraph = document.paragraphs.find((item) => item.id === paragraphId);
+      if (!paragraph) {
+        reply.code(404);
+        return { message: "Reading paragraph not found" };
+      }
+
+      const audio = await service.synthesizeTextAudio({
+        userId: request.auth!.userId,
+        documentId,
+        paragraphId,
+        text: paragraph.source,
+        voice: voice ?? getDefaultEdgeTtsVoice(document.sourceLanguage),
+        rate,
+      });
+
+      app.log.info(
+        {
+          tts: {
+            userId: request.auth!.userId,
+            documentId,
+            paragraphId,
+            source: audio.diagnostics?.source ?? "unknown",
+            objectKey: audio.diagnostics?.objectKey ?? null,
+            timingsMs: audio.diagnostics?.timingsMs ?? null,
+            requestTotal: Date.now() - requestStartedAt,
+          },
+        },
+        "reading tts request completed",
+      );
+
+      reply.header("content-type", audio.contentType);
+      reply.header("content-disposition", `inline; filename="${audio.fileName}"`);
+      reply.header("cache-control", "private, max-age=86400");
+      return reply.send(audio.audio);
+    } catch (error) {
+      app.log.error(
+        {
+          err: error,
+          tts: {
+            requestTotal: Date.now() - requestStartedAt,
+            path: request.url,
+          },
+        },
+        "reading tts request failed",
       );
       rethrowAsHttp(app, error);
     }
