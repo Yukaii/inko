@@ -1,10 +1,13 @@
 import { NavLink } from "react-router-dom";
 import type { TFunction } from "i18next";
+import { Moon, Sun } from "lucide-react";
+import type { ThemeMode } from "@inko/shared";
 import { SUPPORTED_UI_LANGUAGES } from "../i18n";
 
 type UserInfo = {
   displayName: string;
   email: string;
+  themeMode: ThemeMode;
   canModerateCommunity?: boolean;
 };
 
@@ -121,7 +124,10 @@ export function AppShellNavigation({
   setShowLangSubMenu,
   onSignOut,
   onShowHelp,
+  onToggleTheme,
   showMobileNav,
+  themeMode,
+  themeTogglePending,
 }: {
   t: TFunction;
   i18n: { language: string; changeLanguage: (lang: string) => Promise<unknown> | void };
@@ -135,8 +141,13 @@ export function AppShellNavigation({
   setShowLangSubMenu: (value: boolean) => void;
   onSignOut: () => void;
   onShowHelp: () => void;
+  onToggleTheme: () => void;
   showMobileNav: boolean;
+  themeMode: ThemeMode;
+  themeTogglePending: boolean;
 }) {
+  const isDarkMode = themeMode === "dark";
+
   return (
     <>
       <aside className="hidden h-screen flex-col gap-3 overflow-y-auto border-r border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] bg-bg-page p-6 md:flex">
@@ -178,6 +189,24 @@ export function AppShellNavigation({
               s
             </kbd>
           </NavLink>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isDarkMode}
+            aria-label={isDarkMode ? t("common.switch_to_light") : t("common.switch_to_dark")}
+            disabled={themeTogglePending}
+            className="flex w-full items-center justify-between rounded-xl border border-transparent bg-transparent px-3.5 py-2 text-sm text-text-secondary transition-colors hover:border-[color:color-mix(in_oklab,var(--accent-orange)_22%,var(--border-subtle))] hover:bg-bg-elevated hover:text-text-primary focus:border-[color:color-mix(in_oklab,var(--accent-orange)_30%,var(--border-subtle))] focus:bg-bg-elevated focus:text-text-primary disabled:cursor-not-allowed disabled:opacity-70"
+            onClick={onToggleTheme}
+          >
+            <span className="flex items-center gap-2">
+              {isDarkMode ? <Moon className="h-4 w-4" aria-hidden="true" /> : <Sun className="h-4 w-4" aria-hidden="true" />}
+              <span>{isDarkMode ? t("settings.preferences.dark") : t("settings.preferences.light")}</span>
+            </span>
+            <span className={`relative h-5 w-9 rounded-full border transition-colors ${isDarkMode ? "border-accent-orange bg-accent-orange" : "border-[var(--border-subtle)] bg-bg-elevated"}`} aria-hidden="true">
+              <span className={`absolute left-0.5 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-bg-page shadow-sm transition-transform ${isDarkMode ? "translate-x-4" : "translate-x-0"}`} />
+            </span>
+          </button>
 
           <div className="relative">
             <button

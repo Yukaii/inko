@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_SRS_CONFIG, DefaultThemes, type SrsConfig, type ThemeConfig, type ThemeMode, type ThemePalette, type TypingMode } from "@inko/shared";
 import { api } from "../api/client";
@@ -20,6 +20,13 @@ type MeResponse = {
   srsConfig?: SrsConfig;
   themes: ThemeConfig;
   createdAt: number;
+};
+
+type PreferencesPayload = {
+  themeMode: ThemeMode;
+  typingMode: TypingMode;
+  ttsEnabled: boolean;
+  srsConfig: SrsConfig;
 };
 
 type ThemePreset = {
@@ -366,7 +373,6 @@ export function SettingsPage() {
   const { t, i18n } = useTranslation();
   const { token, signOut } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const queryClient = useQueryClient();
   const [message, setMessage] = useState("");
   const [activeSection, setActiveSection] = useState<SettingsSection>(() => parseSettingsSectionFromHash(window.location.hash));
@@ -491,21 +497,30 @@ export function SettingsPage() {
   });
 
   const updatePreferencesMutation = useMutation({
-    mutationFn: () =>
-      api.updatePreferences(token ?? "", {
+    mutationFn: async () => {
+      const submitted: PreferencesPayload = {
         themeMode,
         typingMode,
         ttsEnabled,
         srsConfig,
-      }),
+      };
+      const updated = await api.updatePreferences(token ?? "", submitted);
+      return { submitted, updated: updated as MeResponse };
+    },
     onMutate: () => {
       setMessage(t("settings.messages.autosaving", "Saving preferences..."));
     },
-    onSuccess: (updated) => {
-      const nextUser = updated as MeResponse;
+    onSuccess: ({ submitted, updated }) => {
+      const nextUser: MeResponse = {
+        ...updated,
+        themeMode: submitted.themeMode,
+        typingMode: submitted.typingMode,
+        ttsEnabled: submitted.ttsEnabled,
+        srsConfig: submitted.srsConfig,
+      };
       queryClient.setQueryData(authQueryKey(token, "me"), nextUser);
-      applyThemePreferences({ themeMode: nextUser.themeMode, themes: nextUser.themes });
-      saveThemePreferences({ themeMode: nextUser.themeMode, themes: nextUser.themes });
+      applyThemePreferences({ themeMode: submitted.themeMode, themes: nextUser.themes });
+      saveThemePreferences({ themeMode: submitted.themeMode, themes: nextUser.themes });
       setMessage(t("settings.messages.autosaved", "Preferences saved."));
     },
     onError: (error) => {
@@ -719,20 +734,24 @@ export function SettingsPage() {
   ];
 
   useEffect(() => {
-    const sectionFromHash = parseSettingsSectionFromHash(location.hash);
-    if (sectionFromHash !== activeSection) {
-      setActiveSection(sectionFromHash);
-    }
-  }, [activeSection, location.hash]);
+    const syncSectionFromHash = () => {
+      setActiveSection(parseSettingsSectionFromHash(window.location.hash));
+    };
+
+    window.addEventListener("popstate", syncSectionFromHash);
+    window.addEventListener("hashchange", syncSectionFromHash);
+
+    return () => {
+      window.removeEventListener("popstate", syncSectionFromHash);
+      window.removeEventListener("hashchange", syncSectionFromHash);
+    };
+  }, []);
 
   const handleSectionChange = (section: SettingsSection) => {
-    navigate(
-      {
-        pathname: location.pathname,
-        hash: `#${section}`,
-      },
-      { replace: false },
-    );
+    const nextUrl = `${window.location.pathname}${window.location.search}#${section}`;
+    if (window.location.hash !== `#${section}`) {
+      window.history.pushState(null, "", nextUrl);
+    }
     setActiveSection(section);
   };
 
@@ -757,7 +776,7 @@ export function SettingsPage() {
       node.removeEventListener("scroll", updateSettingsNavScrollState);
       window.removeEventListener("resize", updateSettingsNavScrollState);
     };
-  }, [activeSection, i18n.language]);
+  }, [i18n.language]);
 
   const scrollSettingsNavBy = (direction: "left" | "right") => {
     const node = settingsNavRef.current;
@@ -809,7 +828,11 @@ export function SettingsPage() {
               <button
                 key={item.id}
                 type="button"
-                className={`shrink-0 whitespace-nowrap rounded-[10px] px-4 py-3 text-left text-sm transition-all lg:w-full ${activeSection === item.id ? "bg-bg-card font-medium text-text-primary" : "bg-transparent text-text-secondary hover:bg-bg-card hover:text-text-primary"}`}
+                className={`shrink-0 whitespace-nowrap rounded-[10px] px-4 py-3 text-left text-sm transition-all lg:w-full ${
+                  activeSection === item.id
+                    ? "border border-[color:color-mix(in_oklab,var(--accent-orange)_38%,var(--border-subtle))] bg-[color:color-mix(in_oklab,var(--bg-card)_72%,var(--accent-orange)_28%)] font-medium text-text-primary shadow-sm"
+                    : "border border-transparent bg-transparent font-medium text-text-primary hover:border-[color:color-mix(in_oklab,var(--accent-orange)_24%,var(--border-subtle))] hover:bg-[color:color-mix(in_oklab,var(--bg-card)_86%,var(--accent-orange)_14%)]"
+                }`}
                 onClick={() => handleSectionChange(item.id)}
               >
                 {t(item.label)}

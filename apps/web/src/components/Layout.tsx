@@ -1,8 +1,8 @@
 import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import type { ThemeConfig, ThemeMode } from "@inko/shared";
+import { DEFAULT_SRS_CONFIG, type ThemeMode, type UpdatePreferencesInput, type UserDTO } from "@inko/shared";
 import { getShortcutsList, registerShortcut, useKeyboardShortcuts } from "../hooks/useKeyboard";
 import { shouldResetAuth, useAuth } from "../hooks/useAuth";
 import { api } from "../api/client";
@@ -17,6 +17,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { token, signOut } = useAuth();
+  const queryClient = useQueryClient();
   const [showHelp, setShowHelp] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showLangSubMenu, setShowLangSubMenu] = useState(false);
@@ -40,7 +41,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     refetchOnReconnect: false,
   });
 
-  const user = meQuery.data as { displayName: string; email: string; themeMode: ThemeMode; themes: ThemeConfig; canModerateCommunity?: boolean } | undefined;
+  const user = meQuery.data as UserDTO | undefined;
 
   useEffect(() => {
     if (!meQuery.error || !shouldResetAuth(meQuery.error)) {
@@ -53,7 +54,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }, [meQuery.error, navigate, signOut]);
 
   useEffect(() => {
-    const me = meQuery.data as { themeMode: ThemeMode; themes: ThemeConfig } | undefined;
+    const me = meQuery.data as UserDTO | undefined;
     if (!me) return;
 
     const preferences = { themeMode: me.themeMode, themes: me.themes };
@@ -123,6 +124,52 @@ export function Layout({ children }: { children: React.ReactNode }) {
     navigate("/login", { replace: true });
   }, [navigate, signOut]);
 
+  const updateThemeModeMutation = useMutation({
+    mutationFn: async ({ submitted }: { submitted: UpdatePreferencesInput; previousUser: UserDTO }) => {
+      const updated = await api.updatePreferences(token ?? "", submitted);
+      return { submitted, updated };
+    },
+    onMutate: ({ submitted, previousUser }) => {
+      const nextUser = { ...previousUser, themeMode: submitted.themeMode };
+      queryClient.setQueryData(authQueryKey(token, "me"), nextUser);
+      applyThemePreferences({ themeMode: submitted.themeMode, themes: previousUser.themes });
+      saveThemePreferences({ themeMode: submitted.themeMode, themes: previousUser.themes });
+      return { previousUser };
+    },
+    onSuccess: ({ submitted, updated }) => {
+      const nextUser = {
+        ...updated,
+        themeMode: submitted.themeMode,
+        typingMode: submitted.typingMode,
+        ttsEnabled: submitted.ttsEnabled,
+        srsConfig: submitted.srsConfig,
+      };
+      queryClient.setQueryData(authQueryKey(token, "me"), nextUser);
+      applyThemePreferences({ themeMode: submitted.themeMode, themes: nextUser.themes });
+      saveThemePreferences({ themeMode: submitted.themeMode, themes: nextUser.themes });
+    },
+    onError: (_error, _variables, context) => {
+      if (!context?.previousUser) return;
+      queryClient.setQueryData(authQueryKey(token, "me"), context.previousUser);
+      applyThemePreferences({ themeMode: context.previousUser.themeMode, themes: context.previousUser.themes });
+      saveThemePreferences({ themeMode: context.previousUser.themeMode, themes: context.previousUser.themes });
+    },
+  });
+
+  const handleToggleTheme = useCallback(() => {
+    if (!user || updateThemeModeMutation.isPending) return;
+    const nextThemeMode: ThemeMode = user.themeMode === "dark" ? "light" : "dark";
+    updateThemeModeMutation.mutate({
+      submitted: {
+        themeMode: nextThemeMode,
+        typingMode: user.typingMode,
+        ttsEnabled: user.ttsEnabled,
+        srsConfig: { ...DEFAULT_SRS_CONFIG, ...user.srsConfig },
+      },
+      previousUser: user,
+    });
+  }, [updateThemeModeMutation, user]);
+
   const shortcuts = getShortcutsList();
   const isPracticeRoute = matchPath("/practice/:deckId", location.pathname) !== null;
 
@@ -142,11 +189,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
           setShowLangSubMenu={setShowLangSubMenu}
           onSignOut={() => void handleSignOut()}
           onShowHelp={() => setShowHelp(true)}
+          onToggleTheme={handleToggleTheme}
           showMobileNav={!isPracticeRoute}
+          themeMode={user?.themeMode ?? "dark"}
+          themeTogglePending={updateThemeModeMutation.isPending}
         />
       </div>
 
-      <main id="main-content" className={`h-screen overflow-y-auto px-5 pt-5 ${!isPracticeRoute ? "pb-[84px]" : "pb-5"} md:px-10 md:py-8`} tabIndex={-1}>
+      <main
+        id="main-content"
+        className={`h-screen overflow-y-auto px-5 pt-5 [scrollbar-gutter:stable] ${!isPracticeRoute ? "pb-[84px]" : "pb-5"} md:px-10 md:py-8`}
+        tabIndex={-1}
+      >
         {children}
       </main>
 

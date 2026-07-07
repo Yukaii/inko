@@ -150,6 +150,34 @@ export const DEFAULT_SRS_CONFIG = {
   intervalExpertMinutes: 15 * 24 * 60,
 } satisfies z.infer<typeof SrsConfigSchema>;
 
+function finiteNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function legacyHoursToMinutes(value: unknown) {
+  const hours = finiteNumber(value);
+  return hours === undefined ? undefined : Math.round(hours * 60);
+}
+
+export function normalizeSrsConfig(value: unknown): z.infer<typeof SrsConfigSchema> {
+  const source = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  const candidate = {
+    startingStrength: finiteNumber(source.startingStrength) ?? DEFAULT_SRS_CONFIG.startingStrength,
+    strengthStepDivisor: finiteNumber(source.strengthStepDivisor) ?? DEFAULT_SRS_CONFIG.strengthStepDivisor,
+    intervalLowMinutes:
+      finiteNumber(source.intervalLowMinutes) ?? legacyHoursToMinutes(source.intervalLowHours) ?? DEFAULT_SRS_CONFIG.intervalLowMinutes,
+    intervalMidMinutes:
+      finiteNumber(source.intervalMidMinutes) ?? legacyHoursToMinutes(source.intervalMidHours) ?? DEFAULT_SRS_CONFIG.intervalMidMinutes,
+    intervalStrongMinutes:
+      finiteNumber(source.intervalStrongMinutes) ?? legacyHoursToMinutes(source.intervalStrongHours) ?? DEFAULT_SRS_CONFIG.intervalStrongMinutes,
+    intervalMasteredMinutes:
+      finiteNumber(source.intervalMasteredMinutes) ?? legacyHoursToMinutes(source.intervalMasteredHours) ?? DEFAULT_SRS_CONFIG.intervalMasteredMinutes,
+    intervalExpertMinutes:
+      finiteNumber(source.intervalExpertMinutes) ?? legacyHoursToMinutes(source.intervalExpertHours) ?? DEFAULT_SRS_CONFIG.intervalExpertMinutes,
+  };
+  return SrsConfigSchema.parse(candidate);
+}
+
 export const ThemePaletteSchema = z.object({
   accentOrange: HexColorSchema,
   accentTeal: HexColorSchema,
