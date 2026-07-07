@@ -412,9 +412,9 @@ export function ReadingPage() {
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
             onClick={clearAllTranslations}
-            disabled={!currentDocument || completedCount === 0}
+            disabled={!currentDocument}
           >
             <RotateCcw className="h-4 w-4" aria-hidden="true" />
             Clear all translations

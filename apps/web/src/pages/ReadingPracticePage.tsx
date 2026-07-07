@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { BookOpenText, Eye, EyeOff, Languages, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { BookOpenText, Eye, EyeOff, Languages, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
 import {
   getDefaultEdgeTtsVoice,
   LANGUAGE_LABELS,
@@ -12,6 +12,7 @@ import {
 } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
+import { registerShortcut } from "../hooks/useKeyboard";
 import { authQueryKey } from "../lib/queryKeys";
 import { applyNoIndexMetadata } from "../lib/seo";
 
@@ -75,8 +76,12 @@ export function ReadingPracticePage() {
   const [ttsRate, setTtsRate] = useState<EdgeTtsRate>("default");
   const [cardTransition, setCardTransition] = useState(false);
   const [lastSubmitAccepted, setLastSubmitAccepted] = useState<boolean | null>(null);
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
+  const [lastEscPressedAt, setLastEscPressedAt] = useState<number | null>(null);
 
   const hiddenInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const exitConfirmButtonRef = useRef<HTMLButtonElement | null>(null);
+  const skipSentenceRef = useRef<() => void>(() => {});
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioCacheRef = useRef(new Map<string, string>());
   const audioInFlightRef = useRef(new Map<string, Promise<string>>());
@@ -115,14 +120,14 @@ export function ReadingPracticePage() {
     const typed = [...typedInput];
     return sourceChars.map((char, i) => {
       if (i < typed.length) {
-        return typed[i] === char ? "correct" : "wrong";
+        return typed[i].toLowerCase() === char.toLowerCase() ? "correct" : "wrong";
       }
       if (i === typed.length) return "cursor";
       return "pending";
     });
   }, [sourceChars, typedInput]);
 
-  const isComplete = typedInput === sourceText && sourceText.length > 0;
+  const isComplete = typedInput.toLowerCase() === sourceText.toLowerCase() && sourceText.length > 0;
 
   // Reset state when changing paragraph
   useEffect(() => {
@@ -147,6 +152,18 @@ export function ReadingPracticePage() {
 
   useEffect(() => {
     hiddenInputRef.current?.focus();
+  }, []);
+
+  // Register keyboard shortcut for skipping (⌘+Enter / Ctrl+Enter)
+  useEffect(() => {
+    const cleanup = registerShortcut({
+      key: "Enter",
+      meta: true,
+      handler: () => skipSentenceRef.current(),
+      description: "Skip sentence",
+      scope: "local",
+    });
+    return cleanup;
   }, []);
 
   useEffect(() => {
@@ -376,6 +393,8 @@ export function ReadingPracticePage() {
     }
   }, [activeParagraph, activeSentences, paragraphIndex, sentenceIndex, currentDocument]);
 
+  skipSentenceRef.current = skipSentence;
+
   const goToParagraph = useCallback(
     (nextIndex: number) => {
       if (!currentDocument) return;
@@ -390,17 +409,63 @@ export function ReadingPracticePage() {
     hiddenInputRef.current?.focus();
   }, []);
 
+  const closeExitConfirm = useCallback(() => {
+    setExitConfirmOpen(false);
+    setLastEscPressedAt(null);
+  }, []);
+
+  const confirmExit = useCallback(() => {
+    setExitConfirmOpen(false);
+    navigate(`/reader/${currentDocument?.id ?? ""}`);
+  }, [currentDocument?.id, navigate]);
+
+  useEffect(() => {
+    if (lastEscPressedAt === null) return;
+    const timer = window.setTimeout(() => setLastEscPressedAt(null), 1000);
+    return () => window.clearTimeout(timer);
+  }, [lastEscPressedAt]);
+
+  const requestExitIntent = useCallback(
+    (source: "esc" | "button") => {
+      if (source === "button") {
+        setLastEscPressedAt(null);
+        setExitConfirmOpen(true);
+        return;
+      }
+
+      const now = Date.now();
+      if (lastEscPressedAt && now - lastEscPressedAt <= 1000) {
+        setLastEscPressedAt(null);
+        setExitConfirmOpen(true);
+        return;
+      }
+
+      setLastEscPressedAt(now);
+    },
+    [lastEscPressedAt],
+  );
+
+  useEffect(() => {
+    if (!exitConfirmOpen) return;
+    exitConfirmButtonRef.current?.focus();
+  }, [exitConfirmOpen]);
+
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
+        if (exitConfirmOpen) {
+          closeExitConfirm();
+          return;
+        }
+        requestExitIntent("esc");
         return;
       }
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (isInteractiveElement(event.target)) return;
       focusInput();
     },
-    [focusInput],
+    [closeExitConfirm, exitConfirmOpen, focusInput, requestExitIntent],
   );
 
   if (documentQuery.isLoading) {
@@ -514,12 +579,13 @@ export function ReadingPracticePage() {
         </div>
 
         {/* Exit */}
-        <Link
-          to={`/reader/${currentDocument.id}`}
+        <button
+          type="button"
           className="inline-flex h-8 shrink-0 items-center justify-center gap-2 self-end whitespace-nowrap rounded-lg border border-[var(--border-muted)] bg-transparent px-3 text-xs font-normal text-text-secondary hover:border-[var(--border-strong)] hover:text-text-primary sm:h-auto sm:self-auto sm:px-3.5 sm:py-1.5 sm:text-[13px]"
+          onClick={() => requestExitIntent("button")}
         >
           Exit
-        </Link>
+        </button>
       </div>
 
       {/* Translation panel - shown by default, below typing box */}
@@ -528,6 +594,39 @@ export function ReadingPracticePage() {
       {error ? (
         <div className="fixed left-1/2 top-14 z-[220] -translate-x-1/2 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-toast-bg)] px-3 py-2 text-xs text-[var(--danger-text)]">
           {error}
+        </div>
+      ) : null}
+
+      {/* Exit confirmation dialog */}
+      {exitConfirmOpen ? (
+        <div
+          className="fixed left-1/2 top-16 z-[230] w-[min(92vw,420px)] -translate-x-1/2 rounded-xl border border-[var(--border-strong)] bg-bg-card p-4 shadow-xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reading-exit-confirm-title"
+        >
+          <p id="reading-exit-confirm-title" className="m-0 text-sm font-semibold text-text-primary">End reading practice?</p>
+          <p className="mt-1 mb-0 text-xs text-text-secondary">Your progress on completed sentences is saved.</p>
+          <div className="mt-3 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              className="rounded-md border border-[var(--border-strong)] bg-bg-page px-3 py-1.5 text-xs font-medium text-text-primary hover:border-accent-orange"
+              onClick={closeExitConfirm}
+            >
+              Continue reading
+            </button>
+            <button
+              type="button"
+              ref={exitConfirmButtonRef}
+              className="rounded-md border border-[var(--danger-border)] bg-[var(--danger-bg)] px-3 py-1.5 text-xs font-medium text-[var(--danger-text)] hover:bg-[var(--danger-bg)]"
+              onClick={confirmExit}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <X className="h-3 w-3" aria-hidden="true" />
+                Exit
+              </span>
+            </button>
+          </div>
         </div>
       ) : null}
 
@@ -586,12 +685,7 @@ export function ReadingPracticePage() {
             : null}
         </div>
 
-        {/* Placeholder when empty */}
-        {!typedInput ? (
-          <p className="text-sm text-text-secondary">
-            Start typing the sentence above
-          </p>
-        ) : null}
+
 
         {/* Translation - shown below typing box */}
         {showTranslation ? (

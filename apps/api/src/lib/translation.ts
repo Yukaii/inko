@@ -171,16 +171,18 @@ async function translateWithAiSdk(input: TranslateReadingParagraphInput) {
       "You are a language-learning translation engine. Keep output faithful to the source. " +
       "Return sentence-aligned translations and concise meaning hints for important vocabulary or phrases.",
     output: translationOutput,
-    prompt: JSON.stringify({
-      sourceLanguage,
-      translationLanguage: input.translationLanguage,
-      paragraph: input.paragraph,
-      instructions: [
-        "Translate the paragraph naturally.",
-        "Split sentenceTranslations by source sentence in original order.",
-        "Meaning hints should help a learner understand words or phrases while typing their own translation.",
-      ],
-    }),
+    prompt: [
+      `PARAGRAPH (${sourceLanguage})`,
+      input.paragraph,
+      "",
+      `TARGET LANGUAGE: ${input.translationLanguage}`,
+      "",
+      "INSTRUCTIONS:",
+      "- Translate the paragraph naturally into the target language.",
+      "- Provide sentence-aligned translations (sentenceTranslations) in original sentence order.",
+      "- For meaningHints, extract only important words/phrases that actually appear in the PARAGRAPH above. Do not invent or guess terms that are not present in the source text. Give each a short learner-friendly meaning in the target language.",
+      "- Limit meaningHints to at most 12 entries.",
+    ].join("\n"),
   });
 
   const parsedOutput = TranslationOutputSchema.parse(output);
