@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Play } from "lucide-react";
+import { BookOpenText, Play, Upload } from "lucide-react";
+import { LANGUAGE_LABELS } from "@inko/shared";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { authQueryKey } from "../lib/queryKeys";
@@ -39,6 +40,12 @@ export function DashboardPage() {
   const decksQuery = useQuery({
     queryKey: authQueryKey(token, "decks"),
     queryFn: () => api.listDecks(token ?? ""),
+    enabled: Boolean(token),
+    staleTime: 30_000,
+  });
+  const readingsQuery = useQuery({
+    queryKey: authQueryKey(token, "reading-documents"),
+    queryFn: () => api.listReadingDocuments(token ?? ""),
     enabled: Boolean(token),
     staleTime: 30_000,
   });
@@ -162,6 +169,57 @@ export function DashboardPage() {
               </Link>{" "}
               {t("dashboard.create_first_deck")}
             </p>
+          </section>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="m-0 text-[24px] font-semibold [font-family:var(--font-display)]">
+              Reading Library
+            </h2>
+            <p className="m-0 mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-text-secondary">
+              Imported books and texts
+            </p>
+          </div>
+          <Link
+            to="/reader/import"
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-card px-3 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-bg-elevated"
+          >
+            <Upload className="h-4 w-4 text-accent-orange" aria-hidden="true" />
+            Import
+          </Link>
+        </div>
+
+        {readingsQuery.isLoading ? null : readingsQuery.data?.length ? (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {readingsQuery.data.slice(0, 6).map((reading) => (
+              <button
+                key={reading.id}
+                type="button"
+                className="rounded-[20px] border border-[var(--border-subtle)] bg-bg-card p-4 text-left transition-colors hover:bg-bg-elevated"
+                onClick={() => navigate(`/reader/${reading.id}`)}
+              >
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <BookOpenText className="h-5 w-5 text-accent-teal" aria-hidden="true" />
+                  <span className="rounded-full bg-bg-page px-2 py-1 text-xs text-text-secondary">
+                    {reading.completedCount}/{reading.paragraphCount}
+                  </span>
+                </div>
+                <h3 className="m-0 truncate text-base font-semibold text-text-primary">{reading.title}</h3>
+                <p className="m-0 mt-2 text-sm text-text-secondary">
+                  {LANGUAGE_LABELS[reading.sourceLanguage]} to {reading.translationLanguage}
+                </p>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <section className="rounded-[24px] border border-dashed border-[var(--border-strong)] bg-bg-card px-8 py-8 text-center text-text-secondary">
+            <p className="m-0 text-base text-text-primary">No readings imported yet.</p>
+            <Link to="/reader/import" className="mt-2 inline-flex text-sm text-accent-orange hover:underline">
+              Import a book or paste text
+            </Link>
           </section>
         )}
       </section>

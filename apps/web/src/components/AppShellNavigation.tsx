@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import type { TFunction } from "i18next";
-import { Moon, Sun } from "lucide-react";
+import { BookOpenText, Moon, Sun } from "lucide-react";
 import type { ThemeMode } from "@inko/shared";
 import { SUPPORTED_UI_LANGUAGES } from "../i18n";
 
@@ -107,6 +107,7 @@ function CommunityIcon({ className }: { className?: string }) {
 const ICONS = {
   dashboard: HomeIcon,
   wordBank: DecksIcon,
+  reader: BookOpenText,
   settings: SettingsIcon,
   community: CommunityIcon,
 };
@@ -319,7 +320,7 @@ export function AppShellNavigation({
       <nav className={`fixed inset-x-0 bottom-0 z-[9999] h-16 items-center justify-around border-t border-[color:color-mix(in_oklab,var(--text-secondary)_40%,var(--bg-page))] bg-bg-page px-2 shadow-[0_-1px_6px_var(--shadow)] md:hidden ${showMobileNav ? "flex" : "hidden"}`} aria-label={t("common.mobile_navigation")}>
         {navLinks.map((link) => {
           const isActive = locationPathname === link.to;
-          const Icon = ICONS[link.key === "d" ? "dashboard" : link.key === "w" ? "wordBank" : "community"];
+          const Icon = ICONS[link.key === "d" ? "dashboard" : link.key === "w" ? "wordBank" : link.key === "r" ? "reader" : "community"];
           return (
             <NavLink
               key={link.to}

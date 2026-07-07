@@ -5,11 +5,15 @@ import type {
   CommunityDeckSummaryDTO,
   CreateCommunityDeckSubmissionInput,
   CreateDeckInput,
+  CreateReadingDocumentInput,
   CreateWordsBatchInput,
   CreateWordInput,
   DeckDTO,
   DeleteWordsBatchInput,
   PracticeCardDTO,
+  ReadingDocumentDTO,
+  ReadingDocumentSummaryDTO,
+  ReadingTranslationDTO,
   RateCommunityDeckInput,
   ReviewCommunityDeckSubmissionInput,
   SessionSummaryDTO,
@@ -19,8 +23,10 @@ import type {
   UpdateProfileInput,
   UpdateDeckInput,
   UpdateWordInput,
+  TranslateReadingParagraphInput,
   UserDTO,
   WordDTO,
+  UpdateReadingDocumentInput,
 } from "@inko/shared";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
@@ -339,6 +345,23 @@ export const api = {
       { method: "POST", body: JSON.stringify(input) },
       token,
     ),
+
+  listReadingDocuments: (token: string) => request<ReadingDocumentSummaryDTO[]>("/api/readings", {}, token),
+
+  createReadingDocument: (token: string, input: CreateReadingDocumentInput) =>
+    request<ReadingDocumentDTO>("/api/readings", { method: "POST", body: JSON.stringify(input) }, token),
+
+  getReadingDocument: (token: string, documentId: string) =>
+    request<ReadingDocumentDTO>(`/api/readings/${documentId}`, {}, token),
+
+  updateReadingDocument: (token: string, documentId: string, input: UpdateReadingDocumentInput) =>
+    request<ReadingDocumentDTO>(`/api/readings/${documentId}`, { method: "PATCH", body: JSON.stringify(input) }, token),
+
+  deleteReadingDocument: (token: string, documentId: string) =>
+    request<{ ok: boolean }>(`/api/readings/${documentId}`, { method: "DELETE" }, token),
+
+  translateReadingParagraph: (token: string, input: TranslateReadingParagraphInput) =>
+    request<ReadingTranslationDTO>("/api/readings/translate", { method: "POST", body: JSON.stringify(input) }, token),
 
   startPractice: (token: string, deckId: string) =>
     request<StartPracticeResponse>(

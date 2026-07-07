@@ -29,6 +29,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navLinks = [
     { to: "/dashboard", label: "nav.dashboard", mobileLabel: "nav.home", key: "d" },
     { to: "/word-bank", label: "nav.word_bank", mobileLabel: "nav.decks", key: "w" },
+    { to: "/reader", label: "nav.reader", mobileLabel: "nav.reader", key: "r" },
     { to: "/community", label: "nav.community", mobileLabel: "nav.community", key: "c" },
   ];
 
@@ -95,6 +96,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
       }),
       registerShortcut({
         key: "3",
+        handler: () => navigate("/reader"),
+        description: t("shortcuts.go_reader", "Go to Reader"),
+        scope: "global",
+      }),
+      registerShortcut({
+        key: "4",
         handler: () => navigate("/community"),
         description: t("shortcuts.go_community", "Go to Community"),
         scope: "global",

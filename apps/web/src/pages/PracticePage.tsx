@@ -697,7 +697,7 @@ export function PracticePage() {
   return (
     <section
       ref={zoneRef}
-      className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-start overflow-hidden bg-bg-page"
+      className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-start overflow-hidden bg-bg-page sm:justify-center"
       tabIndex={-1}
       aria-label="Practice session"
       onKeyDown={handleKeyDown}
@@ -925,7 +925,7 @@ export function PracticePage() {
       <div className={`pointer-events-none fixed inset-0 z-[190] bg-[radial-gradient(circle_at_center,var(--accent-teal)_0%,transparent_40%)] opacity-0 transition-opacity duration-300 ${cardTransition ? "opacity-5" : ""}`} aria-hidden="true" />
 
       {/* Center focus area */}
-      <div className={`relative z-[200] mt-[clamp(7rem,18svh,9.5rem)] flex h-[min(52svh,28rem)] w-[min(92vw,44rem)] flex-col items-center justify-start gap-3 overflow-y-auto overflow-x-hidden px-2 text-center transition-all duration-300 portrait:max-sm:mt-[3.5rem] portrait:max-sm:h-[calc(50svh-3.5rem)] portrait:max-sm:min-h-[10.5rem] portrait:max-sm:w-[min(92vw,24rem)] portrait:max-sm:gap-1.5 ${cardTransition ? "-translate-y-2 opacity-0" : ""}`}>
+      <div className={`relative z-[200] mt-[clamp(7rem,18svh,9.5rem)] flex h-[min(52svh,28rem)] w-[min(92vw,44rem)] flex-col items-center justify-start gap-3 overflow-y-auto overflow-x-hidden px-2 text-center transition-all duration-300 sm:mt-0 sm:h-[min(68svh,34rem)] sm:justify-center portrait:max-sm:mt-[3.5rem] portrait:max-sm:h-[calc(50svh-3.5rem)] portrait:max-sm:min-h-[10.5rem] portrait:max-sm:w-[min(92vw,24rem)] portrait:max-sm:justify-start portrait:max-sm:gap-1.5 ${cardTransition ? "-translate-y-2 opacity-0" : ""}`}>
         {isAudioChallengeActive ? (
           <div className="flex max-w-[min(90vw,32rem)] flex-col items-center gap-3 rounded-[28px] border border-[var(--border-strong)] bg-bg-card/80 px-6 py-7 text-center shadow-[0_20px_60px_var(--shadow)] backdrop-blur-sm portrait:max-sm:gap-2 portrait:max-sm:rounded-2xl portrait:max-sm:px-4 portrait:max-sm:py-4">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-[var(--border-muted)] bg-bg-page text-accent-orange portrait:max-sm:h-9 portrait:max-sm:w-9">

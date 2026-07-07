@@ -410,6 +410,85 @@ export const CommunityDeckSubmissionSchema = z.object({
   updatedAt: z.number(),
 });
 
+export const ReadingParagraphSchema = z.object({
+  id: z.string().min(1),
+  source: z.string().min(1),
+  translation: z.string().default(""),
+  engineTranslation: z.string().optional(),
+  sentenceTranslations: z
+    .array(
+      z.object({
+        source: z.string().min(1),
+        translation: z.string().min(1),
+      }),
+    )
+    .default([]),
+  meaningHints: z
+    .array(
+      z.object({
+        term: z.string().min(1),
+        meaning: z.string().min(1),
+      }),
+    )
+    .default([]),
+});
+
+export const ReadingDocumentSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  title: z.string().min(1),
+  sourceLanguage: LanguageSchema,
+  translationLanguage: z.string().min(1),
+  sourceKind: z.union([z.literal("txt"), z.literal("epub"), z.literal("paste"), z.literal("manual")]),
+  sourceName: z.string().optional(),
+  paragraphCount: z.number().int().nonnegative(),
+  completedCount: z.number().int().nonnegative(),
+  paragraphs: z.array(ReadingParagraphSchema),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+});
+
+export const ReadingDocumentSummarySchema = ReadingDocumentSchema.omit({ paragraphs: true });
+
+export const CreateReadingDocumentSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  sourceLanguage: LanguageSchema,
+  translationLanguage: z.string().trim().min(1).max(80),
+  sourceKind: z.union([z.literal("txt"), z.literal("epub"), z.literal("paste"), z.literal("manual")]),
+  sourceName: z.string().trim().max(240).optional(),
+  paragraphs: z.array(ReadingParagraphSchema.pick({ id: true, source: true })).min(1).max(5000),
+});
+
+export const UpdateReadingDocumentSchema = z.object({
+  title: z.string().trim().min(1).max(200).optional(),
+  sourceLanguage: LanguageSchema.optional(),
+  translationLanguage: z.string().trim().min(1).max(80).optional(),
+  paragraphs: z.array(ReadingParagraphSchema).min(1).max(5000).optional(),
+});
+
+export const TranslateReadingParagraphSchema = z.object({
+  sourceLanguage: LanguageSchema,
+  translationLanguage: z.string().trim().min(1).max(80),
+  paragraph: z.string().trim().min(1).max(5000),
+});
+
+export const ReadingTranslationSchema = z.object({
+  engine: z.string(),
+  translation: z.string(),
+  sentenceTranslations: z.array(
+    z.object({
+      source: z.string(),
+      translation: z.string(),
+    }),
+  ),
+  meaningHints: z.array(
+    z.object({
+      term: z.string(),
+      meaning: z.string(),
+    }),
+  ),
+});
+
 export const CreateWordsBatchSchema = z.object({
   words: z.array(CreateWordSchema).min(1).max(10000),
 });
@@ -491,6 +570,10 @@ export type CommunityDeckSummaryDTO = z.infer<typeof CommunityDeckSummarySchema>
 export type CommunityDeckDetailDTO = z.infer<typeof CommunityDeckDetailSchema>;
 export type CommunityDeckCommentDTO = z.infer<typeof CommunityDeckCommentSchema>;
 export type CommunityDeckSubmissionDTO = z.infer<typeof CommunityDeckSubmissionSchema>;
+export type ReadingDocumentDTO = z.infer<typeof ReadingDocumentSchema>;
+export type ReadingDocumentSummaryDTO = z.infer<typeof ReadingDocumentSummarySchema>;
+export type ReadingParagraphDTO = z.infer<typeof ReadingParagraphSchema>;
+export type ReadingTranslationDTO = z.infer<typeof ReadingTranslationSchema>;
 export type WordDTO = z.infer<typeof WordSchema>;
 export type PracticeCardDTO = z.infer<typeof PracticeCardSchema>;
 export type SessionSummaryDTO = z.infer<typeof SessionSummarySchema>;
@@ -503,6 +586,9 @@ export type CreateWordInput = z.infer<typeof CreateWordSchema>;
 export type CreateWordsBatchInput = z.infer<typeof CreateWordsBatchSchema>;
 export type CreateCommunityDeckSubmissionInput = z.infer<typeof CreateCommunityDeckSubmissionSchema>;
 export type CreateCommunityDeckCommentInput = z.infer<typeof CreateCommunityDeckCommentSchema>;
+export type CreateReadingDocumentInput = z.infer<typeof CreateReadingDocumentSchema>;
+export type UpdateReadingDocumentInput = z.infer<typeof UpdateReadingDocumentSchema>;
+export type TranslateReadingParagraphInput = z.infer<typeof TranslateReadingParagraphSchema>;
 export type DeleteWordsBatchInput = z.infer<typeof DeleteWordsBatchSchema>;
 export type RateCommunityDeckInput = z.infer<typeof RateCommunityDeckSchema>;
 export type ReviewCommunityDeckSubmissionInput = z.infer<typeof ReviewCommunityDeckSubmissionSchema>;

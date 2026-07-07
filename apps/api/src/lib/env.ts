@@ -27,12 +27,20 @@ const EnvSchema = z.object({
   PRACTICE_TRACE_SLOW_MS: z.coerce.number().int().nonnegative().default(1000),
   MODERATOR_EMAILS: z.string().default(""),
   STATIC_ASSETS_DIR: z.string().min(1).optional(),
+  TRANSLATION_PROVIDER: z.enum(["fallback", "openai_compatible"]).default("fallback"),
+  TRANSLATION_API_URL: z.string().url().optional(),
+  TRANSLATION_API_KEY: z.string().min(1).optional(),
+  TRANSLATION_MODEL: z.string().min(1).default("gpt-4o-mini"),
 });
 
 const parsedEnv = EnvSchema.parse(process.env);
 
 if (parsedEnv.MAIL_PROVIDER === "resend" && !parsedEnv.RESEND_API_KEY) {
   throw new Error("RESEND_API_KEY is required when MAIL_PROVIDER=resend");
+}
+
+if (parsedEnv.TRANSLATION_PROVIDER === "openai_compatible" && (!parsedEnv.TRANSLATION_API_URL || !parsedEnv.TRANSLATION_API_KEY)) {
+  throw new Error("TRANSLATION_API_URL and TRANSLATION_API_KEY are required when TRANSLATION_PROVIDER=openai_compatible");
 }
 
 export const env = {

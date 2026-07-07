@@ -1,4 +1,4 @@
-import type { LanguageCode, SrsConfig, ThemeConfig, TypingMode } from "@inko/shared";
+import type { LanguageCode, ReadingParagraphDTO, SrsConfig, ThemeConfig, TypingMode } from "@inko/shared";
 import type { ColumnType } from "kysely";
 
 export type TimestampMs = ColumnType<number, number | undefined, number | undefined>;
@@ -8,6 +8,7 @@ export type TtsRate = "-20%" | "default" | "+20%";
 export type CommunityDifficulty = "Beginner" | "Intermediate" | "Advanced";
 export type CommunitySourceKind = "apkg" | "colpkg" | "csv" | "tsv" | "community_clone" | "manual";
 export type CommunitySubmissionStatus = "pending" | "approved" | "rejected";
+export type ReadingSourceKind = "txt" | "epub" | "paste" | "manual";
 
 export type NoteTypeRecord = { name: string; fields: string[] };
 export type WordPayload = {
@@ -184,6 +185,21 @@ export interface CommunityDeckSubmissionsTable {
   updated_at: TimestampMs;
 }
 
+export interface ReadingDocumentsTable {
+  id: string;
+  user_id: string;
+  title: string;
+  source_language: LanguageCode;
+  translation_language: string;
+  source_kind: ReadingSourceKind;
+  source_name: string | null;
+  paragraphs: JsonColumn<ReadingParagraphDTO[]>;
+  paragraph_count: number;
+  completed_count: number;
+  created_at: TimestampMs;
+  updated_at: TimestampMs;
+}
+
 export interface MagicLinkTokensTable {
   token: string;
   email: string;
@@ -204,5 +220,6 @@ export interface Database {
   community_deck_comments: CommunityDeckCommentsTable;
   community_deck_ratings: CommunityDeckRatingsTable;
   community_deck_submissions: CommunityDeckSubmissionsTable;
+  reading_documents: ReadingDocumentsTable;
   magic_link_tokens: MagicLinkTokensTable;
 }

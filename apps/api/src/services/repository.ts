@@ -20,6 +20,7 @@ import {
   type CreateCommunityDeckCommentInput,
   type CreateCommunityDeckSubmissionInput,
   type CreateDeckInput,
+  type CreateReadingDocumentInput,
   type CreateWordInput,
   type CreateWordsBatchInput,
   type DeleteWordsBatchInput,
@@ -27,6 +28,7 @@ import {
   type PracticeCardDTO,
   type RateCommunityDeckInput,
   type ReviewCommunityDeckSubmissionInput,
+  type ReadingDocumentDTO,
   type SrsConfig,
   type StartPracticeSessionInput,
   type SubmitPracticeCardInput,
@@ -35,6 +37,7 @@ import {
   type UpdateDeckInput,
   type UpdatePreferencesInput,
   type UpdateProfileInput,
+  type UpdateReadingDocumentInput,
   type UpdateWordInput,
 } from "@inko/shared";
 import { sql, type Selectable } from "kysely";
@@ -46,6 +49,7 @@ import type {
   CommunityDecksTable,
   DeckWordsTable,
   DecksTable,
+  ReadingDocumentsTable,
   UsersTable,
   WordChannelStatsTable,
   WordsTable,
@@ -94,6 +98,7 @@ type CommunityDeckRow = Selectable<CommunityDecksTable>;
 type CommunityCommentRow = Selectable<CommunityDeckCommentsTable>;
 type CommunityRatingRow = Selectable<CommunityDeckRatingsTable>;
 type CommunitySubmissionRow = Selectable<CommunityDeckSubmissionsTable>;
+type ReadingDocumentRow = Selectable<ReadingDocumentsTable>;
 
 const moderatorEmails = new Set(
   env.MODERATOR_EMAILS.split(",")
@@ -225,6 +230,39 @@ function toCommunitySubmissionDTO(submission: CommunitySubmissionRow): Community
   };
 }
 
+function normalizeReadingParagraphs(paragraphs: Array<Pick<ReadingDocumentDTO["paragraphs"][number], "id" | "source"> & Partial<ReadingDocumentDTO["paragraphs"][number]>>) {
+  return paragraphs.map((paragraph, index) => ({
+    id: paragraph.id || `p-${index + 1}`,
+    source: paragraph.source,
+    translation: paragraph.translation ?? "",
+    engineTranslation: paragraph.engineTranslation,
+    sentenceTranslations: paragraph.sentenceTranslations ?? [],
+    meaningHints: paragraph.meaningHints ?? [],
+  }));
+}
+
+function countCompletedReadingParagraphs(paragraphs: ReadingDocumentDTO["paragraphs"]) {
+  return paragraphs.filter((paragraph) => paragraph.translation.trim().length > 0).length;
+}
+
+function toReadingDocumentDTO(document: ReadingDocumentRow): ReadingDocumentDTO {
+  const paragraphs = normalizeReadingParagraphs(asArray<ReadingDocumentDTO["paragraphs"]>(document.paragraphs, []));
+  return {
+    id: document.id,
+    userId: document.user_id,
+    title: document.title,
+    sourceLanguage: document.source_language,
+    translationLanguage: document.translation_language,
+    sourceKind: document.source_kind,
+    sourceName: document.source_name ?? undefined,
+    paragraphCount: document.paragraph_count,
+    completedCount: document.completed_count,
+    paragraphs,
+    createdAt: asNumber(document.created_at),
+    updatedAt: asNumber(document.updated_at),
+  };
+}
+
 function decodeCursor(cursor: string | null) {
   if (!cursor) return -1;
   const parsed = Number.parseInt(cursor, 10);
@@ -327,6 +365,13 @@ async function requireWordOwnedByUser(userId: string, wordId: string) {
   if (!word) throw new RepositoryError("Word not found", 404);
   if (word.user_id !== userId) throw new RepositoryError("Forbidden", 403);
   return word;
+}
+
+async function requireReadingDocumentOwnedByUser(userId: string, documentId: string) {
+  const document = await db.selectFrom("reading_documents").selectAll().where("id", "=", documentId).executeTakeFirst();
+  if (!document) throw new RepositoryError("Reading document not found", 404);
+  if (document.user_id !== userId) throw new RepositoryError("Forbidden", 403);
+  return document;
 }
 
 async function getWordStats(userId: string, wordId: string) {
@@ -848,6 +893,78 @@ export const repository = {
       }
     });
 
+    return { ok: true };
+  },
+
+  async listReadingDocuments(userId: string) {
+    await requireUser(userId);
+    const documents = await db
+      .selectFrom("reading_documents")
+      .selectAll()
+      .where("user_id", "=", userId)
+      .orderBy("updated_at desc")
+      .execute();
+    return documents.map((document) => {
+      const dto = toReadingDocumentDTO(document);
+      const { paragraphs: _paragraphs, ...summary } = dto;
+      return summary;
+    });
+  },
+
+  async createReadingDocument(userId: string, input: CreateReadingDocumentInput) {
+    await requireUser(userId);
+    const now = Date.now();
+    const paragraphs = normalizeReadingParagraphs(input.paragraphs.map((paragraph) => ({ ...paragraph, translation: "" })));
+    const document = await db
+      .insertInto("reading_documents")
+      .values({
+        id: randomUUID(),
+        user_id: userId,
+        title: input.title,
+        source_language: input.sourceLanguage,
+        translation_language: input.translationLanguage,
+        source_kind: input.sourceKind,
+        source_name: input.sourceName ?? null,
+        paragraphs: jsonb(paragraphs),
+        paragraph_count: paragraphs.length,
+        completed_count: 0,
+        created_at: now,
+        updated_at: now,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return toReadingDocumentDTO(document);
+  },
+
+  async getReadingDocument(userId: string, documentId: string) {
+    return toReadingDocumentDTO(await requireReadingDocumentOwnedByUser(userId, documentId));
+  },
+
+  async updateReadingDocument(userId: string, documentId: string, input: UpdateReadingDocumentInput) {
+    const existing = await requireReadingDocumentOwnedByUser(userId, documentId);
+    const paragraphs = input.paragraphs
+      ? normalizeReadingParagraphs(input.paragraphs)
+      : normalizeReadingParagraphs(asArray<ReadingDocumentDTO["paragraphs"]>(existing.paragraphs, []));
+    const document = await db
+      .updateTable("reading_documents")
+      .set({
+        title: input.title ?? existing.title,
+        source_language: input.sourceLanguage ?? existing.source_language,
+        translation_language: input.translationLanguage ?? existing.translation_language,
+        paragraphs: jsonb(paragraphs),
+        paragraph_count: paragraphs.length,
+        completed_count: countCompletedReadingParagraphs(paragraphs),
+        updated_at: Date.now(),
+      })
+      .where("id", "=", documentId)
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return toReadingDocumentDTO(document);
+  },
+
+  async deleteReadingDocument(userId: string, documentId: string) {
+    await requireReadingDocumentOwnedByUser(userId, documentId);
+    await db.deleteFrom("reading_documents").where("id", "=", documentId).execute();
     return { ok: true };
   },
 

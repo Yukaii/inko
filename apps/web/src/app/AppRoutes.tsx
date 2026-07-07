@@ -10,6 +10,8 @@ import { useTranslation } from "react-i18next";
 
 const DashboardPage = lazy(() => import("../pages/DashboardPage").then((m) => ({ default: m.DashboardPage })));
 const WordBankPage = lazy(() => import("../pages/WordBankPage").then((m) => ({ default: m.WordBankPage })));
+const ReadingPage = lazy(() => import("../pages/ReadingPage").then((m) => ({ default: m.ReadingPage })));
+const ReadingImportPage = lazy(() => import("../pages/ReadingImportPage").then((m) => ({ default: m.ReadingImportPage })));
 const PracticePage = lazy(() => import("../pages/PracticePage").then((m) => ({ default: m.PracticePage })));
 const SessionDetailsPage = lazy(() => import("../pages/SessionDetailsPage").then((m) => ({ default: m.SessionDetailsPage })));
 const SettingsPage = lazy(() => import("../pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
@@ -158,6 +160,30 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <WordBankPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reader"
+        element={
+          <ProtectedRoute>
+            <ReadingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reader/import"
+        element={
+          <ProtectedRoute>
+            <ReadingImportPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reader/:documentId"
+        element={
+          <ProtectedRoute>
+            <ReadingPage />
           </ProtectedRoute>
         }
       />

@@ -20,6 +20,7 @@ import { practiceRoutes } from "./routes/practice";
 import { dashboardRoutes } from "./routes/dashboard";
 import { communityRoutes } from "./routes/community";
 import { importRoutes } from "./routes/imports";
+import { readingRoutes } from "./routes/readings";
 import { mediaRoutes } from "./routes/media";
 import { ttsRoutes } from "./routes/tts";
 import { repository, type Repository } from "./services/repository";
@@ -105,6 +106,7 @@ export async function buildServer(options?: {
   await app.register(async (instance) => practiceRoutes(instance, repo));
   await app.register(async (instance) => dashboardRoutes(instance, repo));
   await app.register(async (instance) => communityRoutes(instance, repo));
+  await app.register(async (instance) => readingRoutes(instance, repo));
   await app.register(async (instance) => ttsRoutes(instance, repo, tts));
 
   app.get("/health", async () => ({ ok: true }));
