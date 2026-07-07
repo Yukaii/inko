@@ -199,7 +199,7 @@ export function DashboardPage() {
                 key={reading.id}
                 type="button"
                 className="rounded-[20px] border border-[var(--border-subtle)] bg-bg-card p-4 text-left transition-colors hover:bg-bg-elevated"
-                onClick={() => navigate(`/reader/${reading.id}`)}
+                onClick={() => navigate(`/reader/${reading.id}/practice`)}
               >
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <BookOpenText className="h-5 w-5 text-accent-teal" aria-hidden="true" />

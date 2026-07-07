@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowRight, BookOpenText, Languages, RotateCcw, Sparkles, Volume2 } from "lucide-react";
+import { BookOpenText, Eye, EyeOff, Languages, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import {
   getDefaultEdgeTtsVoice,
   LANGUAGE_LABELS,
+  type EdgeTtsRate,
   type LanguageCode,
   type ReadingDocumentDTO,
   type ReadingParagraphDTO,
@@ -31,17 +32,15 @@ function getParagraphSentences(paragraph: ReadingParagraphDTO) {
 
 function getInitialParagraphIndex(document: ReadingDocumentDTO | undefined) {
   if (!document) return 0;
-  const incompleteIndex = document.paragraphs.findIndex((paragraph) => paragraph.translation.trim().length === 0);
+  const incompleteIndex = document.paragraphs.findIndex(
+    (paragraph) => paragraph.translation.trim().length === 0,
+  );
   return incompleteIndex >= 0 ? incompleteIndex : 0;
 }
 
 function clampIndex(index: number, length: number) {
   if (length <= 0) return 0;
   return Math.max(0, Math.min(index, length - 1));
-}
-
-function getTranslationPreview(paragraph: ReadingParagraphDTO) {
-  return paragraph.engineTranslation || paragraph.sentenceTranslations.map((sentence) => sentence.translation).join(" ");
 }
 
 function buildSentenceQueue(document: ReadingDocumentDTO | undefined) {
@@ -54,24 +53,36 @@ function buildSentenceQueue(document: ReadingDocumentDTO | undefined) {
   return units;
 }
 
+function isInteractiveElement(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest("button, a, input, select, textarea, [role='button'], [tabindex]:not([tabindex='-1'])"));
+}
+
 export function ReadingPracticePage() {
   const { token } = useAuth();
   const { documentId } = useParams<{ documentId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
   const [paragraphIndex, setParagraphIndex] = useState(0);
-  const [draftTranslation, setDraftTranslation] = useState("");
-  const [activeSentenceId, setActiveSentenceId] = useState<string | null>(null);
-  const [loadingSentenceId, setLoadingSentenceId] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
+  const [sentenceIndex, setSentenceIndex] = useState(0);
+  const [typedInput, setTypedInput] = useState("");
+  const [activeTtsSentenceId, setActiveTtsSentenceId] = useState<string | null>(null);
+  const [loadingTtsSentenceId, setLoadingTtsSentenceId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showTranslation, setShowTranslation] = useState(true);
+  const [ttsEnabled, setTtsEnabled] = useState(true);
+  const [ttsRate, setTtsRate] = useState<EdgeTtsRate>("default");
+  const [cardTransition, setCardTransition] = useState(false);
+  const [lastSubmitAccepted, setLastSubmitAccepted] = useState<boolean | null>(null);
+
+  const hiddenInputRef = useRef<HTMLTextAreaElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const typingRef = useRef<HTMLTextAreaElement | null>(null);
   const audioCacheRef = useRef(new Map<string, string>());
   const audioInFlightRef = useRef(new Map<string, Promise<string>>());
 
   useEffect(() => {
-    applyNoIndexMetadata("Reading Practice | Inko", "Focused reading and translation typing workspace.");
+    applyNoIndexMetadata("Reading Practice | Inko", "Practice typing Japanese sentences from imported readings.");
   }, []);
 
   const documentQuery = useQuery({
@@ -82,15 +93,38 @@ export function ReadingPracticePage() {
 
   const currentDocument = documentQuery.data;
   const sentenceQueue = useMemo(() => buildSentenceQueue(currentDocument), [currentDocument]);
+
   const activeParagraph = currentDocument?.paragraphs[paragraphIndex];
   const activeSentences = activeParagraph ? getParagraphSentences(activeParagraph) : [];
-  const activeQueueIndex = activeSentenceId ? sentenceQueue.find((unit) => unit.sentence.id === activeSentenceId)?.queueIndex : undefined;
+  const activeSentence = activeSentences[sentenceIndex];
+  const activeUnit = activeSentence
+    ? sentenceQueue.find((unit) => unit.sentence.id === activeSentence.id)
+    : undefined;
+  const activeSentenceTranslation = activeSentence
+    ? activeParagraph?.sentenceTranslations[activeSentence.index]?.translation
+    : undefined;
   const completedCount = currentDocument?.completedCount ?? 0;
-  const progressPercent = currentDocument && currentDocument.paragraphCount > 0
-    ? Math.round((completedCount / currentDocument.paragraphCount) * 100)
-    : 0;
   const sourceLanguage: LanguageCode = currentDocument?.sourceLanguage ?? "ja";
+  const chapterLabel = activeParagraph?.chapterTitle ?? "Imported text";
 
+  // Character analysis for monkeytype display
+  const sourceText = activeSentence?.text ?? "";
+  const sourceChars = useMemo(() => [...sourceText], [sourceText]);
+
+  const charStates = useMemo(() => {
+    const typed = [...typedInput];
+    return sourceChars.map((char, i) => {
+      if (i < typed.length) {
+        return typed[i] === char ? "correct" : "wrong";
+      }
+      if (i === typed.length) return "cursor";
+      return "pending";
+    });
+  }, [sourceChars, typedInput]);
+
+  const isComplete = typedInput === sourceText && sourceText.length > 0;
+
+  // Reset state when changing paragraph
   useEffect(() => {
     if (!currentDocument) return;
     setParagraphIndex((current) => {
@@ -100,11 +134,20 @@ export function ReadingPracticePage() {
   }, [currentDocument]);
 
   useEffect(() => {
-    if (!activeParagraph) return;
-    setDraftTranslation(activeParagraph.translation);
-    setActiveSentenceId((current) => current ?? activeSentences[0]?.id ?? null);
-    window.requestAnimationFrame(() => typingRef.current?.focus());
-  }, [activeParagraph?.id]);
+    setSentenceIndex(0);
+    setTypedInput("");
+    setLastSubmitAccepted(null);
+  }, [paragraphIndex]);
+
+  useEffect(() => {
+    setTypedInput("");
+    setLastSubmitAccepted(null);
+    window.requestAnimationFrame(() => hiddenInputRef.current?.focus());
+  }, [sentenceIndex]);
+
+  useEffect(() => {
+    hiddenInputRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -116,8 +159,10 @@ export function ReadingPracticePage() {
   }, []);
 
   const updateDocument = useMutation({
-    mutationFn: async (input: { documentId: string; patch: Parameters<typeof api.updateReadingDocument>[2] }) =>
-      api.updateReadingDocument(token ?? "", input.documentId, input.patch),
+    mutationFn: async (input: {
+      documentId: string;
+      patch: Parameters<typeof api.updateReadingDocument>[2];
+    }) => api.updateReadingDocument(token ?? "", input.documentId, input.patch),
     onSuccess: async (document) => {
       queryClient.setQueryData(authQueryKey(token, "reading-document", document.id), document);
       await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "reading-documents") });
@@ -145,101 +190,218 @@ export function ReadingPracticePage() {
             }
           : item,
       );
-      await updateDocument.mutateAsync({ documentId: currentDocument.id, patch: { paragraphs } });
-      setStatus("Engine translation added.");
+      await updateDocument.mutateAsync({
+        documentId: currentDocument.id,
+        patch: { paragraphs },
+      });
     },
     onError: (translationError) => {
       setError(translationError instanceof Error ? translationError.message : "Translation failed.");
     },
   });
 
-  const saveActiveParagraph = useCallback(async () => {
+  // Pre-fetch translations: translate current + next paragraph proactively
+  useEffect(() => {
+    if (!currentDocument) return;
+
+    // Translate current paragraph if needed
+    if (
+      activeParagraph &&
+      !activeParagraph.sentenceTranslations.length &&
+      !activeParagraph.engineTranslation &&
+      !translateParagraph.isPending
+    ) {
+      translateParagraph.mutate(activeParagraph);
+    }
+
+    // Pre-fetch next paragraph's translation when on last sentence
+    const nextParagraph = currentDocument.paragraphs[paragraphIndex + 1];
+    if (
+      sentenceIndex >= activeSentences.length - 1 &&
+      nextParagraph &&
+      !nextParagraph.sentenceTranslations.length &&
+      !nextParagraph.engineTranslation &&
+      !translateParagraph.isPending
+    ) {
+      translateParagraph.mutate(nextParagraph);
+    }
+  }, [activeParagraph, paragraphIndex, sentenceIndex, activeSentences.length, currentDocument, translateParagraph]);
+
+  const markSentenceComplete = useCallback(async () => {
     if (!currentDocument || !activeParagraph) return;
+
+    const nextSentenceIndex = sentenceIndex + 1;
+    const newTranslation = activeSentences
+      .slice(0, nextSentenceIndex)
+      .map(() => "✓")
+      .join("");
+
     const paragraphs = currentDocument.paragraphs.map((paragraph) =>
-      paragraph.id === activeParagraph.id ? { ...paragraph, translation: draftTranslation } : paragraph,
+      paragraph.id === activeParagraph.id
+        ? { ...paragraph, translation: newTranslation }
+        : paragraph,
     );
+
     queryClient.setQueryData(authQueryKey(token, "reading-document", currentDocument.id), {
       ...currentDocument,
       paragraphs,
-      completedCount: paragraphs.filter((paragraph) => paragraph.translation.trim().length > 0).length,
+      completedCount: paragraphs.filter((p) => p.translation.trim().length > 0).length,
       updatedAt: Date.now(),
     });
-    await updateDocument.mutateAsync({ documentId: currentDocument.id, patch: { paragraphs } });
-    setStatus("Translation saved.");
-  }, [activeParagraph, currentDocument, draftTranslation, queryClient, token, updateDocument]);
 
-  const goToParagraph = useCallback(async (nextIndex: number) => {
-    if (!currentDocument) return;
-    await saveActiveParagraph();
-    const clamped = clampIndex(nextIndex, currentDocument.paragraphs.length);
-    setParagraphIndex(clamped);
-    setActiveSentenceId(getParagraphSentences(currentDocument.paragraphs[clamped])?.[0]?.id ?? null);
-    setStatus(null);
-  }, [currentDocument, saveActiveParagraph]);
+    await updateDocument.mutateAsync({
+      documentId: currentDocument.id,
+      patch: { paragraphs },
+    });
+  }, [
+    activeParagraph,
+    activeSentences,
+    currentDocument,
+    sentenceIndex,
+    queryClient,
+    token,
+    updateDocument,
+  ]);
 
-  const getSentenceAudio = useCallback(async (unit: SentenceUnit) => {
-    const cached = audioCacheRef.current.get(unit.sentence.id);
-    if (cached) return cached;
+  const getSentenceAudio = useCallback(
+    async (unit: SentenceUnit) => {
+      const cached = audioCacheRef.current.get(unit.sentence.id);
+      if (cached) return cached;
 
-    const pending = audioInFlightRef.current.get(unit.sentence.id);
-    if (pending) return pending;
+      const pending = audioInFlightRef.current.get(unit.sentence.id);
+      if (pending) return pending;
 
-    if (!currentDocument) throw new Error("No reading selected.");
-    const voice = getDefaultEdgeTtsVoice(currentDocument.sourceLanguage);
-    const request = api
-      .fetchReadingSentenceTts(token ?? "", currentDocument.id, unit.paragraph.id, unit.sentence.id, voice, "default")
-      .then((audio) => {
-        const url = URL.createObjectURL(audio);
-        audioCacheRef.current.set(unit.sentence.id, url);
-        return url;
-      })
-      .finally(() => {
-        audioInFlightRef.current.delete(unit.sentence.id);
-      });
-    audioInFlightRef.current.set(unit.sentence.id, request);
-    return request;
-  }, [currentDocument, token]);
+      if (!currentDocument) throw new Error("No reading selected.");
+      const voice = getDefaultEdgeTtsVoice(currentDocument.sourceLanguage);
+      const request = api
+        .fetchReadingSentenceTts(
+          token ?? "",
+          currentDocument.id,
+          unit.paragraph.id,
+          unit.sentence.id,
+          voice,
+          ttsRate,
+        )
+        .then((audio) => {
+          const url = URL.createObjectURL(audio);
+          audioCacheRef.current.set(unit.sentence.id, url);
+          return url;
+        })
+        .finally(() => {
+          audioInFlightRef.current.delete(unit.sentence.id);
+        });
+      audioInFlightRef.current.set(unit.sentence.id, request);
+      return request;
+    },
+    [currentDocument, token, ttsRate],
+  );
 
-  const prefetchFrom = useCallback((queueIndex: number) => {
-    for (const unit of sentenceQueue.slice(queueIndex, queueIndex + READING_TTS_PREFETCH_WINDOW)) {
-      void getSentenceAudio(unit).catch(() => undefined);
-    }
-  }, [getSentenceAudio, sentenceQueue]);
+  const prefetchFrom = useCallback(
+    (queueIndex: number) => {
+      for (const unit of sentenceQueue.slice(queueIndex, queueIndex + READING_TTS_PREFETCH_WINDOW)) {
+        void getSentenceAudio(unit).catch(() => undefined);
+      }
+    },
+    [getSentenceAudio, sentenceQueue],
+  );
 
-  const playSentence = useCallback(async (unit: SentenceUnit) => {
-    try {
-      setError(null);
-      setLoadingSentenceId(unit.sentence.id);
-      const url = await getSentenceAudio(unit);
-      setLoadingSentenceId(null);
-      setActiveSentenceId(unit.sentence.id);
-      setParagraphIndex(unit.paragraphIndex);
-      prefetchFrom(unit.queueIndex + 1);
+  const playSentence = useCallback(
+    async (unit: SentenceUnit) => {
+      if (!ttsEnabled) return;
+      try {
+        setLoadingTtsSentenceId(unit.sentence.id);
+        const url = await getSentenceAudio(unit);
+        setLoadingTtsSentenceId(null);
+        setActiveTtsSentenceId(unit.sentence.id);
 
-      audioRef.current?.pause();
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      audio.onended = () => {
-        const nextUnit = sentenceQueue[unit.queueIndex + 1];
-        if (nextUnit) {
-          void playSentence(nextUnit);
-        }
-      };
-      await audio.play();
-    } catch (ttsError) {
-      setLoadingSentenceId(null);
-      setError(ttsError instanceof Error ? ttsError.message : "Could not play audio.");
-    }
-  }, [getSentenceAudio, prefetchFrom, sentenceQueue]);
+        audioRef.current?.pause();
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        audio.onended = () => setActiveTtsSentenceId(null);
+        await audio.play();
+      } catch {
+        setLoadingTtsSentenceId(null);
+        setActiveTtsSentenceId(null);
+      }
+    },
+    [getSentenceAudio, ttsEnabled],
+  );
+
+  const playCurrentSentence = useCallback(() => {
+    if (activeUnit) void playSentence(activeUnit);
+  }, [activeUnit, playSentence]);
+
+  // Prefetch TTS and auto-play
+  useEffect(() => {
+    if (activeUnit) prefetchFrom(activeUnit.queueIndex);
+  }, [activeUnit, prefetchFrom]);
 
   useEffect(() => {
-    const firstUnit = activeSentenceId
-      ? sentenceQueue.find((unit) => unit.sentence.id === activeSentenceId)
-      : activeParagraph
-        ? sentenceQueue.find((unit) => unit.paragraph.id === activeParagraph.id)
-        : undefined;
-    if (firstUnit) prefetchFrom(firstUnit.queueIndex);
-  }, [activeParagraph?.id, activeSentenceId, prefetchFrom, sentenceQueue]);
+    if (ttsEnabled && activeUnit) {
+      void playSentence(activeUnit);
+    }
+  }, [ttsEnabled, activeUnit, playSentence]);
+
+  // Auto-advance on complete match
+  useEffect(() => {
+    if (!isComplete || !activeParagraph) return;
+
+    setLastSubmitAccepted(true);
+    void markSentenceComplete();
+
+    setCardTransition(true);
+    setTimeout(() => {
+      const nextIndex = sentenceIndex + 1;
+      if (nextIndex >= activeSentences.length) {
+        if (paragraphIndex < (currentDocument?.paragraphs.length ?? 0) - 1) {
+          setParagraphIndex(paragraphIndex + 1);
+        }
+      } else {
+        setSentenceIndex(nextIndex);
+      }
+      setCardTransition(false);
+    }, 350);
+  }, [isComplete, activeParagraph, sentenceIndex, activeSentences, paragraphIndex, currentDocument, markSentenceComplete]);
+
+  const skipSentence = useCallback(() => {
+    if (!activeParagraph) return;
+    setLastSubmitAccepted(null);
+    const nextIndex = sentenceIndex + 1;
+    if (nextIndex >= activeSentences.length) {
+      if (paragraphIndex < (currentDocument?.paragraphs.length ?? 0) - 1) {
+        setParagraphIndex(paragraphIndex + 1);
+      }
+    } else {
+      setSentenceIndex(nextIndex);
+    }
+  }, [activeParagraph, activeSentences, paragraphIndex, sentenceIndex, currentDocument]);
+
+  const goToParagraph = useCallback(
+    (nextIndex: number) => {
+      if (!currentDocument) return;
+      const clamped = clampIndex(nextIndex, currentDocument.paragraphs.length);
+      setParagraphIndex(clamped);
+      setError(null);
+    },
+    [currentDocument],
+  );
+
+  const focusInput = useCallback(() => {
+    hiddenInputRef.current?.focus();
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        return;
+      }
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isInteractiveElement(event.target)) return;
+      focusInput();
+    },
+    [focusInput],
+  );
 
   if (documentQuery.isLoading) {
     return (
@@ -249,13 +411,16 @@ export function ReadingPracticePage() {
     );
   }
 
-  if (!currentDocument || !activeParagraph) {
+  if (!currentDocument || !activeParagraph || !activeSentence) {
     return (
       <section className="fixed inset-0 z-[200] flex items-center justify-center bg-bg-page px-6 text-center">
         <div>
           <BookOpenText className="mx-auto mb-3 h-10 w-10 text-text-secondary" aria-hidden="true" />
           <p className="m-0 text-sm text-text-secondary">This reading could not be loaded.</p>
-          <Link to="/reader" className="mt-4 inline-flex rounded-xl border border-[var(--border-subtle)] px-4 py-2 text-sm text-text-primary">
+          <Link
+            to="/reader"
+            className="mt-4 inline-flex rounded-xl border border-[var(--border-subtle)] px-4 py-2 text-sm text-text-primary"
+          >
             Back to library
           </Link>
         </div>
@@ -263,167 +428,264 @@ export function ReadingPracticePage() {
     );
   }
 
-  const firstActiveUnit = sentenceQueue.find((unit) => unit.paragraph.id === activeParagraph.id);
-  const activeSentenceIndex = activeSentences.findIndex((sentence) => sentence.id === activeSentenceId);
-  const activeSentenceTranslation = activeParagraph.sentenceTranslations[activeSentenceIndex]?.translation;
-  const chapterLabel = activeParagraph.chapterTitle ?? "Imported text";
-  const translationPreview = getTranslationPreview(activeParagraph);
+  const progressPercent = activeSentences.length > 0
+    ? Math.round(((sentenceIndex) / activeSentences.length) * 100)
+    : 0;
 
   return (
-    <section className="fixed inset-0 z-[200] flex flex-col overflow-hidden bg-bg-page" aria-label="Reading practice">
-      <header className="flex flex-col gap-3 border-b border-[var(--border-subtle)] bg-bg-page/95 px-4 py-3 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div className="min-w-0">
-          <div className="mb-1 flex flex-wrap items-center gap-2 text-xs font-medium text-text-secondary">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-bg-card px-2.5 py-1">
-              <Languages className="h-3.5 w-3.5 text-accent-teal" aria-hidden="true" />
-              {LANGUAGE_LABELS[currentDocument.sourceLanguage]} to {currentDocument.translationLanguage}
-            </span>
-            <span>{chapterLabel}</span>
-          </div>
-          <h1 className="m-0 truncate text-lg font-semibold text-text-primary">{currentDocument.title}</h1>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-[var(--border-subtle)] bg-bg-card px-3 py-1 text-xs text-text-secondary">
-            {paragraphIndex + 1}/{currentDocument.paragraphCount} paragraphs
+    <section
+      className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-start overflow-hidden bg-bg-page sm:justify-center"
+      tabIndex={-1}
+      aria-label="Reading practice"
+      onKeyDown={handleKeyDown}
+      onClick={(event) => {
+        if (isInteractiveElement(event.target)) return;
+        focusInput();
+      }}
+    >
+      {/* Top bar - low opacity, brightens on hover — matching PracticePage style */}
+      <div className="fixed inset-x-0 top-0 z-[210] flex flex-col gap-2 px-3 py-3 opacity-60 transition-opacity hover:opacity-100 focus-within:opacity-100 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
+          {/* Title + chapter info */}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-muted)] bg-bg-page px-3 py-1 text-xs text-text-secondary font-medium">
+            {currentDocument.title}
           </span>
+
+          {/* Language */}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-muted)] bg-bg-page px-2.5 py-1 text-xs text-text-secondary">
+            <Languages className="h-3 w-3" aria-hidden="true" />
+            {LANGUAGE_LABELS[sourceLanguage]}
+          </span>
+
+          {/* Progress */}
+          <span className="inline-flex items-center rounded-full border border-[var(--border-muted)] bg-bg-page px-3 py-1 text-xs text-text-secondary font-medium">
+            S{sentenceIndex + 1}/{activeSentences.length} · P{paragraphIndex + 1}/{currentDocument.paragraphCount}
+          </span>
+
+          {/* Completed count */}
+          <span className="inline-flex items-center rounded-full border border-[var(--border-muted)] bg-bg-page px-3 py-1 text-xs text-text-secondary font-medium">
+            {completedCount}/{currentDocument.paragraphCount} done
+          </span>
+
+          {/* TTS toggle */}
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-bg-card px-3 py-2 text-xs font-medium text-text-primary hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={() => firstActiveUnit && void playSentence(firstActiveUnit)}
-            disabled={!firstActiveUnit || loadingSentenceId !== null}
+            className="inline-flex h-7 items-center whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-2.5 text-[11px] text-text-secondary font-medium outline-none hover:border-[var(--border-strong)] hover:text-text-primary sm:px-3 sm:text-xs"
+            onClick={() => setTtsEnabled(!ttsEnabled)}
+            aria-pressed={ttsEnabled}
           >
-            <Volume2 className="h-3.5 w-3.5 text-accent-teal" aria-hidden="true" />
-            {loadingSentenceId ? "Loading..." : "Listen from here"}
+            <span className="inline-flex items-center gap-1.5">
+              {ttsEnabled ? <Volume2 size={13} aria-hidden="true" /> : <VolumeX size={13} aria-hidden="true" />}
+              <span className="hidden sm:inline">{ttsEnabled ? "Audio on" : "Audio off"}</span>
+            </span>
           </button>
-          <Link
-            to={`/reader/${currentDocument.id}`}
-            className="rounded-xl border border-[var(--border-subtle)] bg-transparent px-3 py-2 text-xs font-medium text-text-secondary hover:bg-bg-elevated hover:text-text-primary"
-          >
-            Exit
-          </Link>
-        </div>
-      </header>
 
-      <div className="h-1 bg-bg-card">
-        <div className="h-full bg-accent-teal transition-all" style={{ width: `${progressPercent}%` }} />
+          {/* Replay */}
+          {ttsEnabled ? (
+            <button
+              type="button"
+              className="inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-2.5 text-[11px] text-text-secondary font-medium outline-none hover:border-[var(--border-strong)] hover:text-text-primary sm:px-3 sm:text-xs"
+              onClick={playCurrentSentence}
+              disabled={loadingTtsSentenceId === activeSentence.id}
+            >
+              <RotateCcw size={13} aria-hidden="true" />
+              <span className="hidden sm:inline">Replay</span>
+            </button>
+          ) : null}
+
+          {/* Translation toggle */}
+          <button
+            type="button"
+            className="inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-2.5 text-[11px] text-text-secondary font-medium outline-none hover:border-[var(--border-strong)] hover:text-text-primary sm:px-3 sm:text-xs"
+            onClick={() => setShowTranslation(!showTranslation)}
+          >
+            {showTranslation ? <EyeOff size={13} aria-hidden="true" /> : <Eye size={13} aria-hidden="true" />}
+            <span className="hidden sm:inline">{showTranslation ? "Hide" : "Show"}</span>
+          </button>
+
+          {/* Skip */}
+          <button
+            type="button"
+            className="inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-2.5 text-[11px] text-text-secondary font-medium outline-none hover:border-[var(--border-strong)] hover:text-text-primary sm:px-3 sm:text-xs"
+            onClick={skipSentence}
+          >
+            Skip
+          </button>
+        </div>
+
+        {/* Exit */}
+        <Link
+          to={`/reader/${currentDocument.id}`}
+          className="inline-flex h-8 shrink-0 items-center justify-center gap-2 self-end whitespace-nowrap rounded-lg border border-[var(--border-muted)] bg-transparent px-3 text-xs font-normal text-text-secondary hover:border-[var(--border-strong)] hover:text-text-primary sm:h-auto sm:self-auto sm:px-3.5 sm:py-1.5 sm:text-[13px]"
+        >
+          Exit
+        </Link>
       </div>
 
-      <main className="grid min-h-0 flex-1 gap-0 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(24rem,0.9fr)]">
-        <section className="flex min-h-0 flex-col gap-4 overflow-y-auto px-4 py-5 sm:px-6 lg:px-10">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="m-0 text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Read</p>
-              <p className="m-0 mt-1 text-sm text-text-secondary">{completedCount}/{currentDocument.paragraphCount} translated</p>
-            </div>
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-bg-card px-3 py-2 text-xs font-medium text-text-primary hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
-              onClick={() => translateParagraph.mutate(activeParagraph)}
-              disabled={translateParagraph.isPending}
-            >
-              <Sparkles className="h-3.5 w-3.5 text-accent-orange" aria-hidden="true" />
-              {translateParagraph.isPending ? "Translating..." : "Translate"}
-            </button>
-          </div>
+      {/* Translation panel - shown by default, below typing box */}
 
-          <div className="flex flex-col gap-3">
-            {activeSentences.map((sentence) => {
-              const unit = sentenceQueue.find((item) => item.sentence.id === sentence.id);
-              const isActive = activeSentenceId === sentence.id;
-              const sentenceTranslation = activeParagraph.sentenceTranslations[sentence.index]?.translation;
-              return (
-                <button
-                  key={sentence.id}
-                  type="button"
-                  className={`rounded-xl border p-4 text-left transition-colors ${isActive ? "border-accent-teal bg-bg-card shadow-sm" : "border-[var(--border-subtle)] bg-transparent hover:bg-bg-card"}`}
-                  onClick={() => {
-                    setActiveSentenceId(sentence.id);
-                    if (unit) void playSentence(unit);
-                  }}
-                >
-                  <p className="m-0 whitespace-pre-wrap text-xl leading-9 text-text-primary sm:text-2xl" lang={sourceLanguage}>
-                    {sentence.text}
-                  </p>
-                  {sentenceTranslation ? (
-                    <p className="m-0 mt-2 text-sm leading-6 text-text-secondary">{sentenceTranslation}</p>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
+      {/* Error */}
+      {error ? (
+        <div className="fixed left-1/2 top-14 z-[220] -translate-x-1/2 rounded-lg border border-[var(--danger-border)] bg-[var(--danger-toast-bg)] px-3 py-2 text-xs text-[var(--danger-text)]">
+          {error}
+        </div>
+      ) : null}
 
-          {translationPreview ? (
-            <div className="rounded-xl border border-[var(--border-subtle)] bg-bg-card p-4">
-              <p className="m-0 text-xs font-semibold uppercase tracking-[0.16em] text-accent-teal">Engine translation</p>
-              <p className="m-0 mt-2 text-sm leading-7 text-text-primary">{translationPreview}</p>
-            </div>
-          ) : null}
+      {/* Success glow */}
+      <div
+        className={`pointer-events-none fixed inset-0 z-[190] bg-[radial-gradient(circle_at_center,var(--accent-teal)_0%,transparent_40%)] opacity-0 transition-opacity duration-300 ${cardTransition ? "opacity-5" : ""}`}
+        aria-hidden="true"
+      />
 
-          {activeParagraph.meaningHints.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {activeParagraph.meaningHints.map((hint) => (
-                <span key={`${activeParagraph.id}-${hint.term}`} className="rounded-full border border-[var(--border-subtle)] bg-bg-card px-3 py-1 text-xs text-text-secondary">
-                  <strong className="text-text-primary">{hint.term}</strong>: {hint.meaning}
+      {/* Center focus area */}
+      <div className="relative z-[200] mt-[clamp(7rem,18svh,9.5rem)] flex max-h-[calc(100svh-8rem)] w-[min(92vw,44rem)] flex-col items-center justify-start gap-4 overflow-y-auto overflow-x-hidden px-2 text-center transition-all duration-300 sm:mt-0 sm:max-h-[min(86svh,40rem)] sm:justify-center">
+        {/* Chapter label */}
+        <div className="max-w-full truncate text-base tracking-[0.02em] text-text-secondary">
+          {chapterLabel}
+        </div>
+
+        {/* Source text - the model */}
+        <div
+          className={`max-w-full select-none text-2xl leading-relaxed tracking-[0.04em] text-text-primary md:text-3xl md:leading-relaxed ${sourceLanguage === "ja" ? "[font-family:var(--font-jp)]" : ""}`}
+          lang={sourceLanguage}
+        >
+          {activeSentence.text}
+        </div>
+
+        {/* Monkeytype-style character feedback */}
+        <div
+          className={`mt-1 flex min-h-[42px] max-w-full flex-wrap justify-center gap-0.5 font-mono text-[20px] tracking-[0.06em] md:text-[26px] ${lastSubmitAccepted === false ? "animate-shake text-[var(--danger-text)]" : ""}`}
+          aria-hidden="true"
+        >
+          {sourceChars.map((char, i) => {
+            const state = charStates[i];
+            const displayChar = char === " " ? "\u00A0" : char;
+            return (
+              <span
+                key={i}
+                className={`whitespace-pre ${
+                  state === "correct"
+                    ? "text-accent-teal"
+                    : state === "wrong"
+                      ? "text-[var(--danger-text)] underline decoration-[color:color-mix(in_oklab,var(--danger-text)_40%,transparent)]"
+                      : state === "cursor"
+                        ? "text-text-primary underline decoration-accent-orange"
+                        : "text-text-secondary"
+                }`}
+              >
+                {displayChar}
+              </span>
+            );
+          })}
+          {typedInput.length > sourceChars.length
+            ? [...typedInput.slice(sourceChars.length)].map((char, i) => (
+                <span key={`extra-${i}`} className="text-[var(--danger-text)]">
+                  {char}
                 </span>
-              ))}
-            </div>
-          ) : null}
-        </section>
+              ))
+            : null}
+        </div>
 
-        <section className="flex min-h-0 flex-col border-t border-[var(--border-subtle)] bg-bg-card lg:border-l lg:border-t-0">
-          <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-4 py-3 sm:px-6">
-            <div>
-              <p className="m-0 text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Type</p>
-              <p className="m-0 mt-1 text-sm text-text-secondary">Your paragraph translation</p>
+        {/* Placeholder when empty */}
+        {!typedInput ? (
+          <p className="text-sm text-text-secondary">
+            Start typing the sentence above
+          </p>
+        ) : null}
+
+        {/* Translation - shown below typing box */}
+        {showTranslation ? (
+          <div className="mt-2 w-full max-w-xl rounded-xl border border-[var(--border-subtle)] bg-bg-card/80 p-4 text-left">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">
+                <Languages className="h-3 w-3" aria-hidden="true" />
+                Translation
+              </div>
+              <button
+                type="button"
+                className="rounded-full border border-[var(--border-muted)] bg-bg-page p-1 text-text-secondary hover:text-text-primary"
+                onClick={() => setShowTranslation(false)}
+                aria-label="Hide translation"
+              >
+                <EyeOff size={12} aria-hidden="true" />
+              </button>
             </div>
-            {status ? <span className="text-xs text-accent-teal">{status}</span> : null}
+            {translateParagraph.isPending ? (
+              <p className="m-0 text-sm text-text-secondary">Translating...</p>
+            ) : (
+              <>
+                {activeSentenceTranslation ? (
+                  <p className="m-0 text-sm leading-6 text-text-secondary">{activeSentenceTranslation}</p>
+                ) : activeParagraph?.engineTranslation ? (
+                  <p className="m-0 text-sm leading-6 text-text-secondary">{activeParagraph.engineTranslation}</p>
+                ) : null}
+
+                {activeParagraph?.meaningHints.filter(
+                  (hint) => hint.meaning !== "Add or confirm this meaning while translating.",
+                ).length > 0 ? (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {activeParagraph.meaningHints
+                      .filter((hint) => hint.meaning !== "Add or confirm this meaning while translating.")
+                      .map((hint) => (
+                        <span
+                          key={`${activeParagraph.id}-${hint.term}`}
+                          className="rounded-full border border-[var(--border-muted)] bg-bg-page px-2 py-0.5 text-[11px] text-text-secondary"
+                        >
+                          <strong className="text-text-primary">{hint.term}</strong>: {hint.meaning}
+                        </span>
+                      ))}
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
-          {error ? <p className="mx-4 mt-4 rounded-xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)] sm:mx-6">{error}</p> : null}
-          <textarea
-            ref={typingRef}
-            className="min-h-[18rem] flex-1 resize-none bg-transparent px-4 py-4 text-lg leading-8 text-text-primary outline-none sm:px-6"
-            value={draftTranslation}
-            onChange={(event) => {
-              setDraftTranslation(event.target.value);
-              setStatus(null);
-            }}
-            onBlur={() => void saveActiveParagraph()}
-            placeholder={activeSentenceTranslation || translationPreview || "Type your translation as you read..."}
+        ) : null}
+      </div>
+
+      {/* Hidden textarea - preserves spaces unlike input */}
+      <label className="absolute m-[-1px] h-px w-px overflow-hidden border-0 p-0 whitespace-nowrap [clip:rect(0,0,0,0)]" htmlFor="reading-typing-input">
+        Type the sentence
+      </label>
+      <textarea
+        id="reading-typing-input"
+        key={`${paragraphIndex}-${sentenceIndex}`}
+        ref={hiddenInputRef as React.Ref<HTMLTextAreaElement>}
+        className="pointer-events-none absolute h-px w-px overflow-hidden border-0 p-0 opacity-0"
+        rows={1}
+        value={typedInput}
+        onChange={(event) => {
+          // textarea preserves whitespace as-is
+          setTypedInput(event.target.value);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+          // Allow Enter to pass through (no newlines in typing)
+          if (event.key === "Enter") {
+            event.preventDefault();
+          }
+        }}
+        aria-label="Type the sentence"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        lang={sourceLanguage}
+        onCompositionStart={() => {}}
+        onCompositionUpdate={() => {}}
+      />
+
+      {/* Progress bar */}
+      <div className="fixed inset-x-0 bottom-0 z-[210]">
+        <div className="h-[3px] overflow-hidden bg-bg-page" aria-hidden="true">
+          <div
+            className="h-full bg-gradient-to-r from-accent-orange to-accent-teal transition-[width] duration-100"
+            style={{ width: `${progressPercent}%` }}
           />
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border-subtle)] px-4 py-3 sm:px-6">
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={() => void goToParagraph(paragraphIndex - 1)}
-              disabled={paragraphIndex === 0 || updateDocument.isPending}
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Previous
-            </button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
-              onClick={() => {
-                const unit = activeQueueIndex === undefined ? firstActiveUnit : sentenceQueue[activeQueueIndex];
-                if (unit) void playSentence(unit);
-              }}
-              disabled={!firstActiveUnit || loadingSentenceId !== null}
-            >
-              <RotateCcw className="h-4 w-4" aria-hidden="true" />
-              Replay
-            </button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-xl bg-accent-orange px-4 py-2 text-sm font-semibold text-text-on-accent hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              onClick={() => void goToParagraph(paragraphIndex + 1)}
-              disabled={paragraphIndex >= currentDocument.paragraphs.length - 1 || updateDocument.isPending}
-            >
-              Next
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
-        </section>
-      </main>
+        </div>
+      </div>
     </section>
   );
 }

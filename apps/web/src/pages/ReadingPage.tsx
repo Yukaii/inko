@@ -297,19 +297,19 @@ export function ReadingPage() {
 
         <div className="flex flex-wrap gap-2">
           <Link
-            to="/reader/import"
-            className="inline-flex items-center gap-2 rounded-xl bg-accent-orange px-4 py-2 text-sm font-semibold text-text-on-accent transition-opacity hover:opacity-90"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Import text
-          </Link>
-          <Link
             to={currentDocument ? `/reader/${currentDocument.id}/practice` : "/reader"}
-            className={`inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-4 py-2 text-sm font-medium transition-colors ${currentDocument ? "text-text-primary hover:bg-bg-elevated" : "pointer-events-none text-text-secondary opacity-60"}`}
+            className={`inline-flex items-center gap-2 rounded-xl bg-accent-orange px-4 py-2 text-sm font-semibold text-text-on-accent transition-opacity hover:opacity-90 ${!currentDocument ? "pointer-events-none opacity-60" : ""}`}
             aria-disabled={!currentDocument}
           >
             <BookOpenText className="h-4 w-4" aria-hidden="true" />
-            Focus mode
+            {currentDocument ? "Start reading" : "Select a book"}
+          </Link>
+          <Link
+            to="/reader/import"
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-bg-elevated"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Import text
           </Link>
           <button
             type="button"
@@ -344,17 +344,31 @@ export function ReadingPage() {
           </div>
           <div className="flex max-h-[34rem] flex-col gap-2 overflow-y-auto">
             {documentsQuery.data?.length ? documentsQuery.data.map((document) => (
-              <button
+              <div
                 key={document.id}
-                type="button"
-                className={`rounded-xl border px-3 py-2 text-left transition-colors ${documentId === document.id ? "border-accent-orange bg-bg-elevated text-text-primary" : "border-[var(--border-subtle)] bg-bg-page text-text-secondary hover:bg-bg-elevated hover:text-text-primary"}`}
-                onClick={() => navigate(`/reader/${document.id}`)}
+                className={`rounded-xl border transition-colors ${documentId === document.id ? "border-accent-orange bg-bg-elevated" : "border-[var(--border-subtle)] bg-bg-page"}`}
               >
-                <span className="block truncate text-sm font-medium">{document.title}</span>
-                <span className="mt-1 block text-xs">
-                  {document.completedCount}/{document.paragraphCount} paragraphs · {LANGUAGE_LABELS[document.sourceLanguage]}
-                </span>
-              </button>
+                <button
+                  type="button"
+                  className="block w-full px-3 py-2 text-left transition-colors"
+                  onClick={() => navigate(`/reader/${document.id}`)}
+                >
+                  <span className={`block truncate text-sm font-medium ${documentId === document.id ? "text-text-primary" : "text-text-secondary hover:text-text-primary"}`}>{document.title}</span>
+                  <span className={`mt-1 block text-xs ${documentId === document.id ? "text-text-primary" : "text-text-secondary hover:text-text-primary"}`}>
+                    {document.completedCount}/{document.paragraphCount} paragraphs · {LANGUAGE_LABELS[document.sourceLanguage]}
+                  </span>
+                </button>
+                <div className="border-t border-[var(--border-subtle)] px-2 py-1.5">
+                  <button
+                    type="button"
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent-orange px-2 py-1 text-xs font-medium text-text-on-accent transition-opacity hover:opacity-90"
+                    onClick={() => navigate(`/reader/${document.id}/practice`)}
+                  >
+                    <BookOpenText className="h-3 w-3" aria-hidden="true" />
+                    Practice
+                  </button>
+                </div>
+              </div>
             )) : (
               <div className="rounded-xl bg-bg-page p-3 text-sm leading-6 text-text-secondary">
                 <p className="m-0">No readings saved yet.</p>
