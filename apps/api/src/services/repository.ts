@@ -230,18 +230,51 @@ function toCommunitySubmissionDTO(submission: CommunitySubmissionRow): Community
   };
 }
 
-function normalizeReadingParagraphs(paragraphs: Array<Pick<ReadingDocumentDTO["paragraphs"][number], "id" | "source"> & Partial<ReadingDocumentDTO["paragraphs"][number]>>) {
-  return paragraphs.map((paragraph, index) => ({
-    id: paragraph.id || `p-${index + 1}`,
-    source: paragraph.source,
-    chapterId: paragraph.chapterId,
-    chapterTitle: paragraph.chapterTitle,
-    chapterIndex: paragraph.chapterIndex,
-    translation: paragraph.translation ?? "",
-    engineTranslation: paragraph.engineTranslation,
-    sentenceTranslations: paragraph.sentenceTranslations ?? [],
-    meaningHints: paragraph.meaningHints ?? [],
+const READING_SENTENCE_SPLIT_PATTERN = /(?<=[。！？.!?])\s+|(?<=[。！？!?])|(?<=[.!?])\s+/u;
+
+function splitReadingSentences(source: string) {
+  const normalized = source.trim();
+  if (!normalized) return [];
+  const sentences = normalized
+    .split(READING_SENTENCE_SPLIT_PATTERN)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+  return sentences.length > 0 ? sentences : [normalized];
+}
+
+function normalizeReadingSentences(paragraphId: string, paragraph: Partial<ReadingDocumentDTO["paragraphs"][number]> & { source: string }) {
+  const existing = Array.isArray(paragraph.sentences) ? paragraph.sentences : [];
+  if (existing.length > 0) {
+    return existing.map((sentence, index) => ({
+      id: sentence.id || `${paragraphId}-s-${index + 1}`,
+      text: sentence.text,
+      index: typeof sentence.index === "number" ? sentence.index : index,
+    }));
+  }
+
+  return splitReadingSentences(paragraph.source).map((text, index) => ({
+    id: `${paragraphId}-s-${index + 1}`,
+    text,
+    index,
   }));
+}
+
+function normalizeReadingParagraphs(paragraphs: Array<Pick<ReadingDocumentDTO["paragraphs"][number], "id" | "source"> & Partial<ReadingDocumentDTO["paragraphs"][number]>>) {
+  return paragraphs.map((paragraph, index) => {
+    const id = paragraph.id || `p-${index + 1}`;
+    return {
+      id,
+      source: paragraph.source,
+      chapterId: paragraph.chapterId,
+      chapterTitle: paragraph.chapterTitle,
+      chapterIndex: paragraph.chapterIndex,
+      sentences: normalizeReadingSentences(id, paragraph),
+      translation: paragraph.translation ?? "",
+      engineTranslation: paragraph.engineTranslation,
+      sentenceTranslations: paragraph.sentenceTranslations ?? [],
+      meaningHints: paragraph.meaningHints ?? [],
+    };
+  });
 }
 
 function countCompletedReadingParagraphs(paragraphs: ReadingDocumentDTO["paragraphs"]) {

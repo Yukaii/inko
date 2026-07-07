@@ -7,6 +7,13 @@ export type ReadingParagraph = {
   chapterId?: string;
   chapterTitle?: string;
   chapterIndex?: number;
+  sentences: ReadingSentence[];
+};
+
+export type ReadingSentence = {
+  id: string;
+  text: string;
+  index: number;
 };
 
 export type ReadingFileMetadata = {
@@ -22,6 +29,7 @@ export type ReadingFileExtraction = {
 
 const XHTML_FILE_PATTERN = /\.(xhtml|html|htm|xml)$/i;
 const PARAGRAPH_BREAK_PATTERN = /\n\s*\n+/;
+const SENTENCE_SPLIT_PATTERN = /(?<=[。！？.!?])\s+|(?<=[。！？!?])|(?<=[.!?])\s+/u;
 const GUTENBERG_BOILERPLATE_PATTERNS = [
   /^the project gutenberg ebook of\b/i,
   /^project gutenberg(?:'s)?\b/i,
@@ -64,6 +72,28 @@ function normalizeWhitespace(value: string) {
   return value.replace(/\r\n?/g, "\n").replace(/[ \t\f\v]+/g, " ").trim();
 }
 
+function isGutenbergBoilerplate(value: string) {
+  return GUTENBERG_BOILERPLATE_PATTERNS.some((pattern) => pattern.test(value));
+}
+
+export function splitReadingSentences(text: string): string[] {
+  const normalized = normalizeWhitespace(text);
+  if (!normalized) return [];
+  const sentences = normalized
+    .split(SENTENCE_SPLIT_PATTERN)
+    .map((part) => normalizeWhitespace(part))
+    .filter(Boolean);
+  return sentences.length > 0 ? sentences : [normalized];
+}
+
+function makeSentences(paragraphId: string, source: string) {
+  return splitReadingSentences(source).map((text, index) => ({
+    id: `${paragraphId}-s-${index + 1}`,
+    text,
+    index,
+  }));
+}
+
 function makeParagraphs(chunks: string[], chapter?: { id: string; title: string; index: number }) {
   return chunks
     .map((chunk) => normalizeWhitespace(chunk))
@@ -71,6 +101,7 @@ function makeParagraphs(chunks: string[], chapter?: { id: string; title: string;
     .map((source, index) => ({
       id: chapter ? `${chapter.id}-p-${index + 1}` : `p-${index + 1}`,
       source,
+      sentences: makeSentences(chapter ? `${chapter.id}-p-${index + 1}` : `p-${index + 1}`, source),
       ...(chapter
         ? {
             chapterId: chapter.id,
@@ -89,7 +120,7 @@ function filterEpubTextChunks(chunks: string[]) {
     startIndex >= 0 ? startIndex + 1 : 0,
     endIndex >= 0 ? endIndex : normalizedChunks.length,
   );
-  return contentChunks.filter((chunk) => !GUTENBERG_BOILERPLATE_PATTERNS.some((pattern) => pattern.test(chunk)));
+  return contentChunks.filter((chunk) => !isGutenbergBoilerplate(chunk));
 }
 
 export function splitReadingParagraphs(text: string): ReadingParagraph[] {
@@ -118,6 +149,7 @@ function extractDocumentParagraphs(markup: string, mimeType: DOMParserSupportedT
 
   const title = Array.from(document.querySelectorAll("h1, h2, h3, title"))
     .map((node) => normalizeWhitespace(node.textContent ?? ""))
+    .filter((value) => !isGutenbergBoilerplate(value))
     .find(Boolean);
 
   return {

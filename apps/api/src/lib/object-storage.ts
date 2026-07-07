@@ -83,6 +83,26 @@ export function buildReadingTtsObjectKey(input: {
   return `tts-readings/${input.userId}/${input.documentId}/${input.paragraphId}/${sanitizeFileSegment(input.voice)}/${sanitizeFileSegment(input.rate)}.mp3`;
 }
 
+export function buildReadingSentenceTtsObjectKey(input: {
+  userId: string;
+  documentId: string;
+  paragraphId: string;
+  sentenceId: string;
+  voice: string;
+  rate: "-20%" | "default" | "+20%";
+}) {
+  return [
+    "tts-readings",
+    sanitizeFileSegment(input.userId),
+    sanitizeFileSegment(input.documentId),
+    sanitizeFileSegment(input.paragraphId),
+    "sentences",
+    sanitizeFileSegment(input.sentenceId),
+    sanitizeFileSegment(input.voice),
+    `${sanitizeFileSegment(input.rate)}.mp3`,
+  ].join("/");
+}
+
 export function buildMediaUrl(key: string) {
   const url = new URL("/api/media", env.API_PUBLIC_URL);
   url.searchParams.set("key", key);

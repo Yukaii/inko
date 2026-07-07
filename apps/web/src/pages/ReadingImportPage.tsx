@@ -13,10 +13,11 @@ import { extractReadingFileFromFile, splitReadingParagraphs, type ReadingFileMet
 type ImportStep = "source" | "details" | "review";
 type SourceKind = "txt" | "epub" | "paste";
 
-function toDocumentParagraphs(paragraphs: ReadingParagraph[]): Pick<ReadingParagraphDTO, "id" | "source" | "chapterId" | "chapterTitle" | "chapterIndex">[] {
+function toDocumentParagraphs(paragraphs: ReadingParagraph[]): Pick<ReadingParagraphDTO, "id" | "source" | "sentences" | "chapterId" | "chapterTitle" | "chapterIndex">[] {
   return paragraphs.map((paragraph) => ({
     id: paragraph.id,
     source: paragraph.source,
+    sentences: paragraph.sentences,
     chapterId: paragraph.chapterId,
     chapterTitle: paragraph.chapterTitle,
     chapterIndex: paragraph.chapterIndex,

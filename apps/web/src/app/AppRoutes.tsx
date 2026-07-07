@@ -12,6 +12,7 @@ const DashboardPage = lazy(() => import("../pages/DashboardPage").then((m) => ({
 const WordBankPage = lazy(() => import("../pages/WordBankPage").then((m) => ({ default: m.WordBankPage })));
 const ReadingPage = lazy(() => import("../pages/ReadingPage").then((m) => ({ default: m.ReadingPage })));
 const ReadingImportPage = lazy(() => import("../pages/ReadingImportPage").then((m) => ({ default: m.ReadingImportPage })));
+const ReadingPracticePage = lazy(() => import("../pages/ReadingPracticePage").then((m) => ({ default: m.ReadingPracticePage })));
 const PracticePage = lazy(() => import("../pages/PracticePage").then((m) => ({ default: m.PracticePage })));
 const SessionDetailsPage = lazy(() => import("../pages/SessionDetailsPage").then((m) => ({ default: m.SessionDetailsPage })));
 const SettingsPage = lazy(() => import("../pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
@@ -176,6 +177,14 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <ReadingImportPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reader/:documentId/practice"
+        element={
+          <ProtectedRoute>
+            <ReadingPracticePage />
           </ProtectedRoute>
         }
       />

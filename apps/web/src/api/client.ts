@@ -404,4 +404,11 @@ export const api = {
       {},
       token,
     ),
+
+  fetchReadingSentenceTts: (token: string, documentId: string, paragraphId: string, sentenceId: string, voice: string, rate: "-20%" | "default" | "+20%") =>
+    requestBlob(
+      `/api/readings/${documentId}/paragraphs/${paragraphId}/sentences/${sentenceId}/tts?voice=${encodeURIComponent(voice)}&rate=${encodeURIComponent(rate)}`,
+      {},
+      token,
+    ),
 };

@@ -9,15 +9,30 @@ globalThis.DOMParser = new JSDOM("").window.DOMParser;
 describe("reading utils", () => {
   it("splits plain text on blank lines", () => {
     expect(splitReadingParagraphs("第一段。\nstill first.\n\nSecond paragraph.")).toEqual([
-      { id: "p-1", source: "第一段。\nstill first." },
-      { id: "p-2", source: "Second paragraph." },
+      {
+        id: "p-1",
+        source: "第一段。\nstill first.",
+        sentences: [
+          { id: "p-1-s-1", text: "第一段。", index: 0 },
+          { id: "p-1-s-2", text: "still first.", index: 1 },
+        ],
+      },
+      {
+        id: "p-2",
+        source: "Second paragraph.",
+        sentences: [{ id: "p-2-s-1", text: "Second paragraph.", index: 0 }],
+      },
     ]);
   });
 
   it("treats single-line text exports as one paragraph per line", () => {
     expect(splitReadingParagraphs("Line one\nLine two\n\nLine three")).toEqual([
-      { id: "p-1", source: "Line one\nLine two" },
-      { id: "p-2", source: "Line three" },
+      {
+        id: "p-1",
+        source: "Line one\nLine two",
+        sentences: [{ id: "p-1-s-1", text: "Line one\nLine two", index: 0 }],
+      },
+      { id: "p-2", source: "Line three", sentences: [{ id: "p-2-s-1", text: "Line three", index: 0 }] },
     ]);
   });
 
@@ -58,8 +73,22 @@ describe("reading utils", () => {
     const paragraphs = await extractReadingParagraphsFromFile(new File([blob], "book.epub", { type: "application/epub+zip" }));
 
     expect(paragraphs).toEqual([
-      { id: "chapter-1-p-1", source: "First chapter.", chapterId: "chapter-1", chapterTitle: "Chapter 1", chapterIndex: 0 },
-      { id: "chapter-2-p-1", source: "Second chapter.", chapterId: "chapter-2", chapterTitle: "Chapter 2", chapterIndex: 1 },
+      {
+        id: "chapter-1-p-1",
+        source: "First chapter.",
+        sentences: [{ id: "chapter-1-p-1-s-1", text: "First chapter.", index: 0 }],
+        chapterId: "chapter-1",
+        chapterTitle: "Chapter 1",
+        chapterIndex: 0,
+      },
+      {
+        id: "chapter-2-p-1",
+        source: "Second chapter.",
+        sentences: [{ id: "chapter-2-p-1-s-1", text: "Second chapter.", index: 0 }],
+        chapterId: "chapter-2",
+        chapterTitle: "Chapter 2",
+        chapterIndex: 1,
+      },
     ]);
   });
 
@@ -92,7 +121,14 @@ describe("reading utils", () => {
       language: "ko",
     });
     expect(extraction.paragraphs).toEqual([
-      { id: "chapter-1-p-1", source: "첫 문장입니다.", chapterId: "chapter-1", chapterTitle: "Chapter 1", chapterIndex: 0 },
+      {
+        id: "chapter-1-p-1",
+        source: "첫 문장입니다.",
+        sentences: [{ id: "chapter-1-p-1-s-1", text: "첫 문장입니다.", index: 0 }],
+        chapterId: "chapter-1",
+        chapterTitle: "Chapter 1",
+        chapterIndex: 0,
+      },
     ]);
   });
 
@@ -134,8 +170,9 @@ describe("reading utils", () => {
       {
         id: "chapter-1-p-1",
         source: "Il était une fois un petit enfant.",
+        sentences: [{ id: "chapter-1-p-1-s-1", text: "Il était une fois un petit enfant.", index: 0 }],
         chapterId: "chapter-1",
-        chapterTitle: "The Project Gutenberg eBook of ABC: Petits Contes",
+        chapterTitle: "Chapter 1",
         chapterIndex: 0,
       },
     ]);

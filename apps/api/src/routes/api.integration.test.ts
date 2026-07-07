@@ -139,6 +139,32 @@ function makeRepositoryMock(): Repository {
       audioUrl: undefined,
       tags: ["n5"],
     })),
+    getReadingDocument: vi.fn(async () => ({
+      id: "reading_1",
+      userId: "user_1",
+      title: "Short Reader",
+      sourceLanguage: "ja" as const,
+      translationLanguage: "English",
+      sourceKind: "txt" as const,
+      sourceName: "short.txt",
+      paragraphCount: 1,
+      completedCount: 0,
+      paragraphs: [
+        {
+          id: "p-1",
+          source: "第一文です。第二文です。",
+          sentences: [
+            { id: "p-1-s-1", text: "第一文です。", index: 0 },
+            { id: "p-1-s-2", text: "第二文です。", index: 1 },
+          ],
+          translation: "",
+          sentenceTranslations: [],
+          meaningHints: [],
+        },
+      ],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    })),
     deleteWord: vi.fn(async () => ({ ok: true })),
     deleteWordsBatch: vi.fn(async (_userId: string, _deckId: string, input: { wordIds: string[] }) => ({
       deleted: input.wordIds.length,
@@ -351,6 +377,8 @@ describe("API integration", () => {
   let sendMagicLink: ReturnType<typeof vi.fn>;
   let tts: TtsService;
   let synthesizeWordAudio: ReturnType<typeof vi.fn>;
+  let synthesizeTextAudio: ReturnType<typeof vi.fn>;
+  let synthesizeReadingSentenceAudio: ReturnType<typeof vi.fn>;
   let magicTokenStore: ReturnType<typeof createInMemoryMagicTokenStore>;
 
   beforeEach(() => {
@@ -362,8 +390,22 @@ describe("API integration", () => {
       fileName: "word.mp3",
       audioUrl: "https://media.example/word.mp3",
     }));
+    synthesizeTextAudio = vi.fn(async () => ({
+      audio: Buffer.from("fake-reading-mp3"),
+      contentType: "audio/mpeg",
+      fileName: "reading.mp3",
+      audioUrl: "https://media.example/reading.mp3",
+    }));
+    synthesizeReadingSentenceAudio = vi.fn(async () => ({
+      audio: Buffer.from("fake-reading-sentence-mp3"),
+      contentType: "audio/mpeg",
+      fileName: "reading-sentence.mp3",
+      audioUrl: "https://media.example/reading-sentence.mp3",
+    }));
     tts = {
       synthesizeWordAudio,
+      synthesizeTextAudio,
+      synthesizeReadingSentenceAudio,
     };
     mailer = {
       kind: "log",
@@ -646,6 +688,26 @@ describe("API integration", () => {
         deckId: "deck_1",
         wordId: "word_1",
         voice: undefined,
+        rate: undefined,
+      }),
+    );
+
+    const readingSentenceTtsRes = await app.inject({
+      method: "GET",
+      url: "/api/readings/reading_1/paragraphs/p-1/sentences/p-1-s-1/tts",
+      headers: auth,
+    });
+    expect(readingSentenceTtsRes.statusCode).toBe(200);
+    expect(readingSentenceTtsRes.headers["content-type"]).toContain("audio/mpeg");
+    expect(readingSentenceTtsRes.body).toBe("fake-reading-sentence-mp3");
+    expect(synthesizeReadingSentenceAudio).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user_1",
+        documentId: "reading_1",
+        paragraphId: "p-1",
+        sentenceId: "p-1-s-1",
+        text: "第一文です。",
+        voice: "ja-JP-NanamiNeural",
         rate: undefined,
       }),
     );

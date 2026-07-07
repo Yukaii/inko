@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { EdgeTTS } from "node-edge-tts";
-import { buildReadingTtsObjectKey, buildTtsObjectKey, getObject, hasObject, putObject } from "./object-storage";
+import { buildReadingSentenceTtsObjectKey, buildReadingTtsObjectKey, buildTtsObjectKey, getObject, hasObject, putObject } from "./object-storage";
 
 export type TtsAudioResult = {
   audio: Buffer;
@@ -40,6 +40,15 @@ export type TtsService = {
     userId: string;
     documentId: string;
     paragraphId: string;
+    text: string;
+    voice?: string;
+    rate?: "-20%" | "default" | "+20%";
+  }): Promise<TtsAudioResult>;
+  synthesizeReadingSentenceAudio(input: {
+    userId: string;
+    documentId: string;
+    paragraphId: string;
+    sentenceId: string;
     text: string;
     voice?: string;
     rate?: "-20%" | "default" | "+20%";
@@ -161,6 +170,23 @@ export const ttsService: TtsService = {
       }),
       text: input.text,
       fileNameHint: input.text.slice(0, 48) || input.paragraphId,
+      voice: input.voice,
+      rate: input.rate,
+    });
+  },
+
+  async synthesizeReadingSentenceAudio(input) {
+    return synthesizeAudio({
+      key: buildReadingSentenceTtsObjectKey({
+        userId: input.userId,
+        documentId: input.documentId,
+        paragraphId: input.paragraphId,
+        sentenceId: input.sentenceId,
+        voice: input.voice ?? "en-US-EmmaNeural",
+        rate: input.rate ?? "default",
+      }),
+      text: input.text,
+      fileNameHint: input.text.slice(0, 48) || input.sentenceId,
       voice: input.voice,
       rate: input.rate,
     });

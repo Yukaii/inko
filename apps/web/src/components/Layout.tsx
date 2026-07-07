@@ -178,7 +178,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }, [updateThemeModeMutation, user]);
 
   const shortcuts = getShortcutsList();
-  const isPracticeRoute = matchPath("/practice/:deckId", location.pathname) !== null;
+  const isPracticeRoute =
+    matchPath("/practice/:deckId", location.pathname) !== null ||
+    matchPath("/reader/:documentId/practice", location.pathname) !== null;
 
   return (
     <div className="grid h-screen grid-cols-1 grid-rows-[1fr_auto] overflow-hidden md:grid-cols-[220px_minmax(0,1fr)] md:grid-rows-1">

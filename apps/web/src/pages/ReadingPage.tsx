@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { BookOpenText, Download, Languages, Library, Plus, Sparkles, Volume2 } from "lucide-react";
@@ -15,6 +15,14 @@ import { useAuth } from "../hooks/useAuth";
 import { authQueryKey } from "../lib/queryKeys";
 import { applyNoIndexMetadata } from "../lib/seo";
 import { TRANSLATION_LANGUAGE_OPTIONS } from "../lib/translationLanguages";
+
+const READING_TTS_PREFETCH_WINDOW = 5;
+
+type ReadingSentenceUnit = {
+  paragraph: ReadingParagraphDTO;
+  sentence: ReadingParagraphDTO["sentences"][number];
+  queueIndex: number;
+};
 
 function formatExport(document: ReadingDocumentDTO) {
   return document.paragraphs
@@ -62,7 +70,11 @@ export function ReadingPage() {
   const [translationLanguage, setTranslationLanguage] = useState("English");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [activeTtsSentenceId, setActiveTtsSentenceId] = useState<string | null>(null);
+  const [loadingTtsSentenceId, setLoadingTtsSentenceId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const sentenceAudioCacheRef = useRef(new Map<string, string>());
+  const sentenceAudioInFlightRef = useRef(new Map<string, Promise<string>>());
 
   useEffect(() => {
     applyNoIndexMetadata("Library | Inko", "View imported books and texts, then open a reading workspace for sentence-level translation.");
@@ -132,27 +144,6 @@ export function ReadingPage() {
     },
   });
 
-  const playParagraphTts = useMutation({
-    mutationFn: async (paragraph: ReadingParagraphDTO) => {
-      if (!currentDocument) throw new Error("No reading selected.");
-      const voice = getDefaultEdgeTtsVoice(currentDocument.sourceLanguage);
-      const audio = await api.fetchReadingParagraphTts(token ?? "", currentDocument.id, paragraph.id, voice, "default");
-      return { paragraph, audio };
-    },
-    onSuccess: ({ audio }) => {
-      setError(null);
-      const nextUrl = URL.createObjectURL(audio);
-      setAudioUrl((current) => {
-        if (current) URL.revokeObjectURL(current);
-        return nextUrl;
-      });
-      void new Audio(nextUrl).play();
-    },
-    onError: (ttsError) => {
-      setError(ttsError instanceof Error ? ttsError.message : "Could not play audio.");
-    },
-  });
-
   const currentDocument = documentQuery.data;
   const completedCount = currentDocument?.completedCount ?? 0;
   const progressPercent = currentDocument && currentDocument.paragraphCount > 0
@@ -162,14 +153,29 @@ export function ReadingPage() {
   const activeTranslationParagraphId = useMemo(() => {
     return translateParagraph.variables?.id ?? null;
   }, [translateParagraph.variables]);
-  const activeTtsParagraphId = playParagraphTts.variables?.id ?? null;
   const chapterGroups = useMemo(() => groupParagraphsByChapter(currentDocument?.paragraphs ?? []), [currentDocument?.paragraphs]);
+  const sentenceQueue = useMemo<ReadingSentenceUnit[]>(() => {
+    const units: ReadingSentenceUnit[] = [];
+    for (const paragraph of currentDocument?.paragraphs ?? []) {
+      const sentences = paragraph.sentences.length > 0
+        ? paragraph.sentences
+        : [{ id: `${paragraph.id}-s-1`, text: paragraph.source, index: 0 }];
+      for (const sentence of sentences) {
+        units.push({ paragraph, sentence, queueIndex: units.length });
+      }
+    }
+    return units;
+  }, [currentDocument?.paragraphs]);
 
   useEffect(() => {
     return () => {
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
+      audioRef.current?.pause();
+      for (const url of sentenceAudioCacheRef.current.values()) {
+        URL.revokeObjectURL(url);
+      }
+      sentenceAudioCacheRef.current.clear();
     };
-  }, [audioUrl]);
+  }, []);
 
   async function saveMetadata() {
     if (!currentDocument) return;
@@ -195,6 +201,73 @@ export function ReadingPage() {
     if (!currentDocument) return;
     const cachedDocument = queryClient.getQueryData<ReadingDocumentDTO>(authQueryKey(token, "reading-document", currentDocument.id)) ?? currentDocument;
     await updateDocument.mutateAsync({ documentId: cachedDocument.id, patch: { paragraphs: cachedDocument.paragraphs } });
+  }
+
+  function getSentenceTranslation(paragraph: ReadingParagraphDTO, sentenceIndex: number) {
+    return paragraph.sentenceTranslations[sentenceIndex]?.translation;
+  }
+
+  async function getSentenceAudio(unit: ReadingSentenceUnit) {
+    const cached = sentenceAudioCacheRef.current.get(unit.sentence.id);
+    if (cached) return cached;
+
+    const pending = sentenceAudioInFlightRef.current.get(unit.sentence.id);
+    if (pending) return pending;
+
+    if (!currentDocument) throw new Error("No reading selected.");
+    const voice = getDefaultEdgeTtsVoice(currentDocument.sourceLanguage);
+    const request = api
+      .fetchReadingSentenceTts(token ?? "", currentDocument.id, unit.paragraph.id, unit.sentence.id, voice, "default")
+      .then((audio) => {
+        const url = URL.createObjectURL(audio);
+        sentenceAudioCacheRef.current.set(unit.sentence.id, url);
+        return url;
+      })
+      .finally(() => {
+        sentenceAudioInFlightRef.current.delete(unit.sentence.id);
+      });
+    sentenceAudioInFlightRef.current.set(unit.sentence.id, request);
+    return request;
+  }
+
+  function prefetchSentenceAudioFrom(queueIndex: number) {
+    const upcoming = sentenceQueue.slice(queueIndex, queueIndex + READING_TTS_PREFETCH_WINDOW);
+    for (const unit of upcoming) {
+      void getSentenceAudio(unit).catch(() => undefined);
+    }
+  }
+
+  async function playSentence(unit: ReadingSentenceUnit) {
+    try {
+      setError(null);
+      setLoadingTtsSentenceId(unit.sentence.id);
+      const url = await getSentenceAudio(unit);
+      setLoadingTtsSentenceId(null);
+      setActiveTtsSentenceId(unit.sentence.id);
+      prefetchSentenceAudioFrom(unit.queueIndex + 1);
+
+      audioRef.current?.pause();
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => {
+        const nextUnit = sentenceQueue[unit.queueIndex + 1];
+        if (nextUnit) {
+          void playSentence(nextUnit);
+        } else {
+          setActiveTtsSentenceId(null);
+        }
+      };
+      await audio.play();
+    } catch (ttsError) {
+      setLoadingTtsSentenceId(null);
+      setActiveTtsSentenceId(null);
+      setError(ttsError instanceof Error ? ttsError.message : "Could not play audio.");
+    }
+  }
+
+  function playParagraphSentences(paragraph: ReadingParagraphDTO) {
+    const firstUnit = sentenceQueue.find((unit) => unit.paragraph.id === paragraph.id);
+    if (firstUnit) void playSentence(firstUnit);
   }
 
   function exportTranslations() {
@@ -229,6 +302,14 @@ export function ReadingPage() {
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Import text
+          </Link>
+          <Link
+            to={currentDocument ? `/reader/${currentDocument.id}/practice` : "/reader"}
+            className={`inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-4 py-2 text-sm font-medium transition-colors ${currentDocument ? "text-text-primary hover:bg-bg-elevated" : "pointer-events-none text-text-secondary opacity-60"}`}
+            aria-disabled={!currentDocument}
+          >
+            <BookOpenText className="h-4 w-4" aria-hidden="true" />
+            Focus mode
           </Link>
           <button
             type="button"
@@ -384,11 +465,11 @@ export function ReadingPage() {
                         <button
                           type="button"
                           className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-subtle)] bg-bg-card px-2.5 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
-                          onClick={() => playParagraphTts.mutate(paragraph)}
-                          disabled={playParagraphTts.isPending && activeTtsParagraphId === paragraph.id}
+                          onClick={() => playParagraphSentences(paragraph)}
+                          disabled={paragraph.sentences.length === 0 || loadingTtsSentenceId?.startsWith(`${paragraph.id}-s-`)}
                         >
                           <Volume2 className="h-3.5 w-3.5 text-accent-teal" aria-hidden="true" />
-                          {playParagraphTts.isPending && activeTtsParagraphId === paragraph.id ? "Loading..." : "Listen"}
+                          {loadingTtsSentenceId?.startsWith(`${paragraph.id}-s-`) ? "Loading..." : "Listen sentences"}
                         </button>
                         <button
                           type="button"
@@ -401,9 +482,38 @@ export function ReadingPage() {
                         </button>
                       </div>
                     </div>
-                    <p className="m-0 whitespace-pre-wrap text-base leading-8 text-text-primary" lang={sourceLanguage}>
-                      {paragraph.source}
-                    </p>
+                    <div className="flex flex-col gap-2" lang={sourceLanguage}>
+                      {(paragraph.sentences.length > 0 ? paragraph.sentences : [{ id: `${paragraph.id}-s-1`, text: paragraph.source, index: 0 }]).map((sentence) => {
+                        const unit = sentenceQueue.find((item) => item.sentence.id === sentence.id);
+                        const sentenceTranslation = getSentenceTranslation(paragraph, sentence.index);
+                        const isActiveSentence = activeTtsSentenceId === sentence.id;
+                        const isLoadingSentence = loadingTtsSentenceId === sentence.id;
+                        return (
+                          <div
+                            key={sentence.id}
+                            className={`rounded-lg border px-3 py-2 transition-colors ${isActiveSentence ? "border-accent-teal bg-bg-card" : "border-[var(--border-subtle)] bg-transparent"}`}
+                          >
+                            <div className="flex items-start gap-2">
+                              <button
+                                type="button"
+                                className="mt-1 inline-flex h-7 w-7 flex-none items-center justify-center rounded-full border border-[var(--border-subtle)] bg-bg-card text-text-primary transition-colors hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
+                                onClick={() => unit && void playSentence(unit)}
+                                disabled={!unit || isLoadingSentence}
+                                aria-label={`Listen to sentence ${sentence.index + 1}`}
+                              >
+                                <Volume2 className="h-3.5 w-3.5 text-accent-teal" aria-hidden="true" />
+                              </button>
+                              <div className="min-w-0">
+                                <p className="m-0 whitespace-pre-wrap text-base leading-7 text-text-primary">{sentence.text}</p>
+                                {sentenceTranslation ? (
+                                  <p className="m-0 mt-1 text-sm leading-6 text-text-secondary">{sentenceTranslation}</p>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
 
                     {paragraph.sentenceTranslations.length > 0 || paragraph.engineTranslation ? (
                       <div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-bg-card p-3">

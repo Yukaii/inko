@@ -135,4 +135,65 @@ export async function ttsRoutes(
       rethrowAsHttp(app, error);
     }
   });
+
+  app.get("/api/readings/:documentId/paragraphs/:paragraphId/sentences/:sentenceId/tts", { preHandler: requireAuth }, async (request, reply) => {
+    const requestStartedAt = Date.now();
+    try {
+      const { documentId, paragraphId, sentenceId } = request.params as { documentId: string; paragraphId: string; sentenceId: string };
+      const { voice, rate } = request.query as {
+        voice?: string;
+        rate?: "-20%" | "default" | "+20%";
+      };
+      const document = await repo.getReadingDocument(request.auth!.userId, documentId);
+      const paragraph = document.paragraphs.find((item) => item.id === paragraphId);
+      const sentence = paragraph?.sentences.find((item) => item.id === sentenceId);
+      if (!paragraph || !sentence) {
+        reply.code(404);
+        return { message: "Reading sentence not found" };
+      }
+
+      const audio = await service.synthesizeReadingSentenceAudio({
+        userId: request.auth!.userId,
+        documentId,
+        paragraphId,
+        sentenceId,
+        text: sentence.text,
+        voice: voice ?? getDefaultEdgeTtsVoice(document.sourceLanguage),
+        rate,
+      });
+
+      app.log.info(
+        {
+          tts: {
+            userId: request.auth!.userId,
+            documentId,
+            paragraphId,
+            sentenceId,
+            source: audio.diagnostics?.source ?? "unknown",
+            objectKey: audio.diagnostics?.objectKey ?? null,
+            timingsMs: audio.diagnostics?.timingsMs ?? null,
+            requestTotal: Date.now() - requestStartedAt,
+          },
+        },
+        "reading sentence tts request completed",
+      );
+
+      reply.header("content-type", audio.contentType);
+      reply.header("content-disposition", `inline; filename="${audio.fileName}"`);
+      reply.header("cache-control", "private, max-age=86400");
+      return reply.send(audio.audio);
+    } catch (error) {
+      app.log.error(
+        {
+          err: error,
+          tts: {
+            requestTotal: Date.now() - requestStartedAt,
+            path: request.url,
+          },
+        },
+        "reading sentence tts request failed",
+      );
+      rethrowAsHttp(app, error);
+    }
+  });
 }
