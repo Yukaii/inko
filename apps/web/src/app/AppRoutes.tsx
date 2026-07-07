@@ -1,7 +1,6 @@
 import { Suspense, lazy, useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { useKeyboardShortcuts } from "../hooks/useKeyboard";
 import { Layout } from "../components/Layout";
 import { PublicNavbar } from "../components/PublicNavbar";
 import { LandingPage } from "../pages/LandingPage";
@@ -27,8 +26,6 @@ function RouteFallback() {
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth();
   const { i18n } = useTranslation();
-
-  useKeyboardShortcuts();
 
   useEffect(() => {
     applyNoIndexMetadata("Inko");

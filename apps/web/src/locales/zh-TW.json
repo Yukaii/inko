@@ -94,7 +94,10 @@
       "title": "打字，直到你完全掌握",
       "subtitle": "匯入 Anki 牌組、用打字訓練記憶，並把整理好的牌組提交到內建審核的社群牌組庫。",
       "cta_primary": "開始練習",
-      "cta_secondary": "了解更多"
+      "cta_secondary": "了解更多",
+      "proof_import": "Anki 匯入",
+      "proof_typing": "打字回想",
+      "proof_community": "社群牌組"
     },
     "how_it_works": {
       "title": "// 運作原理",
@@ -520,6 +523,7 @@
     "nav_numbers": "前往儀表板 / 單字庫 / 社群",
     "go_dashboard": "前往儀表板",
     "go_word_bank": "前往單字庫",
+    "go_community": "前往社群",
     "go_settings": "前往設定",
     "go_settings_direct": "前往設定",
     "toggle_help": "顯示/隱藏說明",

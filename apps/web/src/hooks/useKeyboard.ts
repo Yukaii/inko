@@ -56,11 +56,11 @@ class KeyboardManager {
     const shortcut = this.shortcuts.get(key);
     if (shortcut) {
       // Don't trigger global shortcuts when typing in inputs (except Escape)
-      const target = event.target as HTMLElement;
+      const target = event.target instanceof HTMLElement ? event.target : null;
       const isInput =
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.contentEditable === "true";
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.contentEditable === "true";
 
       if (isInput && shortcut.scope !== "local" && event.key !== "Escape") {
         return;
@@ -91,10 +91,13 @@ export function registerShortcut(shortcut: Shortcut) {
 }
 
 export function getShortcutsList(): Array<{ key: string; description: string }> {
-  return keyboardManager.getAllShortcuts().map((s) => ({
-    key: formatShortcutKey(s),
-    description: s.description,
-  }));
+  return keyboardManager
+    .getAllShortcuts()
+    .filter((s) => s.scope !== "global")
+    .map((s) => ({
+      key: formatShortcutKey(s),
+      description: s.description,
+    }));
 }
 
 function formatShortcutKey(s: Shortcut): string {

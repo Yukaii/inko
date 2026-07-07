@@ -94,7 +94,10 @@
       "title": "打って、覚える。",
       "subtitle": "Anki デッキを取り込み、タイピングで鍛え、仕上げたデッキを審査付きコミュニティライブラリへ共有できます。",
       "cta_primary": "学習を始める",
-      "cta_secondary": "詳細を見る"
+      "cta_secondary": "詳細を見る",
+      "proof_import": "Anki 取り込み",
+      "proof_typing": "タイピング想起",
+      "proof_community": "コミュニティデッキ"
     },
     "how_it_works": {
       "title": "// 使い方",
@@ -520,6 +523,7 @@
     "nav_numbers": "ダッシュボード / 単語帳 / コミュニティへ移動",
     "go_dashboard": "ダッシュボードへ移動",
     "go_word_bank": "単語帳へ移動",
+    "go_community": "コミュニティへ移動",
     "go_settings": "設定へ移動",
     "go_settings_direct": "設定へ移動",
     "toggle_help": "ヘルプを表示/非表示",

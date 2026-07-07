@@ -95,31 +95,7 @@ export function KeyboardHelpModal({
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">2</kbd>
                   <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">3</kbd>
                 </dt>
-                <dd className="m-0 text-text-secondary">{t("shortcuts.nav_numbers", "Go to Dashboard / Word Bank / Settings")}</dd>
-              </div>
-              <div className="flex items-center gap-4 text-sm">
-                <dt className="flex min-w-[100px] items-center gap-1">
-                  <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">g</kbd>
-                  <span className="text-xs text-text-secondary">{t("common.then")}</span>
-                  <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">d</kbd>
-                </dt>
-                <dd className="m-0 text-text-secondary">{t("shortcuts.go_dashboard", "Go to Dashboard")}</dd>
-              </div>
-              <div className="flex items-center gap-4 text-sm">
-                <dt className="flex min-w-[100px] items-center gap-1">
-                  <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">g</kbd>
-                  <span className="text-xs text-text-secondary">{t("common.then")}</span>
-                  <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">w</kbd>
-                </dt>
-                <dd className="m-0 text-text-secondary">{t("shortcuts.go_word_bank", "Go to Word Bank")}</dd>
-              </div>
-              <div className="flex items-center gap-4 text-sm">
-                <dt className="flex min-w-[100px] items-center gap-1">
-                  <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">g</kbd>
-                  <span className="text-xs text-text-secondary">{t("common.then")}</span>
-                  <kbd className="rounded border border-[color:color-mix(in_oklab,var(--text-secondary)_50%,var(--bg-page))] bg-bg-elevated px-2 py-[3px] font-mono text-xs text-text-primary">s</kbd>
-                </dt>
-                <dd className="m-0 text-text-secondary">{t("shortcuts.go_settings", "Go to Settings")}</dd>
+                <dd className="m-0 text-text-secondary">{t("shortcuts.nav_numbers", "Go to Dashboard / Word Bank / Community")}</dd>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <dt className="flex min-w-[100px] items-center gap-1">

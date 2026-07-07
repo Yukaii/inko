@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { ThemeConfig, ThemeMode } from "@inko/shared";
-import { getShortcutsList } from "../hooks/useKeyboard";
+import { getShortcutsList, registerShortcut, useKeyboardShortcuts } from "../hooks/useKeyboard";
 import { shouldResetAuth, useAuth } from "../hooks/useAuth";
 import { api } from "../api/client";
 import { authQueryKey } from "../lib/queryKeys";
@@ -22,7 +22,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [showLangSubMenu, setShowLangSubMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
+  useKeyboardShortcuts();
+
   const currentLangLabel = SUPPORTED_UI_LANGUAGES.find((lang) => i18n.language.startsWith(lang.code))?.label || t("common.language_english");
+  const navLinks = [
+    { to: "/dashboard", label: "nav.dashboard", mobileLabel: "nav.home", key: "d" },
+    { to: "/word-bank", label: "nav.word_bank", mobileLabel: "nav.decks", key: "w" },
+    { to: "/community", label: "nav.community", mobileLabel: "nav.community", key: "c" },
+  ];
 
   const meQuery = useQuery({
     queryKey: authQueryKey(token, "me"),
@@ -71,6 +78,46 @@ export function Layout({ children }: { children: React.ReactNode }) {
     };
   }, [showProfileMenu]);
 
+  useEffect(() => {
+    const cleanups = [
+      registerShortcut({
+        key: "1",
+        handler: () => navigate("/dashboard"),
+        description: t("shortcuts.go_dashboard", "Go to Dashboard"),
+        scope: "global",
+      }),
+      registerShortcut({
+        key: "2",
+        handler: () => navigate("/word-bank"),
+        description: t("shortcuts.go_word_bank", "Go to Word Bank"),
+        scope: "global",
+      }),
+      registerShortcut({
+        key: "3",
+        handler: () => navigate("/community"),
+        description: t("shortcuts.go_community", "Go to Community"),
+        scope: "global",
+      }),
+      registerShortcut({
+        key: "s",
+        handler: () => navigate("/settings"),
+        description: t("shortcuts.go_settings", "Go to Settings"),
+        scope: "global",
+      }),
+      registerShortcut({
+        key: "?",
+        shift: true,
+        handler: () => setShowHelp((current) => !current),
+        description: t("shortcuts.toggle_help", "Toggle this help"),
+        scope: "global",
+      }),
+    ];
+
+    return () => {
+      for (const cleanup of cleanups) cleanup();
+    };
+  }, [navigate, t]);
+
   const handleSignOut = useCallback(async () => {
     await signOut();
     navigate("/login", { replace: true });
@@ -87,11 +134,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           i18n={i18n}
           currentLangLabel={currentLangLabel}
           user={user}
-          navLinks={[
-            { to: "/dashboard", label: "nav.dashboard", mobileLabel: "nav.home", key: "d" },
-            { to: "/word-bank", label: "nav.word_bank", mobileLabel: "nav.decks", key: "w" },
-            { to: "/community", label: "nav.community", mobileLabel: "nav.community", key: "c" },
-          ]}
+          navLinks={navLinks}
           locationPathname={location.pathname}
           showProfileMenu={showProfileMenu}
           setShowProfileMenu={setShowProfileMenu}

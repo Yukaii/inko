@@ -12,6 +12,8 @@ import {
   Layers,
   Volume2,
   Smartphone,
+  FileUp,
+  Library,
 } from "lucide-react";
 
 const fadeInUp = {
@@ -44,6 +46,11 @@ function GetStartedLink({
 
 export function LandingPage() {
   const { t, i18n } = useTranslation();
+  const heroProofs = [
+    { icon: FileUp, label: t("landing.hero.proof_import") },
+    { icon: Keyboard, label: t("landing.hero.proof_typing") },
+    { icon: Library, label: t("landing.hero.proof_community") },
+  ];
 
   useEffect(() => {
     applyMetadata({
@@ -59,66 +66,92 @@ export function LandingPage() {
     <div className="min-h-screen bg-bg-page text-text-primary selection:bg-accent-orange/30">
       <PublicNavbar showAnchors />
 
-      {/* Hero Section */}
-      <section className="flex flex-col items-center pt-20 pb-16 px-6 text-center md:px-30">
-        <motion.div 
-          variants={staggerContainer}
-          initial="initial"
-          animate="animate"
-          className="flex flex-col items-center"
-        >
-          <motion.div 
-            variants={fadeInUp}
-            className="mb-8 inline-flex items-center justify-center rounded-full bg-bg-elevated px-4 py-1.5 font-mono text-[10px] font-bold text-accent-teal uppercase tracking-widest border border-accent-teal/20"
-          >
-            TYPE IT UNTIL YOU OWN IT
-          </motion.div>
-          <motion.h1 
-            variants={fadeInUp}
-            className="mb-6 font-display text-5xl font-bold leading-tight md:text-7xl"
-          >
-            {t("landing.hero.title")}
-          </motion.h1>
-          <motion.p 
-            variants={fadeInUp}
-            className="mb-10 max-w-[600px] text-base leading-relaxed text-text-secondary md:text-lg"
-          >
-            {t("landing.hero.subtitle")}
-          </motion.p>
-          <motion.div 
-            variants={fadeInUp}
-            className="mb-20 flex flex-col gap-4 font-semibold sm:flex-row sm:gap-6"
-          >
-            <GetStartedLink
-              className="rounded-base bg-accent-orange px-7 py-3.5 text-text-on-accent transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-accent-orange/20"
+      <main id="main-content">
+        {/* Hero Section */}
+        <section className="px-6 py-7 md:px-12 md:py-10 lg:px-30">
+          <div className="mx-auto grid max-w-6xl items-center gap-6 md:gap-10 lg:min-h-[calc(100vh-210px)] lg:grid-cols-[0.9fr_1.1fr] lg:gap-12">
+            <motion.div
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+              className="flex flex-col items-start text-left"
             >
-              {t("landing.hero.cta_primary")}
-            </GetStartedLink>
-            <a
-              href="#how-it-works"
-              className="rounded-base border border-text-primary px-7 py-3.5 text-text-primary transition-colors hover:bg-bg-elevated"
-            >
-              {t("landing.hero.cta_secondary")}
-            </a>
-          </motion.div>
-        </motion.div>
+              <motion.h1
+                variants={fadeInUp}
+                className="mb-5 font-display text-4xl font-bold leading-[0.98] sm:text-5xl md:mb-6 md:text-6xl xl:text-7xl"
+              >
+                {t("landing.hero.title")}
+              </motion.h1>
+              <motion.p
+                variants={fadeInUp}
+                className="mb-6 max-w-[620px] text-base leading-relaxed text-text-secondary md:mb-8 md:text-lg"
+              >
+                {t("landing.hero.subtitle")}
+              </motion.p>
+              <motion.div
+                variants={fadeInUp}
+                className="mb-5 flex w-full flex-col gap-3 font-semibold sm:w-auto sm:flex-row md:mb-7"
+              >
+                <GetStartedLink
+                  className="rounded-base bg-accent-orange px-7 py-3 text-center text-text-on-accent shadow-lg shadow-accent-orange/20 transition-transform hover:scale-[1.03] active:scale-95 md:py-3.5"
+                >
+                  {t("landing.hero.cta_primary")}
+                </GetStartedLink>
+                <a
+                  href="#how-it-works"
+                  className="rounded-base border border-[var(--border-strong)] px-7 py-3 text-center text-text-primary transition-colors hover:bg-bg-elevated md:py-3.5"
+                >
+                  {t("landing.hero.cta_secondary")}
+                </a>
+              </motion.div>
+              <motion.div
+                variants={fadeInUp}
+                className="grid w-full gap-2 text-[13px] text-text-secondary sm:grid-cols-3 md:gap-3 lg:max-w-[640px]"
+              >
+                {heroProofs.map((proof) => (
+                  <div
+                    key={proof.label}
+                    className="flex items-center gap-2 rounded-[12px] border border-[var(--border-subtle)] bg-bg-card/70 px-3 py-2 md:py-2.5"
+                  >
+                    <proof.icon className="h-4 w-4 shrink-0 text-accent-teal" />
+                    <span className="whitespace-nowrap leading-snug">{proof.label}</span>
+                  </div>
+                ))}
+              </motion.div>
+            </motion.div>
 
-        {/* Mockup Simulator */}
-        <motion.div 
-          initial={{ opacity: 0, y: 40, scale: 0.95 }}
-          whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="w-full max-w-[1103px] mb-12"
-        >
-          <div className="flex h-[39px] items-center gap-2 rounded-t-2xl bg-[#1a1a1a] px-4">
-            <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]" />
-            <div className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
-            <div className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
+            {/* Mockup Simulator */}
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="hidden w-full min-w-0 md:block"
+            >
+              <div className="flex h-[32px] items-center gap-2 rounded-t-2xl bg-[#1a1a1a] px-4 shadow-[0_24px_80px_var(--shadow)] md:h-[36px]">
+                <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]" />
+                <div className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
+                <div className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
+              </div>
+              <PracticeSimulator />
+            </motion.div>
           </div>
-          <PracticeSimulator />
-        </motion.div>
-      </section>
+        </section>
+
+        <section className="px-6 pb-10 md:hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="w-full min-w-0"
+          >
+            <div className="flex h-[32px] items-center gap-2 rounded-t-2xl bg-[#1a1a1a] px-4 shadow-[0_24px_80px_var(--shadow)]">
+              <div className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]" />
+              <div className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
+              <div className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
+            </div>
+            <PracticeSimulator />
+          </motion.div>
+        </section>
 
       {/* How It Works */}
       <section id="how-it-works" className="bg-bg-card py-20 px-6 md:px-30">
@@ -278,6 +311,7 @@ export function LandingPage() {
           </div>
         </motion.div>
       </section>
+      </main>
 
       {/* Footer */}
       <footer className="border-t border-[var(--border-subtle)] bg-[linear-gradient(180deg,var(--bg-page),var(--bg-card))] py-12 px-6 md:px-30">

@@ -167,7 +167,7 @@ export function PracticeSimulator() {
   const progress = (typed.length / card.answer.length) * 100;
 
   return (
-    <div className="relative flex h-[400px] w-full flex-col items-center justify-center overflow-hidden rounded-b-xl border border-t-0 border-[#1a1a1a] bg-bg-page shadow-2xl md:h-[500px]">
+    <div className="relative flex h-[300px] w-full flex-col items-center justify-center overflow-hidden rounded-b-xl border border-t-0 border-[#1a1a1a] bg-bg-page shadow-2xl md:h-[420px] lg:h-[460px]">
       {/* Top Bar Simulator */}
       <div className="absolute inset-x-0 top-0 flex items-center justify-between px-6 py-4 opacity-60">
         <div className="flex items-center gap-3">
@@ -195,7 +195,7 @@ export function PracticeSimulator() {
               {card.meaning}
             </div>
             
-            <div className="font-jp text-6xl font-bold text-text-primary md:text-8xl">
+            <div className="font-jp text-5xl font-bold text-text-primary md:text-8xl">
               {card.target}
             </div>
 
@@ -203,7 +203,7 @@ export function PracticeSimulator() {
               {card.reading}
             </div>
 
-            <div className="mt-4 flex min-h-[42px] justify-center gap-0.5 font-mono text-2xl tracking-widest md:text-4xl">
+            <div className="mt-2 flex min-h-[36px] justify-center gap-0.5 font-mono text-2xl tracking-widest md:mt-4 md:min-h-[42px] md:text-4xl">
               {card.answer.split("").map((char, i) => {
                 const isTyped = i < typed.length;
                 const isCursor = i === typed.length;
@@ -239,7 +239,7 @@ export function PracticeSimulator() {
       </div>
 
       {/* Interactive Overlay Hint */}
-      <div className="absolute inset-x-0 bottom-8 flex justify-center">
+      <div className="absolute inset-x-0 bottom-5 flex justify-center md:bottom-8">
         <div className="rounded-full bg-bg-elevated/50 px-4 py-1.5 text-[10px] font-mono text-text-secondary backdrop-blur-sm border border-text-secondary/10">
           {t("landing.simulator.hint")}
         </div>

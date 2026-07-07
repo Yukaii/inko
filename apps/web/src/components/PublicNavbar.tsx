@@ -112,8 +112,8 @@ export function PublicNavbar({ showAnchors = false }: PublicNavbarProps) {
                         }}
                         className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-[11px] font-bold transition-all ${
                           isActive
-                            ? "bg-accent-teal text-text-on-accent"
-                            : "text-text-secondary hover:bg-bg-elevated hover:text-text-primary"
+                            ? "bg-accent-teal text-white"
+                            : "bg-transparent text-text-secondary hover:bg-bg-elevated hover:text-text-primary"
                         }`}
                       >
                         {lang.label}

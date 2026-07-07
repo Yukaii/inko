@@ -94,7 +94,10 @@
       "title": "type it until you own it",
       "subtitle": "Import Anki decks, train by typing, and publish curated decks back to a community library with moderation built in.",
       "cta_primary": "Start Typing",
-      "cta_secondary": "Learn More"
+      "cta_secondary": "Learn More",
+      "proof_import": "Anki import",
+      "proof_typing": "Typing recall",
+      "proof_community": "Community decks"
     },
     "how_it_works": {
       "title": "// How It Works",
@@ -516,7 +519,15 @@
     "clean_streak_desc": "Clean streak only increases when you finish a card without ever going off track."
   },
   "shortcuts": {
-    "go_to_page_sequence": "Go to page (g then d/w/s)"
+    "go_to_page_sequence": "Go to page (g then d/w/s)",
+    "nav_numbers": "Go to Dashboard / Word Bank / Community",
+    "go_dashboard": "Go to Dashboard",
+    "go_word_bank": "Go to Word Bank",
+    "go_community": "Go to Community",
+    "go_settings": "Go to Settings",
+    "go_settings_direct": "Go to Settings",
+    "toggle_help": "Toggle this help",
+    "close_dialogs": "Close dialogs / Cancel"
   },
   "importer": {
     "seo_title": "Import Anki Decks | Inko",
