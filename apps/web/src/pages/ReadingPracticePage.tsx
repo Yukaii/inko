@@ -754,7 +754,6 @@ export function ReadingPracticePage() {
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             event.preventDefault();
-            event.stopPropagation();
           }
           // Allow Enter to pass through (no newlines in typing)
           if (event.key === "Enter") {
