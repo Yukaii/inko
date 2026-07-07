@@ -379,6 +379,8 @@
     "subtitle": "Customize your experience",
     "messages": {
       "saved": "Settings saved.",
+      "autosaving": "Saving preferences...",
+      "autosaved": "Preferences saved.",
       "save_failed": "Failed to save settings.",
       "load_failed": "Failed to load settings.",
       "preset_applied": "Applied preset: {{name}}",
@@ -426,6 +428,20 @@
         "interval_strong_minutes": "Strong Interval",
         "interval_mastered_minutes": "Mastered Interval",
         "interval_expert_minutes": "Expert Interval",
+        "preview": {
+          "curve_title": "Review delay curve",
+          "curve_desc": "Strength moves left to right. Higher bands wait longer before the next review.",
+          "attempt_title": "Sample attempt feedback",
+          "attempt_desc": "From the current starting strength, these scores would schedule the next review like this.",
+          "low": "Low",
+          "mid": "Mid",
+          "strong": "Strong",
+          "mastered": "Mastered",
+          "expert": "Expert",
+          "next_strength": "strength",
+          "starting_hint": "New cards begin here on the 0-100 strength scale.",
+          "divisor_hint": "Lower values make scores change strength faster."
+        },
         "units": {
           "minutes": "Minutes",
           "hours": "Hours",

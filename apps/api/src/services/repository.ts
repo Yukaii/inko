@@ -487,7 +487,12 @@ export const repository = {
     await requireUser(userId);
     const user = await db
       .updateTable("users")
-      .set({ tts_enabled: input.ttsEnabled })
+      .set({
+        theme_mode: input.themeMode,
+        typing_mode: input.typingMode,
+        tts_enabled: input.ttsEnabled,
+        srs_config: jsonb(input.srsConfig),
+      })
       .where("id", "=", userId)
       .returningAll()
       .executeTakeFirstOrThrow();

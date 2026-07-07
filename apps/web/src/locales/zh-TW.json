@@ -379,6 +379,8 @@
     "subtitle": "自訂你的使用體驗",
     "messages": {
       "saved": "設定已儲存。",
+      "autosaving": "正在儲存偏好設定...",
+      "autosaved": "偏好設定已儲存。",
       "save_failed": "無法儲存設定。",
       "load_failed": "無法載入設定。",
       "preset_applied": "已套用主題預設：{{name}}",
@@ -426,6 +428,20 @@
         "interval_strong_minutes": "高強度間隔",
         "interval_mastered_minutes": "已掌握間隔",
         "interval_expert_minutes": "熟練間隔",
+        "preview": {
+          "curve_title": "複習間隔曲線",
+          "curve_desc": "強度由左到右提升。越高的區間，下次複習等待越久。",
+          "attempt_title": "範例練習回饋",
+          "attempt_desc": "從目前的起始強度出發，這些分數會這樣安排下次複習。",
+          "low": "低",
+          "mid": "中",
+          "strong": "高",
+          "mastered": "已掌握",
+          "expert": "熟練",
+          "next_strength": "強度",
+          "starting_hint": "新卡會從 0-100 強度刻度上的這個位置開始。",
+          "divisor_hint": "數值越低，分數對強度的影響越快。"
+        },
         "units": {
           "minutes": "分鐘",
           "hours": "小時",

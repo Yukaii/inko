@@ -67,6 +67,8 @@ const INTERVAL_FIELD_KEYS: IntervalFieldKey[] = [
   "intervalExpertMinutes",
 ];
 
+const SRS_PREVIEW_SCORES = [45, 75, 95];
+
 function inferIntervalUnit(totalMinutes: number): IntervalUnit {
   if (totalMinutes % (60 * 24) === 0) return "days";
   if (totalMinutes % 60 === 0) return "hours";
@@ -83,6 +85,25 @@ function unitValueToMinutes(value: number, unit: IntervalUnit) {
   if (unit === "days") return value * 60 * 24;
   if (unit === "hours") return value * 60;
   return value;
+}
+
+function srsIntervalForStrength(strength: number, config: SrsConfig) {
+  if (strength < 35) return config.intervalLowMinutes;
+  if (strength < 55) return config.intervalMidMinutes;
+  if (strength < 70) return config.intervalStrongMinutes;
+  if (strength < 85) return config.intervalMasteredMinutes;
+  return config.intervalExpertMinutes;
+}
+
+function previewNextStrength(currentStrength: number, score: number, config: SrsConfig) {
+  const delta = Math.round((score - 60) / config.strengthStepDivisor);
+  return Math.min(100, Math.max(0, currentStrength + delta));
+}
+
+function compactDuration(totalMinutes: number) {
+  if (totalMinutes % (60 * 24) === 0) return `${Math.round(totalMinutes / (60 * 24))}d`;
+  if (totalMinutes % 60 === 0) return `${Math.round(totalMinutes / 60)}h`;
+  return `${totalMinutes}m`;
 }
 
 const THEME_PRESETS: ThemePreset[] = [
@@ -383,6 +404,51 @@ export function SettingsPage() {
   const [themes, setThemes] = useState<ThemeConfig>(DefaultThemes);
   const [hexDrafts, setHexDrafts] = useState<Record<string, string>>({});
 
+  const preferencesSignature = useMemo(
+    () => JSON.stringify({ themeMode, typingMode, ttsEnabled, srsConfig }),
+    [themeMode, typingMode, ttsEnabled, srsConfig],
+  );
+
+  const savedPreferencesSignature = useMemo(() => {
+    if (!user) return "";
+    return JSON.stringify({
+      themeMode: user.themeMode,
+      typingMode: user.typingMode,
+      ttsEnabled: user.ttsEnabled,
+      srsConfig: { ...DEFAULT_SRS_CONFIG, ...(user.srsConfig ?? {}) },
+    });
+  }, [user]);
+
+  const srsBandPreview = useMemo(() => {
+    const rows = [
+      { key: "low", label: t("settings.preferences.srs.preview.low", "Low"), range: "0-34", interval: srsConfig.intervalLowMinutes, width: 35 },
+      { key: "mid", label: t("settings.preferences.srs.preview.mid", "Mid"), range: "35-54", interval: srsConfig.intervalMidMinutes, width: 20 },
+      { key: "strong", label: t("settings.preferences.srs.preview.strong", "Strong"), range: "55-69", interval: srsConfig.intervalStrongMinutes, width: 15 },
+      { key: "mastered", label: t("settings.preferences.srs.preview.mastered", "Mastered"), range: "70-84", interval: srsConfig.intervalMasteredMinutes, width: 15 },
+      { key: "expert", label: t("settings.preferences.srs.preview.expert", "Expert"), range: "85-100", interval: srsConfig.intervalExpertMinutes, width: 15 },
+    ];
+    const maxInterval = Math.max(...rows.map((row) => row.interval));
+    return rows.map((row) => ({
+      ...row,
+      intervalLabel: compactDuration(row.interval),
+      delayPercent: Math.max(6, Math.round((row.interval / maxInterval) * 100)),
+    }));
+  }, [srsConfig, t]);
+
+  const srsAttemptPreview = useMemo(
+    () =>
+      SRS_PREVIEW_SCORES.map((score) => {
+        const nextStrength = previewNextStrength(srsConfig.startingStrength, score, srsConfig);
+        return {
+          score,
+          nextStrength,
+          intervalLabel: compactDuration(srsIntervalForStrength(nextStrength, srsConfig)),
+          delta: nextStrength - srsConfig.startingStrength,
+        };
+      }),
+    [srsConfig],
+  );
+
   useEffect(() => {
     if (!user) return;
     const nextSrsConfig = { ...DEFAULT_SRS_CONFIG, ...(user.srsConfig ?? {}) };
@@ -423,6 +489,42 @@ export function SettingsPage() {
       setMessage(error instanceof Error ? error.message : t("settings.messages.save_failed"));
     },
   });
+
+  const updatePreferencesMutation = useMutation({
+    mutationFn: () =>
+      api.updatePreferences(token ?? "", {
+        themeMode,
+        typingMode,
+        ttsEnabled,
+        srsConfig,
+      }),
+    onMutate: () => {
+      setMessage(t("settings.messages.autosaving", "Saving preferences..."));
+    },
+    onSuccess: (updated) => {
+      const nextUser = updated as MeResponse;
+      queryClient.setQueryData(authQueryKey(token, "me"), nextUser);
+      applyThemePreferences({ themeMode: nextUser.themeMode, themes: nextUser.themes });
+      saveThemePreferences({ themeMode: nextUser.themeMode, themes: nextUser.themes });
+      setMessage(t("settings.messages.autosaved", "Preferences saved."));
+    },
+    onError: (error) => {
+      setMessage(error instanceof Error ? error.message : t("settings.messages.save_failed"));
+    },
+  });
+  const autoSavePreferences = updatePreferencesMutation.mutate;
+
+  useEffect(() => {
+    if (!user || !token || preferencesSignature === savedPreferencesSignature) return;
+
+    const timer = window.setTimeout(() => {
+      autoSavePreferences();
+    }, 800);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [autoSavePreferences, preferencesSignature, savedPreferencesSignature, token, user]);
 
   const canSave = useMemo(
     () => displayName.trim().length > 0 && displayName.trim().length <= 60 && !updateProfileMutation.isPending,
@@ -894,6 +996,31 @@ export function SettingsPage() {
                       </p>
                     </div>
 
+                    <div className="border-t border-[var(--border-subtle)] py-4">
+                      <div className="flex max-w-[760px] items-center justify-between gap-4">
+                        <div className="flex min-w-0 flex-col gap-2">
+                          <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">{t("settings.preferences.tts")}</span>
+                          <p className="m-0 text-[12px] text-text-secondary">{t("settings.preferences.tts_desc")}</p>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={ttsEnabled}
+                          aria-label={t("settings.preferences.tts")}
+                          onClick={() => setTtsEnabled((current) => !current)}
+                          className={`inline-flex h-7 w-12 shrink-0 items-center rounded-full border border-[var(--border-subtle)] p-1 transition-colors ${
+                            ttsEnabled ? "bg-accent-orange hover:bg-accent-orange" : "bg-bg-elevated hover:bg-bg-elevated"
+                          }`}
+                        >
+                          <span
+                            className={`h-5 w-5 rounded-full bg-bg-card shadow-sm transition-transform ${
+                              ttsEnabled ? "translate-x-5" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="flex flex-col gap-4 border-t border-[var(--border-subtle)] py-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex flex-col gap-1">
@@ -909,6 +1036,57 @@ export function SettingsPage() {
                         </button>
                       </div>
 
+                      <div className="grid gap-4 rounded-[10px] border border-[var(--border-subtle)] bg-bg-elevated p-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">
+                        <div className="flex min-w-0 flex-col gap-4">
+                          <div>
+                            <p className="m-0 text-sm font-semibold text-text-primary">{t("settings.preferences.srs.preview.curve_title", "Review delay curve")}</p>
+                            <p className="mt-1 text-[12px] text-text-secondary">{t("settings.preferences.srs.preview.curve_desc", "Strength moves left to right. Higher bands wait longer before the next review.")}</p>
+                          </div>
+                          <div className="flex h-10 overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-bg-card" aria-label={t("settings.preferences.srs.preview.curve_title", "Review delay curve")}>
+                            {srsBandPreview.map((band, index) => (
+                              <div
+                                key={band.key}
+                                className={index % 2 === 0 ? "bg-accent-orange" : "bg-accent-teal"}
+                                style={{ width: `${band.width}%`, opacity: 0.45 + index * 0.1 }}
+                                title={`${band.label}: ${band.range}`}
+                              />
+                            ))}
+                          </div>
+                          <div className="grid gap-2">
+                            {srsBandPreview.map((band) => (
+                              <div key={band.key} className="grid grid-cols-[72px_minmax(0,1fr)_48px] items-center gap-3 text-[12px]">
+                                <span className="font-medium text-text-primary">{band.label}</span>
+                                <div className="h-2 overflow-hidden rounded-full bg-bg-card">
+                                  <div className="h-full rounded-full bg-accent-teal" style={{ width: `${band.delayPercent}%` }} />
+                                </div>
+                                <span className="text-right font-mono text-text-secondary">{band.intervalLabel}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-bg-card p-3">
+                          <div>
+                            <p className="m-0 text-sm font-semibold text-text-primary">{t("settings.preferences.srs.preview.attempt_title", "Sample attempt feedback")}</p>
+                            <p className="mt-1 text-[12px] text-text-secondary">
+                              {t("settings.preferences.srs.preview.attempt_desc", "From the current starting strength, these scores would schedule the next review like this.")}
+                            </p>
+                          </div>
+                          <div className="grid gap-2">
+                            {srsAttemptPreview.map((attempt) => (
+                              <div key={attempt.score} className="grid grid-cols-[48px_minmax(0,1fr)_52px] items-center gap-3 rounded-md border border-[var(--border-subtle)] px-3 py-2 text-[12px]">
+                                <span className="font-mono text-text-primary">{attempt.score}%</span>
+                                <span className="truncate text-text-secondary">
+                                  {t("settings.preferences.srs.preview.next_strength", "strength")} {attempt.nextStrength}
+                                  <span className={attempt.delta >= 0 ? "text-accent-teal" : "text-accent-orange"}> ({attempt.delta >= 0 ? "+" : ""}{attempt.delta})</span>
+                                </span>
+                                <span className="text-right font-mono text-text-primary">{attempt.intervalLabel}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="grid gap-4 sm:grid-cols-2">
                         {([
                           ["startingStrength", "settings.preferences.srs.starting_strength"],
@@ -919,9 +1097,15 @@ export function SettingsPage() {
                             <input
                               type="number"
                               min={key === "strengthStepDivisor" ? 1 : 0}
+                              max={key === "strengthStepDivisor" ? 20 : 100}
                               value={srsConfig[key]}
                               onChange={(event) => updateSrsConfig(key, event.target.value)}
                             />
+                            <span className="text-[12px] text-text-secondary">
+                              {key === "startingStrength"
+                                ? t("settings.preferences.srs.preview.starting_hint", "New cards begin here on the 0-100 strength scale.")
+                                : t("settings.preferences.srs.preview.divisor_hint", "Lower values make scores change strength faster.")}
+                            </span>
                           </label>
                         ))}
                         {([
@@ -933,14 +1117,16 @@ export function SettingsPage() {
                         ] as Array<[IntervalFieldKey, string]>).map(([key, label]) => (
                           <label key={key} className="flex flex-col gap-2 rounded-[10px] border border-[var(--border-subtle)] bg-bg-elevated p-3">
                             <span className="text-xs font-medium uppercase tracking-[0.04em] text-text-secondary">{t(label)}</span>
-                            <div className="grid max-w-[260px] gap-2 sm:grid-cols-[110px_120px]">
+                            <div className="grid max-w-[240px] gap-2 sm:grid-cols-[108px_112px]">
                               <input
                                 type="number"
                                 min={1}
+                                className="min-h-11"
                                 value={minutesToUnitValue(srsConfig[key], srsIntervalUnits[key])}
                                 onChange={(event) => updateSrsIntervalValue(key, event.target.value)}
                               />
                               <select
+                                className="min-h-11 text-sm"
                                 value={srsIntervalUnits[key]}
                                 onChange={(event) => updateSrsIntervalUnit(key, event.target.value as IntervalUnit)}
                               >
@@ -1110,7 +1296,11 @@ export function SettingsPage() {
                 </section>
               )}
 
-              {(activeSection === "profile" || activeSection === "preferences" || activeSection === "appearance") && (
+              {activeSection === "preferences" && message ? (
+                <p className="mt-6 border-t border-[var(--border-subtle)] pt-4 text-sm text-accent-teal">{message}</p>
+              ) : null}
+
+              {(activeSection === "profile" || activeSection === "appearance") && (
                 <div className="mt-6 border-t border-[var(--border-subtle)] pt-4">
                   <button type="button" onClick={() => updateProfileMutation.mutate()} disabled={!canSave}>
                     {t("common.save_changes")}

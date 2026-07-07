@@ -96,6 +96,25 @@
     background: color-mix(in oklab, var(--bg-card) 80%, var(--bg-page));
   }
 
+  select:not(.appearance-none) {
+    appearance: none;
+    min-height: 44px;
+    padding-right: 2.5rem;
+    background-color: color-mix(in oklab, var(--bg-card) 88%, var(--bg-page));
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%),
+      linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%);
+    background-position:
+      calc(100% - 1.1rem) 50%,
+      calc(100% - 0.78rem) 50%;
+    background-size: 0.38rem 0.38rem, 0.38rem 0.38rem;
+    background-repeat: no-repeat;
+  }
+
+  select:not(.appearance-none):hover {
+    border-color: var(--border-strong);
+  }
+
   button {
     @apply cursor-pointer rounded-[10px] border-0 bg-accent-orange px-3.5 py-2.5 font-semibold text-text-on-accent;
   }

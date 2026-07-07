@@ -265,7 +265,10 @@ export const UpdateProfileSchema = z.object({
 });
 
 export const UpdatePreferencesSchema = z.object({
+  themeMode: ThemeModeSchema,
+  typingMode: TypingModeSchema.default("language_specific"),
   ttsEnabled: z.boolean(),
+  srsConfig: SrsConfigSchema.default(DEFAULT_SRS_CONFIG),
 });
 
 export const CreateDeckSchema = z.object({

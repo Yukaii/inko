@@ -8,7 +8,7 @@ import { buildServer } from "../server";
 import { createInMemoryMagicTokenStore, issueAccessToken } from "../lib/auth";
 import type { Mailer } from "../lib/mailer";
 import type { TtsService } from "../lib/tts";
-import { DefaultThemes, PRACTICE_SESSION_CARD_CAP_DEFAULT } from "@inko/shared";
+import { DEFAULT_SRS_CONFIG, DefaultThemes, PRACTICE_SESSION_CARD_CAP_DEFAULT } from "@inko/shared";
 
 function makeRepositoryMock(): Repository {
   return {
@@ -19,6 +19,7 @@ function makeRepositoryMock(): Repository {
       themeMode: "dark" as const,
       typingMode: "language_specific" as const,
       ttsEnabled: true,
+      srsConfig: DEFAULT_SRS_CONFIG,
       canModerateCommunity: true,
       themes: DefaultThemes,
       createdAt: Date.now(),
@@ -30,6 +31,7 @@ function makeRepositoryMock(): Repository {
       themeMode: "dark" as const,
       typingMode: "language_specific" as const,
       ttsEnabled: true,
+      srsConfig: DEFAULT_SRS_CONFIG,
       canModerateCommunity: true,
       themes: DefaultThemes,
       createdAt: Date.now(),
@@ -41,6 +43,7 @@ function makeRepositoryMock(): Repository {
       themeMode: input.themeMode,
       typingMode: input.typingMode,
       ttsEnabled: input.ttsEnabled,
+      srsConfig: input.srsConfig,
       canModerateCommunity: true,
       themes: input.themes,
       createdAt: Date.now(),
@@ -49,9 +52,10 @@ function makeRepositoryMock(): Repository {
       id: "user_1",
       email: "user@example.com",
       displayName: "user",
-      themeMode: "dark" as const,
-      typingMode: "language_specific" as const,
+      themeMode: input.themeMode,
+      typingMode: input.typingMode,
       ttsEnabled: input.ttsEnabled,
+      srsConfig: input.srsConfig,
       canModerateCommunity: true,
       themes: DefaultThemes,
       createdAt: Date.now(),
@@ -499,6 +503,36 @@ describe("API integration", () => {
     expect(res.json().themeMode).toBe("light");
     expect(res.json().ttsEnabled).toBe(false);
     expect(res.json().themes.light.accentOrange).toBe("#ff9900");
+
+    await app.close();
+  });
+
+  it("autosaves user preferences via /api/me/preferences", async () => {
+    const app = await buildServer({ repository: repo, mailer, magicTokenStore, skipMigrations: true });
+    const accessToken = await issueAccessToken("user_1", "user@example.com");
+    const srsConfig = {
+      ...DEFAULT_SRS_CONFIG,
+      startingStrength: 42,
+      strengthStepDivisor: 4,
+    };
+
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/me/preferences",
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: {
+        themeMode: "light",
+        typingMode: "universal",
+        ttsEnabled: false,
+        srsConfig,
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().themeMode).toBe("light");
+    expect(res.json().typingMode).toBe("universal");
+    expect(res.json().ttsEnabled).toBe(false);
+    expect(res.json().srsConfig.startingStrength).toBe(42);
 
     await app.close();
   });

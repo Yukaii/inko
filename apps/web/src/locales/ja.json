@@ -379,6 +379,8 @@
     "subtitle": "体験をカスタマイズする",
     "messages": {
       "saved": "設定を保存しました。",
+      "autosaving": "環境設定を保存中...",
+      "autosaved": "環境設定を保存しました。",
       "save_failed": "設定を保存できませんでした。",
       "load_failed": "設定を読み込めませんでした。",
       "preset_applied": "プリセットを適用しました: {{name}}",
@@ -426,6 +428,20 @@
         "interval_strong_minutes": "高強度の間隔",
         "interval_mastered_minutes": "習得済みの間隔",
         "interval_expert_minutes": "熟達の間隔",
+        "preview": {
+          "curve_title": "復習間隔のカーブ",
+          "curve_desc": "強度は左から右へ進みます。高い帯ほど次回復習まで長く待ちます。",
+          "attempt_title": "サンプル結果",
+          "attempt_desc": "現在の開始強度から、これらのスコアなら次回復習はこう予定されます。",
+          "low": "低",
+          "mid": "中",
+          "strong": "高",
+          "mastered": "習得済み",
+          "expert": "熟達",
+          "next_strength": "強度",
+          "starting_hint": "新しいカードは 0-100 の強度スケール上のここから始まります。",
+          "divisor_hint": "小さい値ほど、スコアによる強度変化が大きくなります。"
+        },
         "units": {
           "minutes": "分",
           "hours": "時間",
