@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ArrowRight, BookOpenText, Check, FileText, Upload } from "lucide-react";
 import { LANGUAGE_LABELS, SUPPORTED_LANGUAGES, type LanguageCode, type ReadingParagraphDTO } from "@inko/shared";
 import { api } from "../api/client";
@@ -30,6 +31,7 @@ function detectSourceKind(file: File): SourceKind {
 }
 
 export function ReadingImportPage() {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -52,7 +54,7 @@ export function ReadingImportPage() {
   const createDocument = useMutation({
     mutationFn: async () =>
       api.createReadingDocument(token ?? "", {
-        title: title.trim() || "Imported reading",
+        title: title.trim() || t("reading.import.review.title_fallback"),
         sourceLanguage,
         translationLanguage,
         sourceKind,
@@ -64,7 +66,7 @@ export function ReadingImportPage() {
       navigate(`/reader/${document.id}`);
     },
     onError: (saveError) => {
-      setError(saveError instanceof Error ? saveError.message : "Could not save this reading.");
+      setError(saveError instanceof Error ? saveError.message : t("reading.import.errors.save_failed"));
     },
   });
 
@@ -72,7 +74,7 @@ export function ReadingImportPage() {
 
   function loadParagraphs(nextParagraphs: ReadingParagraph[], input: { kind: SourceKind; name?: string; fallbackTitle: string; metadata?: ReadingFileMetadata }) {
     if (nextParagraphs.length === 0) {
-      setError("No readable paragraphs were found.");
+      setError(t("reading.import.errors.no_paragraphs"));
       return;
     }
     setParagraphs(nextParagraphs);
@@ -95,11 +97,11 @@ export function ReadingImportPage() {
       loadParagraphs(extracted.paragraphs, {
         kind: detectSourceKind(file),
         name: file.name,
-        fallbackTitle: file.name.replace(/\.[^.]+$/, "") || "Imported reading",
+        fallbackTitle: file.name.replace(/\.[^.]+$/, "") || t("reading.import.review.title_fallback"),
         metadata: extracted.metadata,
       });
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Could not read this file.");
+      setError(loadError instanceof Error ? loadError.message : t("reading.import.errors.read_failed"));
     } finally {
       setIsParsing(false);
       setIsDragging(false);
@@ -109,14 +111,14 @@ export function ReadingImportPage() {
   function handlePasteLoad() {
     loadParagraphs(splitReadingParagraphs(pastedText), {
       kind: "paste",
-      fallbackTitle: "Pasted reading",
+      fallbackTitle: t("reading.import.review.title_fallback"),
     });
   }
 
   const steps: Array<{ key: ImportStep; label: string }> = [
-    { key: "source", label: "Source" },
-    { key: "details", label: "Details" },
-    { key: "review", label: "Review" },
+    { key: "source", label: t("reading.import.source.step") },
+    { key: "details", label: t("reading.import.details.step") },
+    { key: "review", label: t("reading.import.review.step") },
   ];
 
   return (
@@ -124,15 +126,15 @@ export function ReadingImportPage() {
       <header className="rounded-2xl border border-[var(--border-subtle)] bg-bg-card p-5">
         <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-bg-page px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-accent-teal">
           <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-          Reading import
+          {t("reading.import.badge")}
         </div>
-        <h1 className="m-0 text-3xl font-semibold text-text-primary">Import a book or text.</h1>
+        <h1 className="m-0 text-3xl font-semibold text-text-primary">{t("reading.import.heading")}</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">
-          Add a TXT, EPUB, or pasted passage to your library before opening it in the paragraph translation workspace.
+          {t("reading.import.subtitle")}
         </p>
       </header>
 
-      <nav className="grid gap-2 md:grid-cols-3" aria-label="Import steps">
+      <nav className="grid gap-2 md:grid-cols-3" aria-label={t("reading.import.steps_aria")}>
         {steps.map((item, index) => {
           const isActive = item.key === step;
           const isComplete = steps.findIndex((candidate) => candidate.key === step) > index;
@@ -172,8 +174,8 @@ export function ReadingImportPage() {
             }}
           >
             <BookOpenText className="h-10 w-10 text-accent-orange" aria-hidden="true" />
-            <span className="text-base font-semibold text-text-primary">{isParsing ? "Parsing file..." : "Upload TXT or EPUB"}</span>
-            <span className="max-w-sm text-sm leading-6 text-text-secondary">The browser extracts paragraphs locally, then the cleaned text is saved to your library.</span>
+            <span className="text-base font-semibold text-text-primary">{isParsing ? t("reading.import.source.parsing") : t("reading.import.source.upload_title")}</span>
+            <span className="max-w-sm text-sm leading-6 text-text-secondary">{t("reading.import.source.upload_desc")}</span>
             <input
               type="file"
               className="sr-only"
@@ -185,21 +187,21 @@ export function ReadingImportPage() {
           <div className="rounded-2xl border border-[var(--border-subtle)] bg-bg-card p-5">
             <label className="mb-3 flex items-center gap-2 text-sm font-semibold text-text-primary" htmlFor="reader-paste">
               <FileText className="h-4 w-4 text-accent-teal" aria-hidden="true" />
-              Paste shorter text
+              {t("reading.import.source.paste_label")}
             </label>
             <textarea
               id="reader-paste"
               className="min-h-52 w-full resize-y rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm leading-6 text-text-primary outline-none focus:border-accent-orange"
               value={pastedText}
               onChange={(event) => setPastedText(event.target.value)}
-              placeholder="Paste paragraphs here..."
+              placeholder={t("reading.import.source.paste_placeholder")}
             />
             <button
               type="button"
               className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent-orange px-4 py-2.5 text-sm font-semibold text-text-on-accent transition-opacity hover:opacity-90"
               onClick={handlePasteLoad}
             >
-              Continue
+              {t("reading.import.source.continue")}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
@@ -210,18 +212,18 @@ export function ReadingImportPage() {
         <div className="rounded-2xl border border-[var(--border-subtle)] bg-bg-card p-5">
           <div className="grid gap-4 md:grid-cols-2">
             <label className="text-sm font-medium text-text-primary" htmlFor="reader-title">
-              Title
+              {t("reading.import.details.title_label")}
               <input
                 id="reader-title"
                 className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none focus:border-accent-orange"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder="My reading"
+                placeholder={t("reading.import.details.title_placeholder")}
               />
             </label>
 
             <label className="text-sm font-medium text-text-primary" htmlFor="translation-language">
-              Translation language
+              {t("reading.import.details.translation_language_label")}
               <select
                 id="translation-language"
                 className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none focus:border-accent-orange"
@@ -237,7 +239,7 @@ export function ReadingImportPage() {
             </label>
 
             <label className="text-sm font-medium text-text-primary" htmlFor="source-language">
-              Source language
+              {t("reading.import.details.source_language_label")}
               <select
                 id="source-language"
                 className="mt-2 w-full rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none focus:border-accent-orange"
@@ -253,7 +255,7 @@ export function ReadingImportPage() {
             </label>
 
             <div className="rounded-xl bg-bg-page px-3 py-2 text-sm text-text-secondary">
-              <span className="block font-medium text-text-primary">Detected content</span>
+              <span className="block font-medium text-text-primary">{t("reading.import.details.detected_label")}</span>
               <span>{paragraphs.length} paragraphs · {sourceKind.toUpperCase()}{sourceName ? ` · ${sourceName}` : ""}</span>
             </div>
           </div>
@@ -263,7 +265,7 @@ export function ReadingImportPage() {
             className="mt-5 inline-flex items-center gap-2 rounded-xl bg-accent-orange px-4 py-2.5 text-sm font-semibold text-text-on-accent transition-opacity hover:opacity-90"
             onClick={() => setStep("review")}
           >
-            Review import
+            {t("reading.import.details.review_button")}
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
@@ -273,9 +275,9 @@ export function ReadingImportPage() {
         <div className="rounded-2xl border border-[var(--border-subtle)] bg-bg-card p-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="m-0 text-xl font-semibold text-text-primary">{title || "Imported reading"}</h2>
+              <h2 className="m-0 text-xl font-semibold text-text-primary">{title || t("reading.import.review.title_fallback")}</h2>
               <p className="m-0 mt-1 text-sm text-text-secondary">
-                {paragraphs.length} paragraphs · {LANGUAGE_LABELS[sourceLanguage]} to {translationLanguage}
+                {t("reading.workspace.source_to_target", { source: LANGUAGE_LABELS[sourceLanguage], target: translationLanguage })} · {paragraphs.length} paragraphs
               </p>
             </div>
             <button
@@ -284,14 +286,14 @@ export function ReadingImportPage() {
               onClick={() => createDocument.mutate()}
               disabled={createDocument.isPending || paragraphs.length === 0}
             >
-              {createDocument.isPending ? "Saving..." : "Save to library"}
+              {createDocument.isPending ? t("reading.import.review.saving") : t("reading.import.review.save_to_library")}
             </button>
           </div>
 
           <div className="mt-5 flex flex-col gap-3">
             {previewParagraphs.map((paragraph, index) => (
               <article key={paragraph.id} className="rounded-xl bg-bg-page p-4">
-                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Paragraph {index + 1}</div>
+                <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">{t("reading.import.review.paragraph_number", { n: index + 1 })}</div>
                 <p className="m-0 whitespace-pre-wrap text-sm leading-7 text-text-primary">{paragraph.source}</p>
               </article>
             ))}

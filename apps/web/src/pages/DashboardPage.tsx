@@ -177,10 +177,10 @@ export function DashboardPage() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="m-0 text-[24px] font-semibold [font-family:var(--font-display)]">
-              Reading Library
+              {t("dashboard.reading.title")}
             </h2>
             <p className="m-0 mt-1 font-mono text-[11px] uppercase tracking-[0.08em] text-text-secondary">
-              Imported books and texts
+              {t("dashboard.reading.subtitle")}
             </p>
           </div>
           <Link
@@ -188,7 +188,7 @@ export function DashboardPage() {
             className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-card px-3 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-bg-elevated"
           >
             <Upload className="h-4 w-4 text-accent-orange" aria-hidden="true" />
-            Import
+            {t("reading.workspace.import")}
           </Link>
         </div>
 
@@ -209,16 +209,16 @@ export function DashboardPage() {
                 </div>
                 <h3 className="m-0 truncate text-base font-semibold text-text-primary">{reading.title}</h3>
                 <p className="m-0 mt-2 text-sm text-text-secondary">
-                  {LANGUAGE_LABELS[reading.sourceLanguage]} to {reading.translationLanguage}
+                  {t("reading.workspace.source_to_target", { source: LANGUAGE_LABELS[reading.sourceLanguage], target: reading.translationLanguage })}
                 </p>
               </button>
             ))}
           </div>
         ) : (
           <section className="rounded-[24px] border border-dashed border-[var(--border-strong)] bg-bg-card px-8 py-8 text-center text-text-secondary">
-            <p className="m-0 text-base text-text-primary">No readings imported yet.</p>
+            <p className="m-0 text-base text-text-primary">{t("dashboard.reading.empty_title")}</p>
             <Link to="/reader/import" className="mt-2 inline-flex text-sm text-accent-orange hover:underline">
-              Import a book or paste text
+              {t("dashboard.reading.empty_cta")}
             </Link>
           </section>
         )}

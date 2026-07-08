@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { BookOpenText, Eye, EyeOff, Languages, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
 import {
   getDefaultEdgeTtsVoice,
@@ -60,6 +61,7 @@ function isInteractiveElement(target: EventTarget | null) {
 }
 
 export function ReadingPracticePage() {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const { documentId } = useParams<{ documentId: string }>();
   const navigate = useNavigate();
@@ -110,7 +112,7 @@ export function ReadingPracticePage() {
     : undefined;
   const completedCount = currentDocument?.completedCount ?? 0;
   const sourceLanguage: LanguageCode = currentDocument?.sourceLanguage ?? "ja";
-  const chapterLabel = activeParagraph?.chapterTitle ?? "Imported text";
+  const chapterLabel = activeParagraph?.chapterTitle ?? t("reading.workspace.import_text");
 
   // Character analysis for monkeytype display
   const sourceText = activeSentence?.text ?? "";
@@ -160,7 +162,7 @@ export function ReadingPracticePage() {
       key: "Enter",
       meta: true,
       handler: () => skipSentenceRef.current(),
-      description: "Skip sentence",
+      description: t("reading.practice.skip_sentence_shortcut"),
       scope: "local",
     });
     return cleanup;
@@ -471,7 +473,7 @@ export function ReadingPracticePage() {
   if (documentQuery.isLoading) {
     return (
       <section className="fixed inset-0 z-[200] flex items-center justify-center bg-bg-page">
-        <p className="m-0 text-sm text-text-secondary">Loading reading...</p>
+        <p className="m-0 text-sm text-text-secondary">{t("reading.practice.loading")}</p>
       </section>
     );
   }
@@ -481,12 +483,12 @@ export function ReadingPracticePage() {
       <section className="fixed inset-0 z-[200] flex items-center justify-center bg-bg-page px-6 text-center">
         <div>
           <BookOpenText className="mx-auto mb-3 h-10 w-10 text-text-secondary" aria-hidden="true" />
-          <p className="m-0 text-sm text-text-secondary">This reading could not be loaded.</p>
+          <p className="m-0 text-sm text-text-secondary">{t("reading.practice.not_found")}</p>
           <Link
             to="/reader"
             className="mt-4 inline-flex rounded-xl border border-[var(--border-subtle)] px-4 py-2 text-sm text-text-primary"
           >
-            Back to library
+            {t("reading.practice.back_to_library")}
           </Link>
         </div>
       </section>
@@ -501,7 +503,7 @@ export function ReadingPracticePage() {
     <section
       className="fixed inset-0 z-[200] flex cursor-text flex-col items-center justify-start overflow-hidden bg-bg-page sm:justify-center"
       tabIndex={-1}
-      aria-label="Reading practice"
+      aria-label={t("reading.practice.aria_label")}
       onKeyDown={handleKeyDown}
       onClick={(event) => {
         if (isInteractiveElement(event.target)) return;
@@ -529,7 +531,7 @@ export function ReadingPracticePage() {
 
           {/* Completed count */}
           <span className="inline-flex items-center rounded-full border border-[var(--border-muted)] bg-bg-page px-3 py-1 text-xs text-text-secondary font-medium">
-            {completedCount}/{currentDocument.paragraphCount} done
+            {t("reading.practice.done_count", { count: completedCount, total: currentDocument.paragraphCount })}
           </span>
 
           {/* TTS toggle */}
@@ -541,7 +543,7 @@ export function ReadingPracticePage() {
           >
             <span className="inline-flex items-center gap-1.5">
               {ttsEnabled ? <Volume2 size={13} aria-hidden="true" /> : <VolumeX size={13} aria-hidden="true" />}
-              <span className="hidden sm:inline">{ttsEnabled ? "Audio on" : "Audio off"}</span>
+              <span className="hidden sm:inline">{ttsEnabled ? t("reading.practice.audio_on") : t("reading.practice.audio_off")}</span>
             </span>
           </button>
 
@@ -554,7 +556,7 @@ export function ReadingPracticePage() {
               disabled={loadingTtsSentenceId === activeSentence.id}
             >
               <RotateCcw size={13} aria-hidden="true" />
-              <span className="hidden sm:inline">Replay</span>
+              <span className="hidden sm:inline">{t("reading.practice.replay")}</span>
             </button>
           ) : null}
 
@@ -565,7 +567,7 @@ export function ReadingPracticePage() {
             onClick={() => setShowTranslation(!showTranslation)}
           >
             {showTranslation ? <EyeOff size={13} aria-hidden="true" /> : <Eye size={13} aria-hidden="true" />}
-            <span className="hidden sm:inline">{showTranslation ? "Hide" : "Show"}</span>
+            <span className="hidden sm:inline">{showTranslation ? t("reading.practice.hide") : t("reading.practice.show")}</span>
           </button>
 
           {/* Skip */}
@@ -574,7 +576,7 @@ export function ReadingPracticePage() {
             className="inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--border-muted)] bg-bg-page px-2.5 text-[11px] text-text-secondary font-medium outline-none hover:border-[var(--border-strong)] hover:text-text-primary sm:px-3 sm:text-xs"
             onClick={skipSentence}
           >
-            Skip
+            {t("reading.practice.skip")}
           </button>
         </div>
 
@@ -584,7 +586,7 @@ export function ReadingPracticePage() {
           className="inline-flex h-8 shrink-0 items-center justify-center gap-2 self-end whitespace-nowrap rounded-lg border border-[var(--border-muted)] bg-transparent px-3 text-xs font-normal text-text-secondary hover:border-[var(--border-strong)] hover:text-text-primary sm:h-auto sm:self-auto sm:px-3.5 sm:py-1.5 sm:text-[13px]"
           onClick={() => requestExitIntent("button")}
         >
-          Exit
+          {t("reading.practice.exit")}
         </button>
       </div>
 
@@ -605,15 +607,15 @@ export function ReadingPracticePage() {
           aria-modal="true"
           aria-labelledby="reading-exit-confirm-title"
         >
-          <p id="reading-exit-confirm-title" className="m-0 text-sm font-semibold text-text-primary">End reading practice?</p>
-          <p className="mt-1 mb-0 text-xs text-text-secondary">Your progress on completed sentences is saved.</p>
+          <p id="reading-exit-confirm-title" className="m-0 text-sm font-semibold text-text-primary">{t("reading.practice.end_title")}</p>
+          <p className="mt-1 mb-0 text-xs text-text-secondary">{t("reading.practice.end_desc")}</p>
           <div className="mt-3 flex items-center justify-end gap-2">
             <button
               type="button"
               className="rounded-md border border-[var(--border-strong)] bg-bg-page px-3 py-1.5 text-xs font-medium text-text-primary hover:border-accent-orange"
               onClick={closeExitConfirm}
             >
-              Continue reading
+              {t("reading.practice.continue_reading")}
             </button>
             <button
               type="button"
@@ -623,7 +625,7 @@ export function ReadingPracticePage() {
             >
               <span className="inline-flex items-center gap-1.5">
                 <X className="h-3 w-3" aria-hidden="true" />
-                Exit
+                {t("reading.practice.confirm_exit")}
               </span>
             </button>
           </div>
@@ -693,19 +695,19 @@ export function ReadingPracticePage() {
             <div className="mb-2 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">
                 <Languages className="h-3 w-3" aria-hidden="true" />
-                Translation
+                {t("reading.practice.translation")}
               </div>
               <button
                 type="button"
                 className="rounded-full border border-[var(--border-muted)] bg-bg-page p-1 text-text-secondary hover:text-text-primary"
                 onClick={() => setShowTranslation(false)}
-                aria-label="Hide translation"
+                aria-label={t("reading.practice.hide_translation_aria")}
               >
                 <EyeOff size={12} aria-hidden="true" />
               </button>
             </div>
             {translateParagraph.isPending ? (
-              <p className="m-0 text-sm text-text-secondary">Translating...</p>
+              <p className="m-0 text-sm text-text-secondary">{t("reading.practice.translating")}</p>
             ) : (
               <>
                 {activeSentenceTranslation ? (
@@ -738,7 +740,7 @@ export function ReadingPracticePage() {
 
       {/* Hidden textarea - preserves spaces unlike input */}
       <label className="absolute m-[-1px] h-px w-px overflow-hidden border-0 p-0 whitespace-nowrap [clip:rect(0,0,0,0)]" htmlFor="reading-typing-input">
-        Type the sentence
+        {t("reading.practice.type_sentence_label")}
       </label>
       <textarea
         id="reading-typing-input"
@@ -760,7 +762,7 @@ export function ReadingPracticePage() {
             event.preventDefault();
           }
         }}
-        aria-label="Type the sentence"
+        aria-label={t("reading.practice.type_sentence_label")}
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize="off"

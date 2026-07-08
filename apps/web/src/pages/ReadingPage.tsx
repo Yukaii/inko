@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { BookOpenText, Check, Download, Languages, Library, Pencil, Plus, RotateCcw, Sparkles, Trash2, Volume2, X } from "lucide-react";
 import {
   getDefaultEdgeTtsVoice,
@@ -34,7 +35,7 @@ function formatExport(document: ReadingDocumentDTO) {
     .join("\n\n---\n\n");
 }
 
-function groupParagraphsByChapter(paragraphs: ReadingParagraphDTO[]) {
+function groupParagraphsByChapter(paragraphs: ReadingParagraphDTO[], chapterFallback = "Imported text") {
   const groups: Array<{ id: string; title: string; index: number; paragraphs: Array<{ paragraph: ReadingParagraphDTO; globalIndex: number }>; completedCount: number }> = [];
   const groupsById = new Map<string, (typeof groups)[number]>();
 
@@ -44,7 +45,7 @@ function groupParagraphsByChapter(paragraphs: ReadingParagraphDTO[]) {
     if (!group) {
       group = {
         id,
-        title: paragraph.chapterTitle ?? "Imported text",
+        title: paragraph.chapterTitle ?? chapterFallback,
         index: paragraph.chapterIndex ?? groups.length,
         paragraphs: [],
         completedCount: 0,
@@ -62,6 +63,7 @@ function groupParagraphsByChapter(paragraphs: ReadingParagraphDTO[]) {
 }
 
 export function ReadingPage() {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const { documentId } = useParams();
   const navigate = useNavigate();
@@ -158,7 +160,7 @@ export function ReadingPage() {
   const activeTranslationParagraphId = useMemo(() => {
     return translateParagraph.variables?.id ?? null;
   }, [translateParagraph.variables]);
-  const chapterGroups = useMemo(() => groupParagraphsByChapter(currentDocument?.paragraphs ?? []), [currentDocument?.paragraphs]);
+  const chapterGroups = useMemo(() => groupParagraphsByChapter(currentDocument?.paragraphs ?? [], t("reading.workspace.import_text")), [currentDocument?.paragraphs, t]);
   const sentenceQueue = useMemo<ReadingSentenceUnit[]>(() => {
     const units: ReadingSentenceUnit[] = [];
     for (const paragraph of currentDocument?.paragraphs ?? []) {
@@ -189,7 +191,7 @@ export function ReadingPage() {
       documentId: currentDocument.id,
       patch: { title, sourceLanguage, translationLanguage },
     });
-    setStatus("Reading details saved.");
+    setStatus(t("reading.workspace.reading_details_saved"));
   }
 
   function updateParagraphTranslation(paragraphId: string, translation: string) {
@@ -377,11 +379,11 @@ export function ReadingPage() {
         <div className="max-w-3xl">
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-bg-page px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-accent-teal">
             <BookOpenText className="h-3.5 w-3.5" aria-hidden="true" />
-            Reading workspace
+            {t("reading.workspace.badge")}
           </div>
-          <h1 className="m-0 text-3xl font-semibold text-text-primary">Manage books and translate as you read.</h1>
+          <h1 className="m-0 text-3xl font-semibold text-text-primary">{t("reading.workspace.heading")}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">
-            Browse imported readings, generate sentence-level translation, then type your own paragraph translation with meaning hints nearby.
+            {t("reading.workspace.subtitle")}
           </p>
         </div>
 
@@ -392,14 +394,14 @@ export function ReadingPage() {
             aria-disabled={!currentDocument}
           >
             <BookOpenText className="h-4 w-4" aria-hidden="true" />
-            {currentDocument ? "Start reading" : "Select a book"}
+            {currentDocument ? t("reading.workspace.start_reading") : t("reading.workspace.select_book")}
           </Link>
           <Link
             to="/reader/import"
             className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-bg-elevated"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Import text
+            {t("reading.workspace.import_text")}
           </Link>
           <button
             type="button"
@@ -408,7 +410,7 @@ export function ReadingPage() {
             disabled={!currentDocument}
           >
             <Download className="h-4 w-4" aria-hidden="true" />
-            Export
+            {t("reading.workspace.export")}
           </button>
           <button
             type="button"
@@ -417,7 +419,7 @@ export function ReadingPage() {
             disabled={!currentDocument}
           >
             <RotateCcw className="h-4 w-4" aria-hidden="true" />
-            Clear all translations
+            {t("reading.workspace.clear_all_translations")}
           </button>
           <button
             type="button"
@@ -425,7 +427,7 @@ export function ReadingPage() {
             onClick={() => currentDocument && deleteDocument.mutate(currentDocument.id)}
             disabled={!currentDocument || deleteDocument.isPending}
           >
-            Delete
+            {t("reading.workspace.delete")}
           </button>
         </div>
       </header>
@@ -435,10 +437,10 @@ export function ReadingPage() {
           <div className="mb-3 flex items-center justify-between gap-2 px-1">
             <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
               <Library className="h-4 w-4 text-accent-teal" aria-hidden="true" />
-              Library
+              {t("reading.workspace.library")}
             </div>
             <Link to="/reader/import" className="text-xs font-medium text-accent-orange hover:underline">
-              Import
+              {t("reading.workspace.import")}
             </Link>
           </div>
           <div className="flex max-h-[34rem] flex-col gap-2 overflow-y-auto">
@@ -494,7 +496,7 @@ export function ReadingPage() {
                       }}
                     >
                       <BookOpenText className="h-3 w-3" aria-hidden="true" />
-                      Practice
+                      {t("reading.workspace.practice")}
                     </span>
                   </div>
                 </button>
@@ -502,13 +504,13 @@ export function ReadingPage() {
             }) : (
               <div className="flex flex-col items-center gap-3 rounded-xl bg-bg-page p-5 text-center">
                 <BookOpenText className="h-8 w-8 text-text-secondary" aria-hidden="true" />
-                <p className="m-0 text-sm leading-6 text-text-secondary">No readings saved yet.</p>
+                <p className="m-0 text-sm leading-6 text-text-secondary">{t("reading.workspace.empty_title")}</p>
                 <Link
                   to="/reader/import"
                   className="inline-flex items-center gap-2 rounded-xl bg-accent-orange px-4 py-2 text-xs font-semibold text-text-on-accent transition-opacity hover:opacity-90"
                 >
                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                  Import your first text
+                  {t("reading.workspace.empty_cta")}
                 </Link>
               </div>
             )}
@@ -520,7 +522,7 @@ export function ReadingPage() {
             <div className="min-w-0 flex-1">
               <div className="mb-3 flex items-center gap-2 text-sm font-medium text-text-primary">
                 <Languages className="h-4 w-4 text-accent-teal" aria-hidden="true" />
-                {LANGUAGE_LABELS[sourceLanguage]} to {translationLanguage || "translation"}
+                {t("reading.workspace.source_to_target", { source: LANGUAGE_LABELS[sourceLanguage], target: translationLanguage || t("reading.workspace.translation_fallback") })}
               </div>
               {currentDocument ? (
                 <div className="grid gap-2 lg:grid-cols-[minmax(10rem,1fr)_12rem_12rem_auto]">
@@ -528,13 +530,13 @@ export function ReadingPage() {
                     className="rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none focus:border-accent-orange"
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
-                    aria-label="Reading title"
+                    aria-label={t("reading.workspace.reading_title_aria")}
                   />
                   <select
                     className="rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none focus:border-accent-orange"
                     value={sourceLanguage}
                     onChange={(event) => setSourceLanguage(event.target.value as LanguageCode)}
-                    aria-label="Source language"
+                    aria-label={t("reading.workspace.source_language_aria")}
                   >
                     {SUPPORTED_LANGUAGES.map((language) => (
                       <option key={language} value={language}>
@@ -546,7 +548,7 @@ export function ReadingPage() {
                     className="rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none focus:border-accent-orange"
                     value={translationLanguage}
                     onChange={(event) => setTranslationLanguage(event.target.value)}
-                    aria-label="Translation language"
+                    aria-label={t("reading.workspace.translation_language_aria")}
                   >
                     {TRANSLATION_LANGUAGE_OPTIONS.map((language) => (
                       <option key={language.value} value={language.value}>
@@ -560,12 +562,12 @@ export function ReadingPage() {
                     onClick={() => void saveMetadata()}
                     disabled={updateDocument.isPending}
                   >
-                    Save
+                    {t("common.save")}
                   </button>
                 </div>
               ) : null}
               <p className="m-0 mt-1 text-xs text-text-secondary">
-                {completedCount}/{currentDocument?.paragraphCount ?? 0} paragraphs translated
+                {completedCount}/{currentDocument?.paragraphCount ?? 0} {t("reading.workspace.paragraphs_translated")}
               </p>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-bg-page md:w-52">
@@ -582,9 +584,9 @@ export function ReadingPage() {
                 <BookOpenText className="h-10 w-10 text-text-secondary" aria-hidden="true" />
               </div>
               <div>
-                <h2 className="m-0 text-xl font-semibold text-text-primary">No reading selected.</h2>
+                <h2 className="m-0 text-xl font-semibold text-text-primary">{t("reading.workspace.no_selected_title")}</h2>
                 <p className="m-0 mt-2 max-w-md text-sm leading-6 text-text-secondary">
-                  Pick a book from your library or import a new one to get started.
+                  {t("reading.workspace.no_selected_desc")}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -593,7 +595,7 @@ export function ReadingPage() {
                   className="inline-flex items-center gap-2 rounded-xl bg-accent-orange px-4 py-2 text-sm font-semibold text-text-on-accent transition-opacity hover:opacity-90"
                 >
                   <Plus className="h-4 w-4" aria-hidden="true" />
-                  Import a text
+                  {t("reading.workspace.import_a_text")}
                 </Link>
               </div>
             </div>
@@ -606,7 +608,7 @@ export function ReadingPage() {
                       <div>
                         <h2 className="m-0 text-lg font-semibold text-text-primary">{chapter.title}</h2>
                         <p className="m-0 mt-1 text-xs text-text-secondary">
-                          {chapter.completedCount}/{chapter.paragraphs.length} paragraphs translated
+                          {chapter.completedCount}/{chapter.paragraphs.length} {t("reading.workspace.paragraphs_translated")}
                         </p>
                       </div>
                       <div className="flex items-center gap-3">
@@ -617,7 +619,7 @@ export function ReadingPage() {
                             onClick={() => clearChapterTranslations(chapter.id)}
                           >
                             <RotateCcw className="h-3 w-3" aria-hidden="true" />
-                            Clear chapter
+                            {t("reading.workspace.clear_chapter")}
                           </button>
                         ) : null}
                         <div className="h-2 w-full overflow-hidden rounded-full bg-bg-card md:w-48">
@@ -634,7 +636,7 @@ export function ReadingPage() {
                       <li key={paragraph.id} className="grid gap-4 p-4 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                   <article className="rounded-xl bg-bg-page p-4">
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Paragraph {globalIndex + 1}</span>
+                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">{t("reading.workspace.paragraph_number", { n: globalIndex + 1 })}</span>
                       <div className="flex flex-wrap gap-2">
                         {editingParagraphId === paragraph.id ? (
                           <>
@@ -644,7 +646,7 @@ export function ReadingPage() {
                               onClick={saveEditedSource}
                             >
                               <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                              Save
+                              {t("common.save")}
                             </button>
                             <button
                               type="button"
@@ -652,7 +654,7 @@ export function ReadingPage() {
                               onClick={cancelEditingSource}
                             >
                               <X className="h-3.5 w-3.5" aria-hidden="true" />
-                              Cancel
+                              {t("common.cancel")}
                             </button>
                           </>
                         ) : (
@@ -663,7 +665,7 @@ export function ReadingPage() {
                               onClick={() => startEditingSource(paragraph)}
                             >
                               <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                              Edit
+                              {t("reading.workspace.edit")}
                             </button>
                             <button
                               type="button"
@@ -672,7 +674,7 @@ export function ReadingPage() {
                               disabled={paragraph.sentences.length === 0 || loadingTtsSentenceId?.startsWith(`${paragraph.id}-s-`)}
                             >
                               <Volume2 className="h-3.5 w-3.5 text-accent-teal" aria-hidden="true" />
-                              {loadingTtsSentenceId?.startsWith(`${paragraph.id}-s-`) ? "Loading..." : "Listen sentences"}
+                              {loadingTtsSentenceId?.startsWith(`${paragraph.id}-s-`) ? t("reading.workspace.loading") : t("reading.workspace.listen_sentences")}
                             </button>
                             <button
                               type="button"
@@ -681,7 +683,7 @@ export function ReadingPage() {
                               disabled={translateParagraph.isPending && activeTranslationParagraphId === paragraph.id}
                             >
                               <Sparkles className="h-3.5 w-3.5 text-accent-orange" aria-hidden="true" />
-                              {translateParagraph.isPending && activeTranslationParagraphId === paragraph.id ? "Translating..." : "Translate"}
+                              {translateParagraph.isPending && activeTranslationParagraphId === paragraph.id ? t("reading.workspace.translating") : t("reading.workspace.translate")}
                             </button>
                             <button
                               type="button"
@@ -703,7 +705,7 @@ export function ReadingPage() {
                               }}
                             >
                               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                              {confirmDeleteParagraphId === paragraph.id ? "Confirm delete" : "Delete"}
+                              {confirmDeleteParagraphId === paragraph.id ? t("reading.workspace.confirm_delete") : t("reading.workspace.delete")}
                             </button>
                           </>
                         )}
@@ -715,7 +717,7 @@ export function ReadingPage() {
                         value={editedSource}
                         onChange={(event) => setEditedSource(event.target.value)}
                         lang={sourceLanguage}
-                        aria-label="Edit paragraph source"
+                        aria-label={t("reading.workspace.edit_source_aria")}
                       />
                     ) : (
                       <div className="flex flex-col gap-2" lang={sourceLanguage}>
@@ -735,7 +737,7 @@ export function ReadingPage() {
                                   className="mt-1 inline-flex h-7 w-7 flex-none items-center justify-center rounded-full border border-[var(--border-subtle)] bg-bg-card text-text-primary transition-colors hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
                                   onClick={() => unit && void playSentence(unit)}
                                   disabled={!unit || isLoadingSentence}
-                                  aria-label={`Listen to sentence ${sentence.index + 1}`}
+                                  aria-label={t("reading.workspace.listen_sentence_aria", { n: sentence.index + 1 })}
                                 >
                                   <Volume2 className="h-3.5 w-3.5 text-accent-teal" aria-hidden="true" />
                                 </button>
@@ -754,7 +756,7 @@ export function ReadingPage() {
 
                     {paragraph.sentenceTranslations.length > 0 || paragraph.engineTranslation ? (
                       <div className="mt-4 rounded-xl border border-[var(--border-subtle)] bg-bg-card p-3">
-                        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-accent-teal">Engine translation</div>
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-accent-teal">{t("reading.workspace.engine_translation")}</div>
                         {paragraph.sentenceTranslations.length > 0 ? (
                           <div className="flex flex-col gap-3">
                             {paragraph.sentenceTranslations.map((sentence, sentenceIndex) => (
@@ -774,7 +776,7 @@ export function ReadingPage() {
                   <div className="flex min-h-56 flex-col gap-3">
                     <label className="flex min-h-44 flex-1 flex-col rounded-xl border border-[var(--border-subtle)] bg-bg-page focus-within:border-accent-orange" htmlFor={`translation-${paragraph.id}`}>
                       <span className="border-b border-[var(--border-subtle)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">
-                        Your translation
+                        {t("reading.workspace.your_translation")}
                       </span>
                       <textarea
                         id={`translation-${paragraph.id}`}
@@ -782,13 +784,13 @@ export function ReadingPage() {
                         value={paragraph.translation}
                         onChange={(event) => updateParagraphTranslation(paragraph.id, event.target.value)}
                         onBlur={() => void saveParagraphTranslations()}
-                        placeholder={paragraph.engineTranslation || "Type as you read..."}
+                        placeholder={paragraph.engineTranslation || t("reading.workspace.type_as_you_read")}
                       />
                     </label>
 
                     {paragraph.meaningHints.length > 0 ? (
                       <div className="rounded-xl border border-[var(--border-subtle)] bg-bg-page p-3">
-                        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Meaning hints</div>
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">{t("reading.workspace.meaning_hints")}</div>
                         <div className="flex flex-wrap gap-2">
                           {paragraph.meaningHints.map((hint) => (
                             <span key={`${paragraph.id}-${hint.term}`} className="rounded-full border border-[var(--border-subtle)] bg-bg-card px-3 py-1 text-xs text-text-secondary">
