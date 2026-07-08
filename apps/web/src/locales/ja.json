@@ -242,6 +242,8 @@
       "export": "書き出し",
       "clear_all_translations": "すべての翻訳をクリア",
       "delete": "削除",
+      "confirm_delete_document": "\"{{title}}\"を削除しますか？",
+      "delete_document_desc": "この読み物と関連するすべての翻訳が完全に削除されます。",
       "library": "ライブラリ",
       "import": "インポート",
       "practice": "練習",

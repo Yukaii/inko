@@ -1,9 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { BookOpenText, Play, Upload } from "lucide-react";
 import { LANGUAGE_LABELS } from "@inko/shared";
 import { api } from "../api/client";
+import { ConfirmModal } from "../components/ConfirmModal";
+import { KebabMenu } from "../components/KebabMenu";
 import { useAuth } from "../hooks/useAuth";
 import { authQueryKey } from "../lib/queryKeys";
 import { useDashboardDeckNavigation } from "../features/dashboard/hooks/useDashboardDeckNavigation";
@@ -48,6 +51,15 @@ export function DashboardPage() {
     queryFn: () => api.listReadingDocuments(token ?? ""),
     enabled: Boolean(token),
     staleTime: 30_000,
+  });
+
+  const [confirmDeleteReading, setConfirmDeleteReading] = useState<{ id: string; title: string } | null>(null);
+
+  const deleteReadingDocument = useMutation({
+    mutationFn: (documentId: string) => api.deleteReadingDocument(token ?? "", documentId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: authQueryKey(token, "reading-documents") });
+    },
   });
 
   const decks = decksQuery.data ?? [];
@@ -195,24 +207,35 @@ export function DashboardPage() {
         {readingsQuery.isLoading ? null : readingsQuery.data?.length ? (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {readingsQuery.data.slice(0, 6).map((reading) => (
-              <button
-                key={reading.id}
-                type="button"
-                className="rounded-[20px] border border-[var(--border-subtle)] bg-bg-card p-4 text-left transition-colors hover:bg-bg-elevated"
-                onClick={() => navigate(`/reader/${reading.id}/practice`)}
-              >
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <BookOpenText className="h-5 w-5 text-accent-teal" aria-hidden="true" />
-                  <span className="rounded-full bg-bg-page px-2 py-1 text-xs text-text-secondary">
-                    {reading.completedCount}/{reading.paragraphCount}
-                  </span>
+              <div key={reading.id} className="group relative">
+                <button
+                  type="button"
+                  className="w-full rounded-[20px] border border-[var(--border-subtle)] bg-bg-card p-4 text-left transition-colors hover:bg-bg-elevated"
+                  onClick={() => navigate(`/reader/${reading.id}/practice`)}
+                >
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <BookOpenText className="h-5 w-5 text-accent-teal" aria-hidden="true" />
+                    <span className="rounded-full bg-bg-page px-2 py-1 text-xs text-text-secondary">
+                      {reading.completedCount}/{reading.paragraphCount}
+                    </span>
+                  </div>
+                  <h3 className="m-0 truncate text-base font-semibold text-text-primary">{reading.title}</h3>
+                  <p className="m-0 mt-2 text-sm text-text-secondary">
+                    {t("reading.workspace.source_to_target", { source: LANGUAGE_LABELS[reading.sourceLanguage], target: reading.translationLanguage })}
+                  </p>
+                </button>
+                <div className="absolute top-2 right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100">
+                  <KebabMenu
+                    items={[{
+                      label: t("reading.workspace.delete"),
+                      danger: true,
+                      onClick: () => setConfirmDeleteReading({ id: reading.id, title: reading.title }),
+                    }]}
+                    ariaLabel={t("reading.workspace.delete")}
+                  />
                 </div>
-                <h3 className="m-0 truncate text-base font-semibold text-text-primary">{reading.title}</h3>
-                <p className="m-0 mt-2 text-sm text-text-secondary">
-                  {t("reading.workspace.source_to_target", { source: LANGUAGE_LABELS[reading.sourceLanguage], target: reading.translationLanguage })}
-                </p>
-              </button>
-            ))}
+              </div>
+              ))}
           </div>
         ) : (
           <section className="rounded-[24px] border border-dashed border-[var(--border-strong)] bg-bg-card px-8 py-8 text-center text-text-secondary">
@@ -238,6 +261,19 @@ export function DashboardPage() {
           onSessionClick={(sessionId) => navigate(`/sessions/${sessionId}`)}
         />
       </section>
+
+      {confirmDeleteReading ? (
+        <ConfirmModal
+          title={t("reading.workspace.confirm_delete_document", { title: confirmDeleteReading.title })}
+          description={t("reading.workspace.delete_document_desc")}
+          danger
+          onConfirm={() => {
+            deleteReadingDocument.mutate(confirmDeleteReading.id);
+            setConfirmDeleteReading(null);
+          }}
+          onCancel={() => setConfirmDeleteReading(null)}
+        />
+      ) : null}
     </div>
   );
 }

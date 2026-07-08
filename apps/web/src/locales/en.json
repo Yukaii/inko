@@ -242,6 +242,8 @@
       "export": "Export",
       "clear_all_translations": "Clear all translations",
       "delete": "Delete",
+      "confirm_delete_document": "Delete \"{{title}}\"?",
+      "delete_document_desc": "This will permanently remove the reading and all associated translations from your library.",
       "library": "Library",
       "import": "Import",
       "practice": "Practice",

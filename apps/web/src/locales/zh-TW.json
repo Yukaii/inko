@@ -242,6 +242,8 @@
       "export": "匯出",
       "clear_all_translations": "清除所有翻譯",
       "delete": "刪除",
+      "confirm_delete_document": "刪除「{{title}}」？",
+      "delete_document_desc": "這將永久移除該閱讀資料及所有相關翻譯。",
       "library": "書庫",
       "import": "匯入",
       "practice": "練習",

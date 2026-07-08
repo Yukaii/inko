@@ -12,6 +12,8 @@ import {
   type ReadingParagraphDTO,
 } from "@inko/shared";
 import { api } from "../api/client";
+import { ConfirmModal } from "../components/ConfirmModal";
+import { KebabMenu } from "../components/KebabMenu";
 import { useAuth } from "../hooks/useAuth";
 import { authQueryKey } from "../lib/queryKeys";
 import { applyNoIndexMetadata } from "../lib/seo";
@@ -78,6 +80,7 @@ export function ReadingPage() {
   const [editingParagraphId, setEditingParagraphId] = useState<string | null>(null);
   const [editedSource, setEditedSource] = useState("");
   const [confirmDeleteParagraphId, setConfirmDeleteParagraphId] = useState<string | null>(null);
+  const [confirmDeleteReading, setConfirmDeleteReading] = useState<{ id: string; title: string } | null>(null);
   const confirmDeleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sentenceAudioCacheRef = useRef(new Map<string, string>());
@@ -375,7 +378,7 @@ export function ReadingPage() {
 
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <header className="flex flex-col gap-4 rounded-2xl border border-[var(--border-subtle)] bg-bg-card p-5 shadow-sm md:flex-row md:items-end md:justify-between">
+      <header className="flex flex-col gap-4 rounded-2xl border border-[var(--border-subtle)] bg-bg-card p-5 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="max-w-3xl">
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-bg-page px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-accent-teal">
             <BookOpenText className="h-3.5 w-3.5" aria-hidden="true" />
@@ -386,50 +389,13 @@ export function ReadingPage() {
             {t("reading.workspace.subtitle")}
           </p>
         </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Link
-            to={currentDocument ? `/reader/${currentDocument.id}/practice` : "/reader"}
-            className={`inline-flex items-center gap-2 rounded-xl bg-accent-orange px-4 py-2 text-sm font-semibold text-text-on-accent transition-opacity hover:opacity-90 ${!currentDocument ? "pointer-events-none opacity-60" : ""}`}
-            aria-disabled={!currentDocument}
-          >
-            <BookOpenText className="h-4 w-4" aria-hidden="true" />
-            {currentDocument ? t("reading.workspace.start_reading") : t("reading.workspace.select_book")}
-          </Link>
-          <Link
-            to="/reader/import"
-            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-bg-elevated"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            {t("reading.workspace.import_text")}
-          </Link>
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={exportTranslations}
-            disabled={!currentDocument}
-          >
-            <Download className="h-4 w-4" aria-hidden="true" />
-            {t("reading.workspace.export")}
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={clearAllTranslations}
-            disabled={!currentDocument}
-          >
-            <RotateCcw className="h-4 w-4" aria-hidden="true" />
-            {t("reading.workspace.clear_all_translations")}
-          </button>
-          <button
-            type="button"
-            className="rounded-xl border border-[var(--border-subtle)] bg-transparent px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-bg-elevated hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={() => currentDocument && deleteDocument.mutate(currentDocument.id)}
-            disabled={!currentDocument || deleteDocument.isPending}
-          >
-            {t("reading.workspace.delete")}
-          </button>
-        </div>
+        <Link
+          to="/reader/import"
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-accent-orange px-4 py-2 text-sm font-semibold text-text-on-accent transition-opacity hover:opacity-90"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          {t("reading.workspace.import_text")}
+        </Link>
       </header>
 
       <div className="grid gap-4 xl:grid-cols-[20rem_minmax(0,1fr)]">
@@ -450,10 +416,10 @@ export function ReadingPage() {
                 : 0;
               const isSelected = documentId === document.id;
               return (
+                <div key={document.id} className="group relative">
                 <button
-                  key={document.id}
                   type="button"
-                  className={`group flex w-full flex-col gap-2 rounded-xl border p-3 text-left transition-all ${
+                  className={`flex w-full flex-col gap-2 rounded-xl border p-3 text-left transition-all ${
                     isSelected
                       ? "border-accent-orange bg-bg-elevated shadow-[0_8px_24px_-12px_var(--accent-orange)]"
                       : "border-[var(--border-subtle)] bg-bg-page hover:border-[var(--border-strong)]"
@@ -500,6 +466,17 @@ export function ReadingPage() {
                     </span>
                   </div>
                 </button>
+                <div className="absolute top-1.5 right-1.5 z-10 opacity-0 transition-opacity group-hover:opacity-100">
+                  <KebabMenu
+                    items={[{
+                      label: t("reading.workspace.delete"),
+                      danger: true,
+                      onClick: () => setConfirmDeleteReading({ id: document.id, title: document.title }),
+                    }]}
+                    ariaLabel={t("reading.workspace.delete")}
+                  />
+                </div>
+              </div>
               );
             }) : (
               <div className="flex flex-col items-center gap-3 rounded-xl bg-bg-page p-5 text-center">
@@ -518,13 +495,13 @@ export function ReadingPage() {
         </aside>
 
         <div className="min-w-0 rounded-2xl border border-[var(--border-subtle)] bg-bg-card">
-          <div className="sticky top-0 z-10 flex flex-col gap-3 border-b border-[var(--border-subtle)] bg-bg-card/95 p-4 backdrop-blur md:flex-row md:items-center md:justify-between">
-            <div className="min-w-0 flex-1">
-              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-text-primary">
-                <Languages className="h-4 w-4 text-accent-teal" aria-hidden="true" />
-                {t("reading.workspace.source_to_target", { source: LANGUAGE_LABELS[sourceLanguage], target: translationLanguage || t("reading.workspace.translation_fallback") })}
-              </div>
-              {currentDocument ? (
+          <div className="sticky top-0 z-10 flex flex-col gap-3 border-b border-[var(--border-subtle)] bg-bg-card/95 p-4 backdrop-blur">
+            <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
+              <Languages className="h-4 w-4 text-accent-teal" aria-hidden="true" />
+              {t("reading.workspace.source_to_target", { source: LANGUAGE_LABELS[sourceLanguage], target: translationLanguage || t("reading.workspace.translation_fallback") })}
+            </div>
+            {currentDocument ? (
+              <>
                 <div className="grid gap-2 lg:grid-cols-[minmax(10rem,1fr)_12rem_12rem_auto]">
                   <input
                     className="rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-2 text-sm text-text-primary outline-none focus:border-accent-orange"
@@ -565,14 +542,51 @@ export function ReadingPage() {
                     {t("common.save")}
                   </button>
                 </div>
-              ) : null}
-              <p className="m-0 mt-1 text-xs text-text-secondary">
-                {completedCount}/{currentDocument?.paragraphCount ?? 0} {t("reading.workspace.paragraphs_translated")}
-              </p>
-            </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-bg-page md:w-52">
-              <div className="h-full rounded-full bg-accent-teal transition-all" style={{ width: `${progressPercent}%` }} />
-            </div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={exportTranslations}
+                      disabled={!currentDocument || completedCount === 0}
+                    >
+                      <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                      {t("reading.workspace.export")}
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-1.5 text-xs font-medium text-text-primary transition-colors hover:bg-bg-elevated disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={clearAllTranslations}
+                      disabled={!currentDocument || completedCount === 0}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                      {t("reading.workspace.clear_all_translations")}
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-bg-page px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-[var(--danger-border)] hover:bg-[var(--danger-bg)] hover:text-[var(--danger-text)] disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={() => {
+                        if (currentDocument) {
+                          setConfirmDeleteReading({ id: currentDocument.id, title: currentDocument.title });
+                        }
+                      }}
+                      disabled={!currentDocument || deleteDocument.isPending}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      {t("reading.workspace.delete")}
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <p className="m-0 text-xs text-text-secondary">
+                      {completedCount}/{currentDocument?.paragraphCount ?? 0} {t("reading.workspace.paragraphs_translated")}
+                    </p>
+                    <div className="h-2 w-32 overflow-hidden rounded-full bg-bg-page md:w-52">
+                      <div className="h-full rounded-full bg-accent-teal transition-all" style={{ width: `${progressPercent}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : null}
           </div>
 
           {status ? <p className="mx-4 mt-4 rounded-xl border border-[color:color-mix(in_oklab,var(--accent-teal)_35%,var(--border-subtle))] bg-bg-page px-3 py-2 text-sm text-accent-teal">{status}</p> : null}
@@ -810,6 +824,19 @@ export function ReadingPage() {
           )}
         </div>
       </div>
+
+      {confirmDeleteReading ? (
+        <ConfirmModal
+          title={t("reading.workspace.confirm_delete_document", { title: confirmDeleteReading.title })}
+          description={t("reading.workspace.delete_document_desc")}
+          danger
+          onConfirm={() => {
+            deleteDocument.mutate(confirmDeleteReading.id);
+            setConfirmDeleteReading(null);
+          }}
+          onCancel={() => setConfirmDeleteReading(null)}
+        />
+      ) : null}
     </section>
   );
 }
