@@ -98,7 +98,8 @@
       "cta_secondary": "詳細を見る",
       "proof_import": "Anki 取り込み",
       "proof_typing": "タイピング想起",
-      "proof_community": "コミュニティデッキ"
+      "proof_community": "コミュニティデッキ",
+      "proof_reading": "読んで翻訳"
     },
     "how_it_works": {
       "title": "// 使い方",
@@ -140,9 +141,9 @@
         "title": "コミュニティデッキ",
         "desc": "公開デッキを閲覧し、サンプルカードを確認し、自分の編集済みデッキも審査に送信できます。"
       },
-      "practice_anywhere": {
-        "title": "発音とメディア",
-        "desc": "TTS と Anki 由来の音声を同じ学習ループで使い、聞く練習と入力練習をつなげます。"
+      "reading_mode": {
+        "title": "リーディングモード",
+        "desc": "TXT/EPUB の書籍をインポートし、AI による文章翻訳と意味ヒントを活用。全文 TTS 再生でタイピング練習ができます。"
       }
     },
     "cta": {

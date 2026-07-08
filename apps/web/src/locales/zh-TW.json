@@ -98,7 +98,8 @@
       "cta_secondary": "了解更多",
       "proof_import": "Anki 匯入",
       "proof_typing": "打字回想",
-      "proof_community": "社群牌組"
+      "proof_community": "社群牌組",
+      "proof_reading": "閱讀與翻譯"
     },
     "how_it_works": {
       "title": "// 運作原理",
@@ -140,9 +141,9 @@
         "title": "社群牌組",
         "desc": "瀏覽公開牌組、檢查範例卡片，也能把自己編輯過的牌組送交審核。"
       },
-      "practice_anywhere": {
-        "title": "發音與媒體",
-        "desc": "把內建 TTS 與 Anki 匯入音訊放進同一套學習流程，讓聽覺與打字互相強化。"
+      "reading_mode": {
+        "title": "閱讀模式",
+        "desc": "匯入 TXT/EPUB 書籍，使用 AI 句子翻譯與詞義提示，配合全文 TTS 播放進行打字練習。"
       }
     },
     "cta": {

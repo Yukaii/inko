@@ -4,7 +4,7 @@
 
 <h1 align="center">Inkō</h1>
 
-Inkō is a vocabulary learning app built around active recall across multiple channels: writing, typing, and listening. It now also supports importing Anki decks with field mapping, browsing shared community decks, and submitting curated decks back to a moderated public library.
+Inkō is a vocabulary learning app built around active recall across multiple channels: writing, typing, listening, and reading. It now also supports importing Anki decks with field mapping, browsing shared community decks, submitting curated decks back to a moderated public library, and practicing with an immersive reading mode.
 
 ## What Users Can Do
 
@@ -17,6 +17,9 @@ Inkō is a vocabulary learning app built around active recall across multiple ch
 - Browse community decks before importing them
 - Submit imported or user-edited decks to the community moderation queue
 - Review your own submission statuses from a dedicated submissions page
+- Import books and texts (TXT, EPUB) for reading practice with sentence-level TTS playback
+- Generate AI-powered paragraph translations with meaning hints while reading
+- Type along with imported readings in a full-screen practice mode with character-level feedback
 - Use local magic-link auth, or enable social sign-in when configured
 
 For the product direction and learning model, see [docs/prd.md](./docs/prd.md).
@@ -32,6 +35,10 @@ For the product direction and learning model, see [docs/prd.md](./docs/prd.md).
 - `/word-bank`
 - `/imports/anki`
 - `/practice/:deckId`
+- `/reader`
+- `/reader/import`
+- `/reader/:documentId`
+- `/reader/:documentId/practice`
 - `/settings`
 
 ## Quick Start

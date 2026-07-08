@@ -98,7 +98,8 @@
       "cta_secondary": "Learn More",
       "proof_import": "Anki import",
       "proof_typing": "Typing recall",
-      "proof_community": "Community decks"
+      "proof_community": "Community decks",
+      "proof_reading": "Read & translate"
     },
     "how_it_works": {
       "title": "// How It Works",
@@ -140,9 +141,9 @@
         "title": "Community Decks",
         "desc": "Browse public decks, inspect sample cards, clone useful sets, and submit your own edited decks for review."
       },
-      "practice_anywhere": {
-        "title": "Pronunciation + Media",
-        "desc": "Keep TTS support and imported Anki audio in the same study flow, so listening and typing reinforce each other."
+      "reading_mode": {
+        "title": "Reading Mode",
+        "desc": "Import TXT/EPUB books, get AI-powered sentence translations with meaning hints, and practice typing with full-sentence TTS playback."
       }
     },
     "cta": {

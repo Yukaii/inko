@@ -11,7 +11,7 @@ import {
   TrendingUp,
   Layers,
   Volume2,
-  Smartphone,
+  BookOpenText,
   FileUp,
   Library,
 } from "lucide-react";
@@ -49,6 +49,7 @@ export function LandingPage() {
   const heroProofs = [
     { icon: FileUp, label: t("landing.hero.proof_import") },
     { icon: Keyboard, label: t("landing.hero.proof_typing") },
+    { icon: BookOpenText, label: t("landing.hero.proof_reading") },
     { icon: Library, label: t("landing.hero.proof_community") },
   ];
 
@@ -106,7 +107,7 @@ export function LandingPage() {
               </motion.div>
               <motion.div
                 variants={fadeInUp}
-                className="grid w-full gap-2 text-[13px] text-text-secondary sm:grid-cols-3 md:gap-3 lg:max-w-[640px]"
+                className="grid w-full gap-2 text-[13px] text-text-secondary sm:grid-cols-2 lg:grid-cols-4 md:gap-3 lg:max-w-[640px]"
               >
                 {heroProofs.map((proof) => (
                   <div
@@ -262,10 +263,10 @@ export function LandingPage() {
                 color: "text-accent-orange",
               },
               {
-                icon: Smartphone,
-                title: t("landing.features.practice_anywhere.title"),
-                desc: t("landing.features.practice_anywhere.desc"),
-                color: "text-accent-teal",
+                icon: BookOpenText,
+                title: t("landing.features.reading_mode.title"),
+                desc: t("landing.features.reading_mode.desc"),
+                color: "text-accent-orange",
               },
             ].map((feat, i) => (
               <motion.div
